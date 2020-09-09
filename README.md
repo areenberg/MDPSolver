@@ -1,13 +1,24 @@
 # MDPSolver
-A solver for Markov decision processes (MDPs) based on the modified policy iteration algorithm
+A solver for Markov decision processes (MDPs) based on the modified policy iteration algorithm.
+
+This solver is written in C++.
 
 # Quickstart guide
 
+Introduction to how the solver is used ...
 
-# How to write the `Model` class
+## Update method
+
+On how to choose the value update method.
+
+## Stopping criteria
+
+On how to choose the stopping criteria.
+
+# Writing your own `Model` class
 
 
-# Background
+# Background theory
 
 # License
 
