@@ -1,6 +1,6 @@
 # MDPSolver
 
-This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is a *Modified Policy Iteration* (MPI) algorithm, which derives an epsilon-optimal policy, where epsilon is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between two different stopping criteria, three different value update methods, as well as using the solver as a epsilon-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
+This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is a *Modified Policy Iteration* (MPI) algorithm, which derives an epsilon-optimal policy that maximizes the expected total discounted reward, where epsilon is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between two different stopping criteria, three different value update methods, as well as using the solver as an epsilon-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
 
 Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively.
 
@@ -8,14 +8,38 @@ Besides the MPI algorithm, the repository also contains two MDP-model classes wh
 
 In order to employ the solver, one only needs the **solver** and **model** class. To import these:
 ```
-#include "modifiedPolicyIteration.h"
-#include "CBMmodel.h"
+#include "modifiedPolicyIteration.h" //import the solver
+#include "CBMmodel.h" //import a model
 
 ```
+Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your model-class is described later in this file.
 
-Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your model-class is described below.
+Now define the parameters
+```
+double epsilon = 1e-3; //the tolerance
+double discount = 0.99; //discount
+bool useSpan = true; //use span seminorm stopping
+int update = 3; //use Successive Over-Relaxation (SOR) updates
+double SORrelaxation = 1.1; //SOR relaxation (only relevant if update=3)
+int M = 100; //stop partial evaluation after 100 iterations
+int L = 5; //model specific parameter
+```
 
+Next, create the model object
+```
+Model mdl(N, L, discount);
+```
+... and plug it into the solver object
+```
+modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
+```
 
+An epsilon-optimal policy can now be derived by using the `solve` method
+```
+mpi.solve(mdl);
+```
+
+## Get the solution
 
 
 ## Switching between VI, PI and MPI
@@ -26,7 +50,7 @@ On how to choose the value update method.
 
 ## Stopping criteria
 
-On how to choose the stopping criteria.
+On how to choose between span seminorm and the supremum norm stopping criteria.
 
 # Writing your own `Model` class
 
