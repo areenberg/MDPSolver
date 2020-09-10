@@ -6,7 +6,7 @@ Besides the MPI algorithm, the repository also contains two MDP-model classes wh
 
 # Getting started
 
-In order to employ the solver, one only needs the **solver** and **model** class. To import these:
+In order to employ the solver, one only needs the **solver** and a **model** class. To import these:
 ```
 #include "modifiedPolicyIteration.h" //import the solver
 #include "CBMmodel.h" //import a model
