@@ -1,11 +1,23 @@
 # MDPSolver
-A solver for Markov decision processes (MDPs) based on the modified policy iteration algorithm.
 
-This solver is written in C++.
+This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is a *Modified Policy Iteration* (MPI) algorithm, which derives an $\epsilon$-optimal policy, where $\epsilon$ is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between two different stopping criteria, three different value update methods, as well as using the solver as a $\epsilon$-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
 
-# Quickstart guide
+Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively.
 
-Introduction to how the solver is used ...
+# Getting started
+
+In order to employ the solver, one only needs the **solver** and **model** class. To import these:
+``
+#include "modifiedPolicyIteration.h"
+#include "CBMmodel.h"
+
+``
+Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your model-class is described below.
+
+
+
+
+## Switching between VI, PI and MPI
 
 ## Update method
 
@@ -16,7 +28,6 @@ On how to choose the value update method.
 On how to choose the stopping criteria.
 
 # Writing your own `Model` class
-
 
 # Background theory
 
