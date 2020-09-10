@@ -57,7 +57,7 @@ On how to choose between span seminorm and the supremum norm stopping criteria.
 
 # Writing your own `Model` class
 
-# Background theory
+# Theory and references
 
 # License
 
