@@ -14,7 +14,7 @@ In order to employ the solver, one only needs the **solver** and a **model** cla
 ```
 Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your model-class is described later in this file.
 
-Now define the parameters
+Now define the parameters:
 ```
 double epsilon = 1e-3; //the tolerance
 double discount = 0.99; //discount
@@ -25,7 +25,7 @@ int M = 100; //stop partial evaluation after 100 iterations
 int L = 5; //model specific parameter
 ```
 
-Next, create the model object
+Next, create the model object:
 ```
 Model mdl(N, L, discount);
 ```
@@ -34,7 +34,7 @@ Model mdl(N, L, discount);
 modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
 ```
 
-An epsilon-optimal policy can now be derived by using the `solve` method
+An epsilon-optimal policy can now be derived by using the `solve` method:
 ```
 mpi.solve(mdl);
 ```
