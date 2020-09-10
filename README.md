@@ -22,7 +22,10 @@ bool useSpan = true; //use span seminorm stopping
 int update = 3; //use Successive Over-Relaxation (SOR) updates
 double SORrelaxation = 1.1; //SOR relaxation (only relevant if update=3)
 int M = 100; //stop partial evaluation after 100 iterations
-int L = 5; //model specific parameter
+
+//some model specific parameters
+int N = 3;
+int L = 5; 
 ```
 
 Next, create the model object:
@@ -34,7 +37,7 @@ Model mdl(N, L, discount);
 modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
 ```
 
-An epsilon-optimal policy can now be derived by using the `solve` method:
+Note that the discount parameter went into the `Model`. An epsilon-optimal policy can now be derived by using the `solve` method:
 ```
 mpi.solve(mdl);
 ```
