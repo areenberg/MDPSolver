@@ -37,7 +37,7 @@ Model mdl(N, L, discount);
 modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
 ```
 
-Note that the discount parameter went into the `Model`. An epsilon-optimal policy can now be derived by using the `solve` method:
+Note the discount parameter went into the model and not the solver. An epsilon-optimal policy can now be derived by using the `solve` method:
 ```
 mpi.solve(mdl);
 ```
