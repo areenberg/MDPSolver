@@ -12,7 +12,7 @@ In order to employ the solver, one only needs the **solver** and a **model** cla
 #include "CBMmodel.h" //import a model
 
 ```
-Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your model-class is described later in this file.
+Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your own model-class is described later in this file.
 
 Now define the parameters:
 ```
