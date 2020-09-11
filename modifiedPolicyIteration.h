@@ -21,7 +21,7 @@
  * Created on 20. november 2019, 12:32
  */
 
-#include "Model.h"
+#include "TBMmodel.h"
 #include <vector>
 
 using namespace std;
@@ -42,10 +42,10 @@ public:
     int nChanges; //count changes in policy in each iteration
     
     //methods
-    void solve(Model& model);
+    void solve(TBMmodel& model);
     
     //constructor and destructor
-    modifiedPolicyIteration(Model& model, double eps, bool useSpan=false, int update=1, int M=200, double SORrelaxation = 1.0);
+    modifiedPolicyIteration(TBMmodel& model, double eps, bool useSpan=false, int update=1, int M=200, double SORrelaxation = 1.0);
     modifiedPolicyIteration(const modifiedPolicyIteration& orig);
     virtual ~modifiedPolicyIteration();
 	
@@ -67,14 +67,14 @@ private:
 	vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
-	void improvePolicy(Model& model);
-	void partialEvaluation(Model& model);
-    void improvePolicySOR(Model& model);
-    void partialEvaluationSOR(Model& model);
-	void initValue(Model& model); //initializes policy, v, and span
+	void improvePolicy(TBMmodel& model);
+	void partialEvaluation(TBMmodel& model);
+    void improvePolicySOR(TBMmodel& model);
+    void partialEvaluationSOR(TBMmodel& model);
+	void initValue(TBMmodel& model); //initializes policy, v, and span
 	void swapPointers(); //swaps vp and vpOld.
 	void updateNorm(); //updates diffMax, diffMin, and span/supNorm
-    void checkFinalValue(Model& model);
+    void checkFinalValue(TBMmodel& model);
 };
 
 #endif /* MODIFIEDPOLICYITERATION_H */

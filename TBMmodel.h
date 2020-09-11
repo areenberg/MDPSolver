@@ -13,11 +13,11 @@
 
 using namespace std;
 
-class Model {
+class TBMmodel {
 public:
-    Model(int N,int L,double discount, bool nonIdentical=false, unsigned int seed=1);
-    Model(const Model& orig);
-    virtual ~Model();
+    TBMmodel(int N,int L,double discount);
+    TBMmodel(const TBMmodel& orig);
+    virtual ~TBMmodel();
     
     //general MDP parameters
     int N; //number of components
@@ -31,7 +31,7 @@ public:
     double rj; //replacement cost
     double Rs; //fixed setup
     double Rf; //component (unexpected) failure extra cost.
-    double penalty; // should be infinite
+    double penalty; // should be very large
     double f; // failure probability parameters
     double fmin; // -
     double fhat; // -
@@ -49,13 +49,6 @@ public:
     double transProb(int, int, int);
     void updateTransProbNextState(int, int, int);
     int postDecisionIdx(int, int);
-
-	//non-identical component functions
-	double rewardNonIdentical(int, int);
-	double transProbNonIdentical(int, int, int);
-	void updateNextStateNonIdentical(int, int, int);
-	void updateTransProbNextStateNonIdentical(int, int, int);
-	int postDecisionIdxNonIdentical(int, int);
 
 	//auxiliary functions
     int intPow(int, int);

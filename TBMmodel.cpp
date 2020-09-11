@@ -5,7 +5,7 @@
  */
 
 /* 
- * File:   Model.cpp
+ * File:   TBMmodel.cpp
  * Author: jfan
  * 
  * Created on 8. november 2019, 08:56
@@ -15,15 +15,14 @@
 #include <fstream> //to import component probabilities
 #include <string>  //
 #include <sstream> // 
-#include <math.h> //for the fabs
+#include <math.h> //for the fabs function
 #include <assert.h>
 #include <limits>
-#include <random> //for initializing rj_vec and lj_vec
-#include "Model.h"
+#include "TBMmodel.h"
 
 using namespace std;
 
-Model::Model(int N, int L, double discount): 
+TBMmodel::TBMmodel(int N, int L, double discount): 
 	N(N),
 	L(L),
 	discount(discount),
@@ -42,7 +41,7 @@ Model::Model(int N, int L, double discount):
 	aidxMat(numberOfActions, vector<int>(N)),
 	sidxSumMat(numberOfStates, 0)
 {
-	int sidxTemp, sm, aidxTemp;
+	int s_i, a_i, sidxTemp, sm, aidxTemp;
 	//initialize sidxMat 
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidxTemp = sidx;
@@ -67,14 +66,14 @@ Model::Model(int N, int L, double discount):
 	}
 }
 
-Model::Model(const Model& orig) {
+TBMmodel::TBMmodel(const TBMmodel& orig) {
 }
 
-Model::~Model() {
+TBMmodel::~TBMmodel() {
 }
 
 //class functions
-double Model::reward(int sidx,int aidx) {
+double TBMmodel::reward(int sidx,int aidx) {
 	//reward function
 	int s_i, a_i;
     double r = 0;
@@ -91,7 +90,8 @@ double Model::reward(int sidx,int aidx) {
 			} else if (s_i > 1) {
 				// probability of not failing
 				if (N > 1) {
-					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0) + fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L));
+					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0) 
+						+ fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L));
 				} else {
 					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0));
 				}
@@ -105,12 +105,11 @@ double Model::reward(int sidx,int aidx) {
     return r;
 }
 
-double Model::transProb(int sidx, int aidx, int jidx) {
+double TBMmodel::transProb(int sidx, int aidx, int jidx) {
 	//probability of transitioning to state j given we are in state s and take action a
 	int s_i, j_i, a_i;
 	double prob = 1;
 	double failProb;
-
 
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i];
@@ -143,7 +142,7 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 	return prob;
 }
 
-void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
+void TBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	//updates psj and nextState. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
@@ -165,11 +164,11 @@ void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int Model::postDecisionIdx(int sidx, int aidx) {
+int TBMmodel::postDecisionIdx(int sidx, int aidx) {
 	//returns state index after replacements
     //replaced components reset to L 
     //other components age by 1
-	int s_i, j_i, a_i;
+	int s_i, a_i;
     
     int pdidx = sidx;
     for (int i=0; i<N; ++i) {
@@ -185,7 +184,7 @@ int Model::postDecisionIdx(int sidx, int aidx) {
     return pdidx;
 }
 
-int Model::intPow(int a, int b) {
+int TBMmodel::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;

@@ -21,7 +21,7 @@
  * Created on 20. november 2019, 12:32
  */
 
-#include "modifiedPolicyIterationSOR.h"
+#include "modifiedPolicyIteration.h"
 #include <iostream>
 #include <chrono>
 #include <vector>
@@ -30,7 +30,7 @@
 
 using namespace std;
 
-modifiedPolicyIteration::modifiedPolicyIteration(Model& model, double epsilon, bool useSpan, int update, int M, double SORrelaxation):
+modifiedPolicyIteration::modifiedPolicyIteration(TBMmodel& model, double epsilon, bool useSpan, int update, int M, double SORrelaxation):
 //initialize vectors
 nz(model.numberOfStates,0),
 //span stopping criteria (only if using standard update)
@@ -40,7 +40,7 @@ update(update),
 SORrelaxation(SORrelaxation),
 //others
 epsilon(epsilon), //tolerance
-M(M), //partial policy eval. iteration limit
+M(M), //partial policy evalualtion iteration limit
 printStuff(true),
 iterLim((int) 1e5), //iteration limit
 duration(0),
@@ -56,7 +56,7 @@ modifiedPolicyIteration::modifiedPolicyIteration(const modifiedPolicyIteration& 
 modifiedPolicyIteration::~modifiedPolicyIteration() {
 }
 
-void modifiedPolicyIteration::solve(Model& model){
+void modifiedPolicyIteration::solve(TBMmodel& model){
 	// - Standard, Gauss-Seidel, or SOR updates. (only for discounted reward criterion)
 	// - VI (M=0), PI (M="infinity")
 	// - All probabilities are calculated "on demand".
@@ -104,8 +104,8 @@ void modifiedPolicyIteration::solve(Model& model){
 	} 
 
 	iter = 0;
-	//while (norm >= tolerance && iter < iterLim) { //MAIN LOOP
-	while (iter < iterLim && !PIconvergence) { //PI convergence attempt
+	while (norm >= tolerance && iter < iterLim) { //MAIN LOOP
+	//while (iter < iterLim && !PIconvergence) { //PI convergence attempt
 		if (printStuff) {
 			if (M > 0) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << ", nChanges: " << nChanges << " mn " << k << endl;
@@ -163,7 +163,7 @@ void modifiedPolicyIteration::solve(Model& model){
 }
 
 
-void modifiedPolicyIteration::improvePolicy(Model& model) {
+void modifiedPolicyIteration::improvePolicy(TBMmodel& model) {
 	//improves the policy based on the current v
 
 	nChanges = 0;
@@ -204,7 +204,7 @@ void modifiedPolicyIteration::improvePolicy(Model& model) {
 	}
 }
 
-void modifiedPolicyIteration::partialEvaluation(Model& model){
+void modifiedPolicyIteration::partialEvaluation(TBMmodel& model){
 	for (k = 0; k < M; k++){ 
 		if ( norm >= tolerance ) { //We always allow early termination before M iterations
 			norm = 0;
@@ -230,7 +230,7 @@ void modifiedPolicyIteration::partialEvaluation(Model& model){
 }
 
 
-void modifiedPolicyIteration::improvePolicySOR(Model& model) {
+void modifiedPolicyIteration::improvePolicySOR(TBMmodel& model) {
 	//improves the policy based on the current v
 
 	nChanges = 0;
@@ -274,7 +274,7 @@ void modifiedPolicyIteration::improvePolicySOR(Model& model) {
 	}
 }
 
-void modifiedPolicyIteration::partialEvaluationSOR(Model& model) {
+void modifiedPolicyIteration::partialEvaluationSOR(TBMmodel& model) {
 	for (k = 0; k < M; k++) {
 		if (norm >= tolerance) { //We always allow early termination before M iterations
 			norm = 0;
@@ -303,7 +303,7 @@ void modifiedPolicyIteration::partialEvaluationSOR(Model& model) {
 	}
 }
 
-void modifiedPolicyIteration::initValue(Model& model){
+void modifiedPolicyIteration::initValue(TBMmodel& model){
     //step 1 on algorithm on page 213.
 	//initializing the value vector, v, such that Bv>0
 
@@ -369,7 +369,7 @@ void modifiedPolicyIteration::updateNorm() {
 	}
 }
 
-void modifiedPolicyIteration::checkFinalValue(Model& model) {
+void modifiedPolicyIteration::checkFinalValue(TBMmodel& model) {
 	//see if final value vector is within reason
 
 	//derive minimum reward

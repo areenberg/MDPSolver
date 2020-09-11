@@ -14,8 +14,8 @@
 
 #include <cstdlib>
 #include <iostream>
-#include "Model.h"
-#include "modifiedPolicyIterationSOR.h"
+#include "TBMModel.h"
+#include "modifiedPolicyIteration.h"
 #include <iomanip> //set precision
 #include <string>
 #include <fstream> 
@@ -24,47 +24,28 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	
-	//Compare update schemes, standard, GS, and SOR, for VI (M=0), PI (M="infinity"), and MPI (M=100)
-	int inputID, N, M, update;
-	bool useSpan;
-	double SORrelaxation; //if update=3 
-	cin >> inputID >> N >> update >> useSpan >> M >> SORrelaxation; // read from input file
-	cout << "inputID " << inputID << " N " << N
-		<< " update " << update << " useSpan " << useSpan << " SORrelaxation " << SORrelaxation << endl;
-	
-	//default parameters used
-	int L = 5;
-	double discount = 0.99;
-	double epsilon = 1e-3;
+	//Solve Time-Based Maintenance (TBM) replacement problem
+	int N = 2; //two components
+	int L = 10;
+	double discount = 0.99; //discount factor
 	
 	
-	// write results to a file
-	cout << fixed;
-	cout << setprecision(6);
-	string filename = "results/resultInput" + to_string(inputID) + ".txt";
-	cout << "saving to " + filename << endl;
-	ofstream outfile;
-	outfile.open(filename);
-
-	string inputpath = "../.././componentProbabilities/component_p_mat_N"
-		+ to_string(N) + "_L" + to_string(L) + ".txt";
-
+	
+	
 	// generate model
-	Model mdl(N, L, discount,inputpath);
+	TBMmodel mdl(N, L, discount);
 
 	//MPI solution
+	double epsilon = 1e-3; //
+	bool useSpan = true;
+	int update = 1; //1=Standard, 2=Gauss-Seidel, 3=Successive Over-Relaxation
+	int M = 100; //Partial evaluation iteration limit
+	double SORrelaxation = 1.1;
 	//		input       ( model, epsilon, useSpan, update, M, SORrelaxation)
 	modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
 
 	mpi.solve(mdl);
 	
-	//write to file
-	//inputID,useGS,useAvg,useSpan,N,iterations,duration,v0,converged //resulting combined file will have these columns
-	outfile << inputID << "," << update << "," << useSpan << "," << M << "," << SORrelaxation << "," 
-		<< N << "," << mpi.iter << "," << mpi.duration << "," << mpi.v[0] << "," << mpi.converged << "\n";
-
-	// stop writing to file
-	outfile.close();
 	cout << update << "," << useSpan << "," << M << "," << SORrelaxation << ","
 		<< N << "," << mpi.iter << "," << mpi.duration << "," << mpi.v[0] << "," << mpi.converged << "\n";
 
