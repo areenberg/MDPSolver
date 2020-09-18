@@ -14,6 +14,7 @@ using namespace std;
 
 class Model {
 public:
+    //contsructor and destructer
     Model(int N,int L,double discount);
     Model(const Model& orig);
     virtual ~Model();
@@ -43,13 +44,13 @@ public:
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
 	vector<int> sidxSumMat; // sidx'th element contains the sum of component states
 
-    // functions
+    //methods
     double reward(int, int);
     double transProb(int, int, int);
     void updateTransProbNextState(int, int, int);
     int postDecisionIdx(int, int);
 
-	//auxiliary functions
+	//auxiliary methods
     int intPow(int, int);
 private:
 };
