@@ -1,28 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /* 
  * File:   TBMmodel.cpp
  * Author: jfan
  * 
- * Created on 8. november 2019, 08:56
+ * Created on 18. september 2020, 12:00
  */
 
-//#include <iostream>
-#include <fstream> //to import component probabilities
-#include <string>  //
-#include <sstream> // 
-#include <math.h> //for the fabs function
-#include <assert.h>
-#include <limits>
 #include "TBMmodel.h"
 
 using namespace std;
 
-TBMmodel::TBMmodel(int N, int L, double discount): 
+Model::Model(int N, int L, double discount): 
 	N(N),
 	L(L),
 	discount(discount),
@@ -66,14 +53,14 @@ TBMmodel::TBMmodel(int N, int L, double discount):
 	}
 }
 
-TBMmodel::TBMmodel(const TBMmodel& orig) {
+Model::Model(const Model& orig) {
 }
 
-TBMmodel::~TBMmodel() {
+Model::~Model() {
 }
 
 //class functions
-double TBMmodel::reward(int sidx,int aidx) {
+double Model::reward(int sidx,int aidx) {
 	//reward function
 	int s_i, a_i;
     double r = 0;
@@ -105,7 +92,7 @@ double TBMmodel::reward(int sidx,int aidx) {
     return r;
 }
 
-double TBMmodel::transProb(int sidx, int aidx, int jidx) {
+double Model::transProb(int sidx, int aidx, int jidx) {
 	//probability of transitioning to state j given we are in state s and take action a
 	int s_i, j_i, a_i;
 	double prob = 1;
@@ -142,7 +129,7 @@ double TBMmodel::transProb(int sidx, int aidx, int jidx) {
 	return prob;
 }
 
-void TBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
+void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	//updates psj and nextState. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
@@ -164,7 +151,7 @@ void TBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int TBMmodel::postDecisionIdx(int sidx, int aidx) {
+int Model::postDecisionIdx(int sidx, int aidx) {
 	//returns state index after replacements
     //replaced components reset to L 
     //other components age by 1
@@ -184,7 +171,7 @@ int TBMmodel::postDecisionIdx(int sidx, int aidx) {
     return pdidx;
 }
 
-int TBMmodel::intPow(int a, int b) {
+int Model::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;

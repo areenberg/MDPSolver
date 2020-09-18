@@ -24,18 +24,16 @@
 #include "modifiedPolicyIteration.h"
 #include <iostream>
 #include <chrono>
-#include <vector>
 #include <math.h>
-#include <fstream>
 
 using namespace std;
 
-modifiedPolicyIteration::modifiedPolicyIteration(TBMmodel& model, double epsilon, bool useSpan, int update, int M, double SORrelaxation):
+modifiedPolicyIteration::modifiedPolicyIteration(Model& model, double epsilon, bool useSpan, int update, int M, double SORrelaxation):
 //initialize vectors
 nz(model.numberOfStates,0),
 //span stopping criteria (only if using standard update)
 useSpan(useSpan && update==1),
-//use 1=STANDARD, 2=GS (Gauss-seidel), or 3=SOR updatas 
+//use 1=STANDARD, 2=GS (Gauss-seidel), or 3=SOR updates 
 update(update),
 SORrelaxation(SORrelaxation),
 //others
@@ -56,15 +54,14 @@ modifiedPolicyIteration::modifiedPolicyIteration(const modifiedPolicyIteration& 
 modifiedPolicyIteration::~modifiedPolicyIteration() {
 }
 
-void modifiedPolicyIteration::solve(TBMmodel& model){
+void modifiedPolicyIteration::solve(Model& model){
 	// - Standard, Gauss-Seidel, or SOR updates. (only for discounted reward criterion)
 	// - VI (M=0), PI (M="infinity")
 	// - All probabilities are calculated "on demand".
 
-    //initialize value vectors and pointers
+    //initialize value vectors and their pointers
 	v.assign(model.numberOfStates, 0);
 	initValue(model); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
-	
 	vp = &v;
 	if (update==1) { 
 		v2 = v; //copy contents of v into v2
@@ -163,7 +160,7 @@ void modifiedPolicyIteration::solve(TBMmodel& model){
 }
 
 
-void modifiedPolicyIteration::improvePolicy(TBMmodel& model) {
+void modifiedPolicyIteration::improvePolicy(Model& model) {
 	//improves the policy based on the current v
 
 	nChanges = 0;
@@ -204,7 +201,7 @@ void modifiedPolicyIteration::improvePolicy(TBMmodel& model) {
 	}
 }
 
-void modifiedPolicyIteration::partialEvaluation(TBMmodel& model){
+void modifiedPolicyIteration::partialEvaluation(Model& model){
 	for (k = 0; k < M; k++){ 
 		if ( norm >= tolerance ) { //We always allow early termination before M iterations
 			norm = 0;
@@ -230,7 +227,7 @@ void modifiedPolicyIteration::partialEvaluation(TBMmodel& model){
 }
 
 
-void modifiedPolicyIteration::improvePolicySOR(TBMmodel& model) {
+void modifiedPolicyIteration::improvePolicySOR(Model& model) {
 	//improves the policy based on the current v
 
 	nChanges = 0;
@@ -274,7 +271,7 @@ void modifiedPolicyIteration::improvePolicySOR(TBMmodel& model) {
 	}
 }
 
-void modifiedPolicyIteration::partialEvaluationSOR(TBMmodel& model) {
+void modifiedPolicyIteration::partialEvaluationSOR(Model& model) {
 	for (k = 0; k < M; k++) {
 		if (norm >= tolerance) { //We always allow early termination before M iterations
 			norm = 0;
@@ -303,7 +300,7 @@ void modifiedPolicyIteration::partialEvaluationSOR(TBMmodel& model) {
 	}
 }
 
-void modifiedPolicyIteration::initValue(TBMmodel& model){
+void modifiedPolicyIteration::initValue(Model& model){
     //step 1 on algorithm on page 213.
 	//initializing the value vector, v, such that Bv>0
 
@@ -369,7 +366,7 @@ void modifiedPolicyIteration::updateNorm() {
 	}
 }
 
-void modifiedPolicyIteration::checkFinalValue(TBMmodel& model) {
+void modifiedPolicyIteration::checkFinalValue(Model& model) {
 	//see if final value vector is within reason
 
 	//derive minimum reward
