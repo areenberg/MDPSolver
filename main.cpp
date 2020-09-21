@@ -25,12 +25,12 @@ int main(int argc, char** argv) {
 
 	//Solver arguments
 	double epsilon = 1e-3; //value function precision
-	bool useSpan = true;
-	int update = 1; //1=Standard, 2=Gauss-Seidel, 3=Successive Over-Relaxation (SOR)
+	string algorithm = "MPI"; //VI, PI, or MPI
+	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
 	int M = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
 	//create solver object
-	modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
+	modifiedPolicyIteration mpi(mdl, epsilon, algorithm, update, M, SORrelaxation);
 
 	mpi.solve(mdl);
 

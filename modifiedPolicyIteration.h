@@ -45,20 +45,17 @@ public:
     double duration;
 	int iter;
 	bool converged;
-    int nChanges; //count changes in policy in each iteration
+    int polChanges; //count changes in policy in each iteration
     
     //medthods
     void solve(Model& model);
     
 private:
-    
-    string algorithm; //"VI", "PI", or "MPI"
-    string update; //"Standard", "GS", or "SOR"
 
     //parameters
-    double epsilon, diff0, diffMax, norm, diffMin, tolerance, val, bestVal, sm, vjidx, discount, SORrelaxation;
-    int k, sidx, aidx, pdidx, iterLim, parIterLim, PIparIterLim, bestAidx;
-    bool useSpan, printStuff, PIconvergence;
+    double epsilon, diff0, diffMax, diffMin, norm, tolerance, val, bestVal, sm, vjidx, discount, SORrelaxation;
+    int sidx, aidx, pdidx, iterLim, parIter, parIterLim, PIparIterLim, bestAidx;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, printStuff;
 
 	//Pointers so we don't have to copy full vectors (for standard value function updates)
 	vector<double> v2; //second value vector required when using standard updates
