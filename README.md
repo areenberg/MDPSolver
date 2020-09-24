@@ -75,7 +75,7 @@ Class `modifiedPolicyIteration` takes *three* different optimization algorithms.
 * Modified Policy Iteration (MPI): "MPI".
          
          
-The user can easily switch between these algorithms with the string `algorithm` (e.g. to choose VI `string algorithm = "VI";`). When MPI is chosen, the user is required to specify the number of *partial evaluation* iterations. This is specified with the integer `parIterLim` (e.g. to conduct 100 partial evaluation iterations `int parIterLim = 100;`).
+The user can easily switch between these algorithms with `string algorithm` (e.g. to choose VI `string algorithm = "VI";`). When MPI is chosen, the user is required to specify the number of *partial evaluation* iterations. This is specified with `int parIterLim` (e.g. to conduct 100 partial evaluation iterations `int parIterLim = 100;`).
 
 Note that all three algorithms will yield an epsilon-optimal policy. Even PI will derive the value of the policy numerically based on the update-method and epsilon (tolerance) specified by the user. We have implemented the algorithms in this way to make the solver suitable for large MDP problems.
 
@@ -89,7 +89,7 @@ Class `modifiedPolicyIteration` takes *three* value update methods. These are:
 
 * Successive Over-Relaxation: "SOR".
 
-The user can switch between these methods with the string `update` (e.g. to use standard value updates `string update = "Standard";`). Note that if `string update = "SOR";` the user is required to specify the relaxation (sometimes denoted omega in the literature) with the double `SORrelaxation` (e.g. to set the relxation to 1.1 `double SORrelaxation = 1.1;`). 
+The user can switch between these methods with `string update` (e.g. to use standard value updates `string update = "Standard";`). Note that if `string update = "SOR";` the user is required to specify the relaxation (sometimes denoted omega in the literature) with `double SORrelaxation` (e.g. to set the relaxation to 1.1 `double SORrelaxation = 1.1;`). 
 
 ## Stopping criteria
 
