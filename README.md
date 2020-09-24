@@ -46,6 +46,23 @@ mpi.solve(mdl);
 
 ## Get the solution
 
+The resulting policy is stored in the model-object in the vector `policy`. To get the action associated with state-index `sidx` run `model.policy[sidx]`. 
+
+The following is an example on how to print the entire policy: 
+
+```
+//output final policy
+	/*
+	cout << endl << "Optimal policy";
+	for (int sidx = 0; sidx < model.numberOfStates; ++sidx) {
+		if (sidx % (model.L + 1) == 0) {
+			cout << endl;
+		}
+		cout << model.policy[sidx] << " ";
+	}
+	cout << endl;
+	*/
+```
 
 ## Switching between VI, PI and MPI
 
