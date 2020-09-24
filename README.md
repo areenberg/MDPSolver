@@ -51,13 +51,11 @@ mpi.solve(mdl);
 
 Class `modifiedPolicyIteration` contains *three* different optimization algorithms. These are:
 
-Markup : 
+* Value Iteration (VI): `"VI"` 
 
-         * Value Iteration (VI): `"VI"` 
-
-         * Policy Iteration (PI): `"PI"`
+* Policy Iteration (PI): `"PI"`
          
-         * Modified Policy Iteration (MPI): `"MPI"`
+* Modified Policy Iteration (MPI): `"MPI"`
          
          
 The user can easily switch between these algorithms through `string algorithm` (e.g. `string algorithm = "VI";` to choose VI).
