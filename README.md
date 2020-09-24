@@ -1,8 +1,8 @@
 # MDPSolver
 
-This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is a *Modified Policy Iteration* (MPI) algorithm, which derives an epsilon-optimal policy that maximizes the expected total discounted reward, where epsilon is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between two different stopping criteria, three different value update methods, as well as using the solver as an epsilon-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
+This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is based on a *Modified Policy Iteration* (MPI) algorithm, which derives an epsilon-optimal policy that maximizes the expected total discounted reward, where epsilon is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between three different value update methods as well as switching to an epsilon-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
 
-Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively.
+Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively. Instructions on how to write your own model-class for the solver are presented below. 
 
 # Getting started
 
@@ -16,12 +16,12 @@ Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this ex
 
 Now define the parameters:
 ```
-double epsilon = 1e-3; //the tolerance
+double epsilon = 1e-3; //tolerance
 double discount = 0.99; //discount
-bool useSpan = true; //use span seminorm stopping
-int update = 3; //use Successive Over-Relaxation (SOR) updates
-double SORrelaxation = 1.1; //SOR relaxation (only relevant if update=3)
-int M = 100; //stop partial evaluation after 100 iterations
+string algorithm = "MPI"; //the optimization algorithm
+string update = "SOR"; //the value update method
+int parIterLim = 100; //number of iterations in the partial evaluation step of MPI
+double SORrelaxation = 1.1; //the SOR relaxation parameter 
 
 //some model specific parameters
 int N = 3;
@@ -30,14 +30,16 @@ int L = 5;
 
 Next, create the model object:
 ```
-Model mdl(N, L, discount);
+Model model(N, L, discount);
 ```
 ... and plug it into the solver object
 ```
-modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
+modifiedPolicyIteration mpi(model,epsilon,algorithm,update,parIterLim,SORrelaxation);
 ```
 
-Note the discount parameter went into the model and not the solver. An epsilon-optimal policy can now be derived by using the `solve` method:
+Note the discount parameter went into the model and not the solver. The `parIterLim`-parameter is only relevant if the MPI-algorithm is selected as the optimization algorithm, and `SORrelaxation` is only relevant if SOR-updates are chosen as the value update method. 
+
+An epsilon-optimal policy can now be derived by using the `solve` method:
 ```
 mpi.solve(mdl);
 ```
@@ -47,13 +49,22 @@ mpi.solve(mdl);
 
 ## Switching between VI, PI and MPI
 
+Class `modifiedPolicyIteration` contains *three* different optimization algorithms. These are:
+Markup : * Value Iteration (VI): `"VI"`. 
+         * Policy Iteration (PI): `"PI"`.
+         * Modified Policy Iteration (MPI): `"MPI"`.
+         
+The user can easily switch between these algorithms through `string algorithm` (e.g. `string algorithm = "VI";` to choose VI).
+
+Note that all three algorithms will yield an epsilon-optimal policy (even PI), and they are all "designed" for large problems. 
+
 ## Update method
 
 On how to choose the value update method.
 
 ## Stopping criteria
 
-On how to choose between span seminorm and the supremum norm stopping criteria.
+The stopping criteria is automatically selected ...
 
 # Writing your own `Model` class
 
