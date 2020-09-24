@@ -53,8 +53,8 @@ public:
 private:
 
     //parameters
-    double epsilon, diff0, diffMax, diffMin, norm, tolerance, val, bestVal, sm, vjidx, discount, SORrelaxation;
-    int sidx, aidx, pdidx, iterLim, parIter, parIterLim, PIparIterLim, bestAidx;
+    double epsilon, diffMax, diffMin, norm, tolerance, discount, SORrelaxation;
+    int iterLim, parIter, parIterLim, PIparIterLim;
     bool useMPI, usePI, useVI, useStd, useGS, useSOR, printStuff;
 
 	//Pointers so we don't have to copy full vectors (for standard value function updates)
@@ -70,7 +70,7 @@ private:
     void partialEvaluationSOR(Model& model);
 	void initValue(Model& model); //initializes policy, v, and span
 	void swapPointers(); //swaps vp and vpOld.
-	void updateNorm(); //updates diffMax, diffMin, and span/supNorm
+	void updateNorm(int s, double valBest); //updates diffMax, diffMin, and span/supNorm
     void checkFinalValue(Model& model);
 };
 

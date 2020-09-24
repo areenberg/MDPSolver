@@ -125,12 +125,12 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 			prob *= 0;
 		}
 	}
-	psj = prob; //store transition probability
+	pNext = prob; //store transition probability
 	return prob;
 }
 
-void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
-	//updates psj and nextState. Assumes that transProb(sidx,aidx,pdidx) has been run,
+void Model::updateNext(int sidx, int aidx, int jidx) {
+	//updates pNext and sNext. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
 	
@@ -140,35 +140,35 @@ void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 		a_i = aidxMat[aidx][i];
 		if (a_i==0 && 0<j_i && s_i != 0) { //non-replacements, working component
 			if ((j_i - s_i) == -1) {
-				nextState -= j_i * intPow(L + 1, i); //decrease to 0  (failure)
-				psj *= failOddsVec[i]; //failOdds=failProb/(1-failProb)
+				sNext -= j_i * intPow(L + 1, i); //decrease to 0  (failure)
+				pNext *= failOddsVec[i]; //failOdds=failProb/(1-failProb)
 			}
 			break; //the remaining components don't change
 		} else if (a_i==0 && s_i > 1) { //only if i'th component was able to fail
-			nextState -= (j_i - (s_i - 1))*intPow(L + 1, i); //reset back to s_i-1 (not failed)
-			psj /= failOddsVec[i]; //failOdds=(1-failProb)/failProb
+			sNext -= (j_i - (s_i - 1))*intPow(L + 1, i); //reset back to s_i-1 (not failed)
+			pNext /= failOddsVec[i]; //failOdds=(1-failProb)/failProb
 		}
 	}
 }
 
-int Model::postDecisionIdx(int sidx, int aidx) {
+int Model::sFirst(int s, int a) {
 	//returns state index after replacements
     //replaced components reset to L 
     //other components age by 1
 	int s_i, a_i;
     
-    int pdidx = sidx;
+    int sf = s;
     for (int i=0; i<N; ++i) {
-		s_i = sidxMat[sidx][i];
-		a_i = aidxMat[aidx][i];
+		s_i = sidxMat[s][i];
+		a_i = aidxMat[a][i];
         if (a_i==1) {
-            pdidx += (L-s_i)*intPow(L+1,i); // sets it to L
+            sf += (L-s_i)*intPow(L+1,i); // sets it to L
         } else if (0<s_i) {
-            pdidx -= intPow(L+1,i); // working components age by 1
+            sf -= intPow(L+1,i); // working components age by 1
         }
     }
-	nextState = pdidx; //store as the "first" next state
-    return pdidx;
+	sNext = sf; //store as the "first" next state
+    return sf;
 }
 
 int Model::intPow(int a, int b) {

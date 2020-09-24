@@ -37,8 +37,8 @@ public:
     double fhat; // -||-
 	
     //auxiliary variables
-    int nextState; //next state to process
-    double psj; //transition probability from state s to j
+    int sNext; //next state to process
+    double pNext; //transition probability from state s to j
 	vector<double> failOddsVec; // probability of failing divided by probability of not failing
 	vector<vector<int>> sidxMat; // (sidx,i)'th element contains s_i for state index sidx
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
@@ -47,8 +47,8 @@ public:
     //methods
     double reward(int, int);
     double transProb(int, int, int);
-    void updateTransProbNextState(int, int, int);
-    int postDecisionIdx(int, int);
+    void updateNext(int, int, int);
+    int sFirst(int, int);
 
 	//auxiliary methods
     int intPow(int, int);

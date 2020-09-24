@@ -16,7 +16,7 @@ using namespace std;
 int main(int argc, char** argv) {
 	
 	//Solve Time-Based Maintenance (TBM) replacement problem
-	int N = 2; //two components
+	int N = 4; //two components
 	int L = 10; //maximum component age
 	double discount = 0.99; //discount factor
 	
@@ -24,18 +24,20 @@ int main(int argc, char** argv) {
 	Model mdl(N, L, discount);
 
 	//Solver arguments
-	double epsilon = 1e-3; //value function precision
-	string algorithm = "MPI"; //VI, PI, or MPI
+	double epsilon = 1e-3; //epsilon-optimal policy is found
+	string algorithm = "PI"; //VI, PI, or MPI
 	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
 	int M = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
 	//create solver object
 	modifiedPolicyIteration mpi(mdl, epsilon, algorithm, update, M, SORrelaxation);
-
+	
+	//solve the MDP
 	mpi.solve(mdl);
 
+	//output final policy
+	/*
 	cout << endl << "Optimal policy";
-
 	for (int sidx = 0; sidx < mdl.numberOfStates; ++sidx) {
 		if (sidx % (mdl.L + 1) == 0) {
 			cout << endl;
@@ -43,7 +45,7 @@ int main(int argc, char** argv) {
 		cout << mdl.policy[sidx] << " ";
 	}
 	cout << endl;
-
+	*/
 	return 0;
 }
 
