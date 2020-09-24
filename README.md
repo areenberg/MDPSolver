@@ -93,7 +93,7 @@ The user can switch between these methods with `string update` (e.g. to use stan
 
 ## Stopping criteria
 
-The stopping criteria is automatically selected, and the solver is equipped with both a regular *supremum norm* and a *span seminorm* when convergence is evaluated. Span seminorm often terminates the algorithm earlier than the supremum norm, but only applies when the algorithm uses standard value updates. Thus, the solver will always employ the span seminorm when standard updates are selected by the user (i.e. when `string update = "Standard";`); otherwise the solver will use the supremum norm.
+The stopping criteria is automatically selected, and the solver is equipped with both a regular *supremum norm* and a *span seminorm* when convergence is evaluated. Span seminorm often terminates the algorithm earlier than the supremum norm, but only applies to standard value updates. Thus, the solver will always employ the span seminorm when standard updates are selected by the user (i.e. when `string update = "Standard";`); otherwise the solver will use the supremum norm.
 
 # Writing your own `Model` class
 
