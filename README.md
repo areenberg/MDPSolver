@@ -49,26 +49,34 @@ mpi.solve(mdl);
 
 ## Switching between VI, PI and MPI
 
-Class `modifiedPolicyIteration` contains *three* different optimization algorithms. These are:
+Class `modifiedPolicyIteration` takes *three* different optimization algorithms. These are:
 
-* Value Iteration (VI): `"VI"` 
+* Value Iteration (VI): "VI". 
 
-* Policy Iteration (PI): `"PI"`
+* Policy Iteration (PI): "PI".
          
-* Modified Policy Iteration (MPI): `"MPI"`
+* Modified Policy Iteration (MPI): "MPI".
          
          
-The user can easily switch between these algorithms through `string algorithm` (e.g. `string algorithm = "VI";` to choose VI).
+The user can easily switch between these algorithms with the string `algorithm` (e.g. to choose VI `string algorithm = "VI";`). When MPI is chosen, the user is required to specify the number of *partial evaluation* iterations. This is specified with the integer `parIterLim` (e.g. to conduct 100 partial evaluation iterations `int parIterLim = 100;`).
 
-Note that all three algorithms will yield an epsilon-optimal policy (even PI), and they are all "designed" for large problems. 
+Note that all three algorithms will yield an epsilon-optimal policy. Even PI will derive the value of the policy numerically based on the update-method and epsilon (tolerance) specified by the user. We have implemented the algorithms in this way to make the solver suitable for large MDP problems.
 
 ## Update method
 
-On how to choose the value update method.
+Class `modifiedPolicyIteration` takes *three* value update methods. These are:
+
+* Standard: "Standard".
+
+* Gauss-Seidel: "GS".
+
+* Successive Over-Relaxation: "SOR".
+
+The user can switch between these methods with the string `update` (e.g. to use standard value updates `string update = "Standard";`). Note that if `string update = "SOR";` the user is required to specify the relaxation (sometimes denoted omega in the literature) with the double `SORrelaxation` (e.g. to set the relxation to 1.1 `double SORrelaxation = 1.1;`). 
 
 ## Stopping criteria
 
-The stopping criteria is automatically selected ...
+The stopping criteria is automatically selected, and the solver is equipped with both a regular *supremum norm* and a *span seminorm* when convergence is evaluated. Span seminorm often terminates the algorithm earlier than the supremum norm, but only applies when the algorithm uses standard value updates. Thus, the solver will always employ the span seminorm when standard updates are selected by the user (i.e. when `string update = "Standard";`); otherwise the solver will use the supremum norm.
 
 # Writing your own `Model` class
 
