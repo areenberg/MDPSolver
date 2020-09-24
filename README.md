@@ -2,7 +2,8 @@
 
 This repository features a C++based solver for *Markov Decision Process* (MDP) optimization problems. The solver is based on a *Modified Policy Iteration* (MPI) algorithm, which derives an epsilon-optimal policy that maximizes the expected total discounted reward, where epsilon is a tolerance parameter given to the algorithm. We further provide the user with the option to choose between three different value update methods as well as switching to an epsilon-optimal *Value Iteration* (VI) or *Policy Iteration* (PI) algorithm. These options, along with a description of how to use the solver, are elaborated below.
 
-Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively. Instructions on how to write your own model-class for the solver are presented below. 
+Besides the MPI algorithm, the repository also contains two MDP-model classes which have an application in the field of Predictive Maintenance. These classes account for a condition- and time-based maintenance optimization problem, respectively. Instructions on how to write your own 
+class for the solver are presented below. 
 
 # Getting started
 
@@ -12,7 +13,7 @@ In order to get started, one only needs the **solver**- and **model**-class. To 
 #include "CBMmodel.h" //import a model
 
 ```
-Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your own model-class is described later in this file.
+Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your own model class is described later in this file.
 
 Now define the parameters:
 ```
@@ -46,7 +47,7 @@ mpi.solve(mdl);
 
 ## Get the solution
 
-The resulting policy is stored in the model-object in the vector `policy`. To get the action associated with state-index `sidx` run `model.policy[sidx]`. 
+The resulting policy is stored in the model object in the vector `policy`. To get the action associated with state-index `sidx` run `model.policy[sidx]`. 
 
 The following is an example on how to print the entire policy: 
 
