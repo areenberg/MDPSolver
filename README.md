@@ -50,6 +50,7 @@ mpi.solve(mdl);
 ## Switching between VI, PI and MPI
 
 Class `modifiedPolicyIteration` contains *three* different optimization algorithms. These are:
+
 Markup : * Value Iteration (VI): `"VI"`. 
          * Policy Iteration (PI): `"PI"`.
          * Modified Policy Iteration (MPI): `"MPI"`.
