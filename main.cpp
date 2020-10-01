@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 	int N = 2; //two components
 	int L = 5; //component failure limit
 	double discount = 0.99; //discount factor
-	string importProbPath = "./CBMexampleProb_N2_L5.txt";
+	string importProbPath = "../CBMexampleProb_N2_L5.txt"; //make sure this is the right path
 	// generate model object
 	Model mdl(N, L, discount, importProbPath);
 
