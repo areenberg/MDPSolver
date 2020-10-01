@@ -1,14 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /* 
  * File:   CBMmodel.cpp
- * Author: jfan
+ * Author: Anders Reenberg Andersen and Jesper Fink Andersen
  * 
- * Created on 8. november 2019, 08:56
+ * Created on 18. september 2020, 12:00
  */
 
 #include <iostream>
@@ -23,7 +17,7 @@
 
 using namespace std;
 
-CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //default constructor
+Model::Model(int N, int L, double discount, string importProbPath): //default constructor
     N(N),
     L(L),
     discount(discount),
@@ -74,15 +68,16 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
 	}
 }
 
-CBMmodel::CBMmodel(const CBMmodel& orig) {
+Model::Model(const Model& orig) {
 }
 
-CBMmodel::~CBMmodel() {
+Model::~Model() {
 }
 
 //class functions
-double CBMmodel::reward(int sidx,int aidx) {
+double Model::reward(int sidx,int aidx) {
     //reward function
+	int s_i, a_i;
     double r = 0;
     bool set_up = false;
     int fail_count = 0;
@@ -105,10 +100,10 @@ double CBMmodel::reward(int sidx,int aidx) {
     return r;
 }
 
-double CBMmodel::transProb(int sidx, int aidx, int jidx) {
+double Model::transProb(int sidx, int aidx, int jidx) {
 	//transition probability function
 
-	int step;
+	int step, s_i, a_i, j_i;
 	double prob = 1;
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i]; //i'th component state
@@ -127,16 +122,15 @@ double CBMmodel::transProb(int sidx, int aidx, int jidx) {
 			prob *= pCompMat[i][j_i];
 		}
 	}
-	psj = prob; //set stored transition probability
+	pNext = prob; //set stored transition probability
 	return prob;
 }
 
-void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
-	//void CBMmodel::updateTransProbNextStateOptimized(int sidx, int aidx, int jidx) {
-	//updates psj and nextState, which are assumed to match. 
-	//That is, input jidx should be nextState.
+void Model::updateNext(int sidx, int aidx, int jidx) {
+	//updates pNext and sNext, which are assumed to match. 
+	//That is, input jidx should be sNext.
 
-	int step;
+	int step, s_i, a_i, j_i;
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i]; //i'th component state
 		s_i = sidxMat[sidx][i];
@@ -151,39 +145,36 @@ void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 		}
 
 		if (j_i<L) {
-			nextState += intPow(L + 1, i); //increment i'th component by one
-			//psj /= pCompMat[i][step]; //psj should be divided by what was previously used to calc component transition
+			sNext += intPow(L + 1, i); //increment i'th component by one
 			if (j_i + 1 < L) {
-				psj *= pCompMat[i][step + 1] / pCompMat[i][step]; // still lower than L after increment
+				pNext *= pCompMat[i][step + 1] / pCompMat[i][step]; // still lower than L after increment
 			} else {
 				if (a_i == 0) {
-					psj *= pFailCompMat[i][s_i] / pCompMat[i][step];
+					pNext *= pFailCompMat[i][s_i] / pCompMat[i][step];
 				} else {
-					psj *= pCompMat[i][j_i + 1] / pCompMat[i][step]; //going from 0 to L here
+					pNext *= pCompMat[i][j_i + 1] / pCompMat[i][step]; //going from 0 to L here
 				}
 			}
 			break; //we are done
 		} else {
-			nextState -= step * intPow(L + 1, i); //reset back to s_i or 0
-			//here j_i=L so psj was formely multiplied with a fail probability
+			sNext -= step * intPow(L + 1, i); //reset back to s_i or 0
 			if (a_i == 0) { //went from s_i to L
-				psj /= pFailCompMat[i][s_i];
+				pNext /= pFailCompMat[i][s_i];
 				if (s_i < L) {
-					psj *= pCompMat[i][0];
+					pNext *= pCompMat[i][0];
 				}
 			} else {
-				psj *= pCompMat[i][0] / pCompMat[i][L];
+				pNext *= pCompMat[i][0] / pCompMat[i][L];
 			}
 		}
 	}
 }
 
-int CBMmodel::postDecisionIdx(int sidx, int aidx) {
-	//int CBMmodel::postDecisionIdxOptimized(int sidx, int aidx) {
+int Model::sFirst(int sidx, int aidx) {
 	//state index right after replacement, which is
 	//assumed instantaneous so components are set to age 0
 	int pdidx = sidx;
-
+	int s_i, a_i;
 	for (int i = 0; i<N; ++i) {
 		s_i = sidxMat[sidx][i];
 		a_i = aidxMat[aidx][i];
@@ -191,46 +182,17 @@ int CBMmodel::postDecisionIdx(int sidx, int aidx) {
 			pdidx -= (s_i)*intPow(L + 1, i); // sets it to 0
 		}
 	}
-	nextState = pdidx; //store as the "first" next state
+	sNext = pdidx; //store as the "first" next state
 	return pdidx;
 }
 
-
-void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
-	//increment one component's deterioration level.
-	if (jidx != -1) {
-		nextState = jidx;
-	} else {
-		jidx = nextState; // default jidx value is current nextState
-	}
-	bool done = false;
-	for (int i = 0; i<N; ++i) {
-		j_i = sidxMat[jidx][i]; //i'th component state
-		s_i = sidxMat[sidx][i];
-		a_i = aidxMat[aidx][i];
-
-		if (!done && j_i<L) { //non-replacements
-			nextState += intPow(L + 1, i);
-			done = true;
-		} else if (!done) {
-			if (a_i == 0) {
-				nextState -= (j_i - s_i)*intPow(L + 1, i); //reset back to s_i
-			} else {
-				nextState -= (j_i)*intPow(L + 1, i); //reset back to 0
-			}
-		}
-
-	}
-}
-
-
-int CBMmodel::intPow(int a, int b) {
+int Model::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;
 }
 
-void CBMmodel::importComponentProbs(string path) {
+void Model::importComponentProbs(string path) {
     string line;
     ifstream inputFile (path);
     try {
@@ -253,7 +215,6 @@ void CBMmodel::importComponentProbs(string path) {
         j = 0;
         while( getline(lineStream, element, ',') ){
             pCompMat [i][j] = stod(element);
-            //cout << i << " " << j << " " << element << endl;
             ++j;
         }
         ++i;

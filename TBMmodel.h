@@ -38,19 +38,19 @@ public:
 	
     //auxiliary variables
     int sNext; //next state to process
-    double pNext; //transition probability from state s to j
+    double pNext; //transition probability to sNext
 	vector<double> failOddsVec; // probability of failing divided by probability of not failing
 	vector<vector<int>> sidxMat; // (sidx,i)'th element contains s_i for state index sidx
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
 	vector<int> sidxSumMat; // sidx'th element contains the sum of component states
 
-    //methods
+    //functions
     double reward(int, int);
     double transProb(int, int, int);
     void updateNext(int, int, int);
     int sFirst(int, int);
 
-	//auxiliary methods
+	//auxiliary functions
     int intPow(int, int);
 private:
 };

@@ -1,6 +1,6 @@
 /* 
  * File:   TBMmodel.cpp
- * Author: jfan
+ * Author: Anders Reenberg Andersen and Jesper Fink Andersen
  * 
  * Created on 18. september 2020, 12:00
  */

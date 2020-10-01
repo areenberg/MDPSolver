@@ -1,27 +1,14 @@
-/*
- * Copyright 2019 arean.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 /* 
  * File:   modifiedPolicyIteration.h
- * Author: arean
+ * Author: Anders Reenberg Andersen and Jesper Fink Andersen
  *
- * Created on 20. november 2019, 12:32
+ * Created on 20. september 2020, 12:00
  */
 
-#include "TBMmodel.h"
+//model class
+//#include "TBMmodel.h"
+#include "CBMmodel.h"
+
 #include <vector>
 #include <string>
 

@@ -5,23 +5,34 @@
 * Created on 18. september 2020, 12:00
 */
 
-#include <cstdlib>
 #include <iostream>
 #include <string>
-#include "TBMModel.h"
+//#include "TBMModel.h"
+#include "CBMmodel.h"
 #include "modifiedPolicyIteration.h"
 
 using namespace std;
 
 int main(int argc, char** argv) {
 	
+	/*
 	//Solve Time-Based Maintenance (TBM) replacement problem
-	int N = 4; //two components
+	int N = 2; //two components
 	int L = 10; //maximum component age
 	double discount = 0.99; //discount factor
 	
 	// generate model object
 	Model mdl(N, L, discount);
+	*/
+
+	//Solve Condition-Based Maintenance (TBM) replacement problem
+	//(CHANGE MODEL HEADER FILE IN ModifiedPolicyIteration.h TO "CBMmodel.h"
+	int N = 2; //two components
+	int L = 5; //component failure limit
+	double discount = 0.99; //discount factor
+	string importProbPath = "./CBMexampleProb_N2_L5.txt";
+	// generate model object
+	Model mdl(N, L, discount, importProbPath);
 
 	//Solver arguments
 	double epsilon = 1e-3; //epsilon-optimal policy is found
@@ -35,8 +46,8 @@ int main(int argc, char** argv) {
 	//solve the MDP
 	mpi.solve(mdl);
 
-	//output final policy
-	/*
+	//output final policy (when N=2)
+	
 	cout << endl << "Optimal policy";
 	for (int sidx = 0; sidx < mdl.numberOfStates; ++sidx) {
 		if (sidx % (mdl.L + 1) == 0) {
@@ -45,7 +56,7 @@ int main(int argc, char** argv) {
 		cout << mdl.policy[sidx] << " ";
 	}
 	cout << endl;
-	*/
+	
 	return 0;
 }
 
