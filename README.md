@@ -136,6 +136,12 @@ do {
 ```
 where `vp` is a pointer to the value function.
 
+# How to cite
+
+Use this DOI to cite the repository
+
+[![DOI](https://zenodo.org/badge/294063917.svg)](https://zenodo.org/badge/latestdoi/294063917)
+
 # License
 
 MIT License
