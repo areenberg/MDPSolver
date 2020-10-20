@@ -1,20 +1,32 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+* MIT License
+*
+* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
 
-/* 
- * File:   CBMmodel.cpp
- * Author: jfan
- * 
- * Created on 8. november 2019, 08:56
- */
 
 #include <iostream>
 #include <fstream> //to import component probabilities
 #include <string>  //
-#include <sstream> // 
+#include <sstream> //
 #include <math.h>
 #include <assert.h>
 #include <exception> //for exiting if probabilities cannot be loaded
@@ -34,7 +46,7 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
     cs(-4),
     p(-300),
 	kN(max(1,N-1)),
-    importProbs(!importProbPath.empty()),    
+    importProbs(!importProbPath.empty()),
     pCompMat(N,vector<double>(L+1)),
 	pFailCompMat(N, vector<double>(L + 1)),
     policy(numberOfStates,0),
@@ -45,14 +57,14 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
     if (importProbs) {
         importComponentProbs(importProbPath);
     }
-	// calculate tail probabilities 
+	// calculate tail probabilities
 	for (int i = 0; i < N; ++i) {
 		pFailCompMat[i][0] = pCompMat[i][L];
 		for (int j = 1; j <= L; ++j) {
 			pFailCompMat[i][j] = pFailCompMat[i][j - 1] + pCompMat[i][L-j];
 		}
 	}
-	//initialize sidxMat 
+	//initialize sidxMat
 	int sidx_temp,s_i;
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidx_temp = sidx;
@@ -62,7 +74,7 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
 			sidx_temp /= (L+1);
 		}
 	}
-	//initialize aidxMat 
+	//initialize aidxMat
 	int aidx_temp, a_i;
 	for (int aidx = 0; aidx < numberOfActions; ++aidx) {
 		aidx_temp = aidx;
@@ -133,7 +145,7 @@ double CBMmodel::transProb(int sidx, int aidx, int jidx) {
 
 void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	//void CBMmodel::updateTransProbNextStateOptimized(int sidx, int aidx, int jidx) {
-	//updates psj and nextState, which are assumed to match. 
+	//updates psj and nextState, which are assumed to match.
 	//That is, input jidx should be nextState.
 
 	int step;
@@ -237,12 +249,12 @@ void CBMmodel::importComponentProbs(string path) {
         if(!inputFile.is_open()) {
             throw path;
         }
-    } 
+    }
     catch (string path) {
         cout << "Exception: UNABLE TO OPEN FILE: " + path + "\n";
         exit(EXIT_FAILURE);
     }
-    
+
     int i = 0;
     int j = 0;
     string element;
@@ -260,4 +272,3 @@ void CBMmodel::importComponentProbs(string path) {
     }
     inputFile.close();
 }
-

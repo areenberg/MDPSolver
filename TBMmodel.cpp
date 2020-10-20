@@ -1,15 +1,33 @@
-/* 
- * File:   TBMmodel.cpp
- * Author: jfan
- * 
- * Created on 18. september 2020, 12:00
- */
+/*
+* MIT License
+*
+* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
 
 #include "TBMmodel.h"
 
 using namespace std;
 
-Model::Model(int N, int L, double discount): 
+Model::Model(int N, int L, double discount):
 	N(N),
 	L(L),
 	discount(discount),
@@ -29,7 +47,7 @@ Model::Model(int N, int L, double discount):
 	sidxSumMat(numberOfStates, 0)
 {
 	int s_i, a_i, sidxTemp, sm, aidxTemp;
-	//initialize sidxMat 
+	//initialize sidxMat
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidxTemp = sidx;
 		sm = 0;
@@ -42,7 +60,7 @@ Model::Model(int N, int L, double discount):
 		sidxSumMat[sidx] = sm;
 	}
 
-	//initialize aidxMat 
+	//initialize aidxMat
 	for (int aidx = 0; aidx < numberOfActions; ++aidx) {
 		aidxTemp = aidx;
 		for (int i = 0; i < N; ++i) {
@@ -67,7 +85,7 @@ double Model::reward(int sidx,int aidx) {
     bool setUp = false;
 	double noFailProb=1;
 	bool payPenalty = false;
-	
+
     for(int i = 0; i < N; ++i) {
 		s_i = sidxMat[sidx][i];
 		a_i = aidxMat[aidx][i];
@@ -77,7 +95,7 @@ double Model::reward(int sidx,int aidx) {
 			} else if (s_i > 1) {
 				// probability of not failing
 				if (N > 1) {
-					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0) 
+					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0)
 						+ fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L));
 				} else {
 					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0));
@@ -104,7 +122,7 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 		a_i = aidxMat[aidx][i];
 
 		if (a_i == 0) {
-			if (s_i > 1) {	
+			if (s_i > 1) {
 				if (N>1) {
 					failProb = f - (f - fmin)*(s_i - 1.0) / (L - 1.0) + fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L);
 				} else {
@@ -133,7 +151,7 @@ void Model::updateNext(int sidx, int aidx, int jidx) {
 	//updates pNext and sNext. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
-	
+
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i];
 		s_i = sidxMat[sidx][i];
@@ -153,10 +171,10 @@ void Model::updateNext(int sidx, int aidx, int jidx) {
 
 int Model::sFirst(int s, int a) {
 	//returns state index after replacements
-    //replaced components reset to L 
+    //replaced components reset to L
     //other components age by 1
 	int s_i, a_i;
-    
+
     int sf = s;
     for (int i=0; i<N; ++i) {
 		s_i = sidxMat[s][i];

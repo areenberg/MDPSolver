@@ -1,25 +1,27 @@
 /*
- * Copyright 2019 Anders Reenberg Andersen and Jesper Fink Andersen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* MIT License
+*
+* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
 
-/* 
- * File:   modifiedPolicyIteration.cpp
- * Author: $Anders Reenberg Andersen and Jesper Fink Andersen
- * 
- * Created on 20. november 2019, 12:32
- */
 
 #include "modifiedPolicyIteration.h"
 #include <iostream>
@@ -69,7 +71,7 @@ void modifiedPolicyIteration::solve(Model& model){
 	v.assign(model.numberOfStates, 0);
 	initValue(model); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
 	vp = &v;
-	if (useStd) { 
+	if (useStd) {
 		v2 = v; //copy contents of v into v2
 		vpOld = &v2;
 	} else { //We only need to store one v if using GS or SOR updates
@@ -89,7 +91,7 @@ void modifiedPolicyIteration::solve(Model& model){
 	} else if (usePI) {
 		parIterLim = PIparIterLim;
 	}
-    
+
 	if (printStuff) {
 		cout << "solving with ";
 		if (useVI) {
@@ -106,7 +108,7 @@ void modifiedPolicyIteration::solve(Model& model){
 			cout << "Gauss-Seidel";
 		} else {
 			cout << "Successive-Over Relaxation";
-		} 
+		}
 		cout << " value function updates, and ";
 		if (useStd) {
 			cout << "span";
@@ -141,12 +143,12 @@ void modifiedPolicyIteration::solve(Model& model){
 
 		//POLICY IMPROVEMENT
 		if (!useSOR) {
-			improvePolicy(model); 
+			improvePolicy(model);
 		}
 		else {
 			improvePolicySOR(model);
 		}
-		
+
 		iter++;
 
 	}
@@ -166,7 +168,7 @@ void modifiedPolicyIteration::solve(Model& model){
 
     auto t2 = chrono::high_resolution_clock::now(); //stop time
 	duration = (double) chrono::duration_cast<chrono::milliseconds>( t2 - t1 ).count();
-	
+
 	if (printStuff) { cout << "v = " << v[0] << " " << v[1] << " " << v[2] << endl; }
 
 	if (iter == iterLim) {
@@ -175,7 +177,7 @@ void modifiedPolicyIteration::solve(Model& model){
 		converged = true;
 		if (printStuff) { cout << "Modified policy iteration finished in " << iter << " iterations and " << duration << " milliseconds" << endl; }
 	}
-    
+
 	checkFinalValue(model);
 
 }
@@ -194,7 +196,7 @@ void modifiedPolicyIteration::improvePolicy(Model& model) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
-		for (int a = 0; a < model.numberOfActions; a++) { 
+		for (int a = 0; a < model.numberOfActions; a++) {
 			valSum = 0;
 			sf = model.sFirst(s, a);
 			model.transProb(s, a, sf);
@@ -222,7 +224,7 @@ void modifiedPolicyIteration::improvePolicy(Model& model) {
 void modifiedPolicyIteration::partialEvaluation(Model& model){
 	int sf;
 	double val, valSum;
-	for (parIter = 0; parIter < parIterLim; parIter++){ 
+	for (parIter = 0; parIter < parIterLim; parIter++){
 		if ( norm >= tolerance ) { //We allow early termination before parIterLim iterations
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
@@ -239,7 +241,7 @@ void modifiedPolicyIteration::partialEvaluation(Model& model){
 				updateNorm(s, val);
 				(*vp)[s] = val;
 			}
-			swapPointers(); //for standard update	
+			swapPointers(); //for standard update
 		} else {
 			break; //stop partial evaluation earlier
 		}
@@ -327,11 +329,11 @@ void modifiedPolicyIteration::initValue(Model& model){
 	double minMaxRew = numeric_limits<double>::infinity();
 	double maxRew;
 	for (int s = 0; s < model.numberOfStates; ++s) {
-		
+
 		maxRew = -numeric_limits<double>::infinity();
-		
+
 		for (int a = 0; a < model.numberOfActions; ++a) {
-			if (model.reward(s, a) > maxRew) { 
+			if (model.reward(s, a) > maxRew) {
 				model.policy[s] = a; //argmax_a r(s,a)
 				maxRew = model.reward(s, a); //max_a r(s,a)
 			}
@@ -386,7 +388,7 @@ void modifiedPolicyIteration::updateNorm(int s, double val) {
 
 void modifiedPolicyIteration::checkFinalValue(Model& model) {
 	//See if final value vector is within reason
-	//NB!! this function is specific to the TBMmodel replacement problem.. 
+	//NB!! this function is specific to the TBMmodel replacement problem..
 
 	//derive minimum reward
 	double minRew = 0;

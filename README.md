@@ -136,8 +136,6 @@ do {
 ```
 where `vp` is a pointer to the value function.
 
-# Theory and references
-
 # License
 
 MIT License
