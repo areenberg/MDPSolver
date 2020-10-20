@@ -5,7 +5,7 @@
  */
 
 /* 
- * File:   Model.cpp
+ * File:   CBMmodel.cpp
  * Author: jfan
  * 
  * Created on 8. november 2019, 08:56
@@ -19,11 +19,11 @@
 #include <assert.h>
 #include <exception> //for exiting if probabilities cannot be loaded
 #include <algorithm> //for min and max function
-#include "Model.h"
+#include "CBMmodel.h"
 
 using namespace std;
 
-Model::Model(int N, int L, double discount, string importProbPath): //default constructor
+CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //default constructor
     N(N),
     L(L),
     discount(discount),
@@ -74,14 +74,14 @@ Model::Model(int N, int L, double discount, string importProbPath): //default co
 	}
 }
 
-Model::Model(const Model& orig) {
+CBMmodel::CBMmodel(const CBMmodel& orig) {
 }
 
-Model::~Model() {
+CBMmodel::~CBMmodel() {
 }
 
 //class functions
-double Model::reward(int sidx,int aidx) {
+double CBMmodel::reward(int sidx,int aidx) {
     //reward function
     double r = 0;
     bool set_up = false;
@@ -105,7 +105,7 @@ double Model::reward(int sidx,int aidx) {
     return r;
 }
 
-double Model::transProb(int sidx, int aidx, int jidx) {
+double CBMmodel::transProb(int sidx, int aidx, int jidx) {
 	//transition probability function
 
 	int step;
@@ -131,8 +131,8 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 	return prob;
 }
 
-void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
-	//void Model::updateTransProbNextStateOptimized(int sidx, int aidx, int jidx) {
+void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
+	//void CBMmodel::updateTransProbNextStateOptimized(int sidx, int aidx, int jidx) {
 	//updates psj and nextState, which are assumed to match. 
 	//That is, input jidx should be nextState.
 
@@ -178,8 +178,8 @@ void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int Model::postDecisionIdx(int sidx, int aidx) {
-	//int Model::postDecisionIdxOptimized(int sidx, int aidx) {
+int CBMmodel::postDecisionIdx(int sidx, int aidx) {
+	//int CBMmodel::postDecisionIdxOptimized(int sidx, int aidx) {
 	//state index right after replacement, which is
 	//assumed instantaneous so components are set to age 0
 	int pdidx = sidx;
@@ -196,7 +196,7 @@ int Model::postDecisionIdx(int sidx, int aidx) {
 }
 
 
-void Model::updateNextState(int sidx, int aidx, int jidx) {
+void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
 	//increment one component's deterioration level.
 	if (jidx != -1) {
 		nextState = jidx;
@@ -224,13 +224,13 @@ void Model::updateNextState(int sidx, int aidx, int jidx) {
 }
 
 
-int Model::intPow(int a, int b) {
+int CBMmodel::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;
 }
 
-void Model::importComponentProbs(string path) {
+void CBMmodel::importComponentProbs(string path) {
     string line;
     ifstream inputFile (path);
     try {

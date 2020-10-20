@@ -5,26 +5,26 @@
  */
 
 /* 
- * File:   Model.h
+ * File:   CBMmodel.h
  * Author: jfan
  *
  * Created on 8. november 2019, 08:56
  */
 
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef CBMMODEL_H
+#define CBMMODEL_H
 
 #include <vector>
 #include <string>
 
 using namespace std;
 
-class Model {
+class CBMmodel {
 public:
-    Model(int Ninput,int Linput,double discountInput,
+    CBMmodel(int Ninput,int Linput,double discountInput,
             string importProbPath = "");
-    Model(const Model& orig);
-    virtual ~Model();
+    CBMmodel(const CBMmodel& orig);
+    virtual ~CBMmodel();
     
     //general MDP parameters
     int N;

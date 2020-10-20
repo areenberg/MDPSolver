@@ -21,33 +21,38 @@
  * Created on 20. november 2019, 12:32
  */
 
-#include "modifiedPolicyIterationSOR.h"
+#include "modifiedPolicyIteration.h"
 #include <iostream>
 #include <chrono>
-#include <vector>
+#include <string>
 #include <math.h>
-#include <fstream>
+#include <assert.h> //to verify "algorithm" and "update" input
 
 using namespace std;
 
-modifiedPolicyIteration::modifiedPolicyIteration(Model& model, double epsilon, bool useSpan, int update, int M, double SORrelaxation):
-//initialize vectors
-nz(model.numberOfStates,0),
-//span stopping criteria (only if using standard update)
-useSpan(useSpan && update==1),
-//use 1=STANDARD, 2=GS (Gauss-seidel), or 3=SOR updatas 
-update(update),
-SORrelaxation(SORrelaxation),
-//others
-epsilon(epsilon), //tolerance
-M(M), //partial policy eval. iteration limit
-printStuff(true),
-iterLim((int) 1e5), //iteration limit
-duration(0),
-converged(false),
-k(0),
-PIconvergence(false) //experiment with terminating only when policy does not change
-{ 
+modifiedPolicyIteration::modifiedPolicyIteration(Model& model, double epsilon, string algorithm,
+	string update, int parIterLim, double SORrelaxation):
+	epsilon(epsilon),
+	useMPI(algorithm.compare("MPI") == 0),
+	usePI(algorithm.compare("PI") == 0),
+	useVI(algorithm.compare("VI") == 0),
+	useStd(update.compare("Standard") == 0),
+	useGS(update.compare("GS") == 0),
+	useSOR(update.compare("SOR") == 0),
+	parIterLim(parIterLim), //partial evaluation iteration limit in MPI
+	SORrelaxation(SORrelaxation),
+	//others
+	discount(model.discount),
+	iterLim((int)1e5), //iteration limit
+	PIparIterLim(1000000), //iteration limit for policy evaluation in PI
+	printStuff(true), //set "true" to print algorithm progress at runtime
+	duration(0),
+	converged(false),
+	parIter(0)
+{
+	//check valid string input
+	assert(update.compare("Standard")==0 || update.compare("GS")==0 || update.compare("SOR")==0);
+	assert(algorithm.compare("VI")==0 || algorithm.compare("PI")==0 || algorithm.compare("MPI")==0);
 }
 
 modifiedPolicyIteration::modifiedPolicyIteration(const modifiedPolicyIteration& orig) {
@@ -57,16 +62,14 @@ modifiedPolicyIteration::~modifiedPolicyIteration() {
 }
 
 void modifiedPolicyIteration::solve(Model& model){
-	// - Standard, Gauss-Seidel, or SOR updates. (only for discounted reward criterion)
-	// - VI (M=0), PI (M="infinity")
-	// - All probabilities are calculated "on demand".
+	//The MDP is solved using the expected total discounted reward criterion.
+	//All probabilities and rewards are calculated "on demand".
 
-    //initialize value vectors and pointers
+    //initialize value vectors and their pointers
 	v.assign(model.numberOfStates, 0);
 	initValue(model); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
-	
 	vp = &v;
-	if (update==1) { 
+	if (useStd) { 
 		v2 = v; //copy contents of v into v2
 		vpOld = &v2;
 	} else { //We only need to store one v if using GS or SOR updates
@@ -74,55 +77,70 @@ void modifiedPolicyIteration::solve(Model& model){
 	}
 
 	//initialize tolerance depending on stopping criteria
-	discount = model.discount;
-	if (useSpan) {
+	if (useStd) {
 		tolerance = epsilon * (1 - model.discount) / model.discount; //tolerance for span
 	} else {
 		tolerance = epsilon * (1 - model.discount) / (2 * (model.discount)); //tolerance for sup norm
 	}
-	
-	norm = numeric_limits<double>::infinity(); //span or supremum norm
 
-    auto t1 = chrono::high_resolution_clock::now(); //start time
+	//change partial iteration limit if using VI or PI
+	if (useVI) {
+		parIterLim = 0;
+	} else if (usePI) {
+		parIterLim = PIparIterLim;
+	}
     
 	if (printStuff) {
 		cout << "solving with ";
-		if (update == 1) {
-			cout << "standard ";
-		} else if (update == 2) {
+		if (useVI) {
+			cout << "VI";
+		} else if (usePI) {
+			cout << "PI";
+		} else {
+			cout << "MPI";
+		}
+		cout << " algorithm, ";
+		if (useStd) {
+			cout << "Standard";
+		} else if (useGS) {
 			cout << "Gauss-Seidel";
 		} else {
-			cout << "SOR";
-		}
-		cout << " updates and ";
-		if (useSpan) {
-			cout << "span" << endl;
+			cout << "Successive-Over Relaxation";
+		} 
+		cout << " value function updates, and ";
+		if (useStd) {
+			cout << "span";
 		} else {
-			cout << "supremum" << endl;
+			cout << "supremum";
 		}
+		cout << " norm stopping criterion." << endl;
+	}
 
-	} 
-
+	//MAIN LOOP
+	auto t1 = chrono::high_resolution_clock::now(); //start timer
 	iter = 0;
-	//while (norm >= tolerance && iter < iterLim) { //MAIN LOOP
-	while (iter < iterLim && !PIconvergence) { //PI convergence attempt
+	norm = numeric_limits<double>::infinity(); //to get the while-loop started
+	polChanges = 1; //to get the while-loop started
+	while ( (usePI && polChanges>0) || (!usePI && norm >= tolerance && iter < iterLim) ) { //MAIN LOOP
 		if (printStuff) {
-			if (M > 0) {
-				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << ", nChanges: " << nChanges << " mn " << k << endl;
+			if (useMPI) {
+				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << ", polChanges: " << polChanges << " parIter " << parIter << endl;
+			} else if (usePI) {
+				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", polChanges: " << polChanges << " parIter " << parIter << endl;
 			} else if (iter % 100 == 0) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << endl;
 			}
 		}
 
 		//PARTIAL EVALUATION
-		if (update < 3) {
+		if (!useSOR) {
 			partialEvaluation(model);
 		} else {
 			partialEvaluationSOR(model);
 		}
 
 		//POLICY IMPROVEMENT
-		if (update <= 3) {
+		if (!useSOR) {
 			improvePolicy(model); 
 		}
 		else {
@@ -134,12 +152,12 @@ void modifiedPolicyIteration::solve(Model& model){
 	}
 
 	//make sure v is the last updated vector if we use standard updates
-	if (update==1 && vpOld != &v) { //vpOld points to last updated value vector at this point
+	if (useStd && vpOld != &v) { //vpOld points to last updated value vector at this point
 		v = v2; //copy content of v2 into v
 	}
 
-	//if span AND discounted reward are used alter v using 6.6.12 in Puterman
-	if (useSpan) {
+	//if using span stopping criterion alter final v using 6.6.12 in Puterman
+	if (useStd) {
 		if (printStuff) { cout << "corrected v according to eq. (6.6.12) in Puterman" << endl; }
 		for (double& val : v) {
 			val += model.discount / (1 - model.discount) * diffMin;
@@ -166,61 +184,60 @@ void modifiedPolicyIteration::solve(Model& model){
 void modifiedPolicyIteration::improvePolicy(Model& model) {
 	//improves the policy based on the current v
 
-	nChanges = 0;
-
+	polChanges = 0;
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
+	int sf, aBest;
+	double val, valBest, valSum;
+	for (int s = 0; s < model.numberOfStates; s++) {
 
-	for (sidx = 0; sidx < model.numberOfStates; sidx++) {
-
-		//maximize v getting the current best action
-		bestVal = -numeric_limits<double>::infinity();
-		for (aidx = 0; aidx < model.numberOfActions; aidx++) { //enumerates all actions
-			sm = 0;
-			pdidx = model.postDecisionIdx(sidx, aidx);
-			model.transProb(sidx, aidx, pdidx);
+		//find the best action
+		valBest = -numeric_limits<double>::infinity();
+		for (int a = 0; a < model.numberOfActions; a++) { 
+			valSum = 0;
+			sf = model.sFirst(s, a);
+			model.transProb(s, a, sf);
 			do {
-				sm += model.psj * (*vpOld)[model.nextState];
-				model.updateTransProbNextState(sidx, aidx, model.nextState);
-			} while (model.nextState != pdidx);
-			val = model.reward(sidx, aidx) + discount * sm;
-			if (val > bestVal) {
-				bestVal = val;
-				bestAidx = aidx;
+				valSum += model.pNext * (*vpOld)[model.sNext];
+				model.updateNext(s, a, model.sNext);
+			} while (model.sNext != sf);
+			val = model.reward(s, a) + discount * valSum;
+			if (val > valBest) {
+				valBest = val;
+				aBest = a;
 			}
 		}
-		//update action if necessary
-		if (model.policy[sidx] != bestAidx) {
-			nChanges++;
-			model.policy[sidx] = bestAidx;
+		//update policy if necessary
+		if (model.policy[s] != aBest) {
+			polChanges++;
+			model.policy[s] = aBest;
 		}
-		updateNorm();
-		(*vp)[sidx] = bestVal;
+		updateNorm(s, valBest);
+		(*vp)[s] = valBest;
 	}
 	swapPointers(); //for standard updates
-	if (M == 1000000 && nChanges == 0) {
-		PIconvergence = true;
-	}
 }
 
 void modifiedPolicyIteration::partialEvaluation(Model& model){
-	for (k = 0; k < M; k++){ 
-		if ( norm >= tolerance ) { //We always allow early termination before M iterations
+	int sf;
+	double val, valSum;
+	for (parIter = 0; parIter < parIterLim; parIter++){ 
+		if ( norm >= tolerance ) { //We allow early termination before parIterLim iterations
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
-			for (sidx = 0; sidx < model.numberOfStates; sidx++) {
-				sm = 0;
-				pdidx = model.postDecisionIdx(sidx, model.policy[sidx]);
-				model.transProb(sidx, model.policy[sidx], pdidx);
+			for (int s = 0; s < model.numberOfStates; s++) {
+				valSum = 0;
+				sf = model.sFirst(s, model.policy[s]);
+				model.transProb(s, model.policy[s], sf);
 				do {
-					sm += model.psj * (*vpOld)[model.nextState];
-					model.updateTransProbNextState(sidx, model.policy[sidx], model.nextState);
-				} while (model.nextState != pdidx);
-				bestVal = model.reward(sidx, model.policy[sidx]) + discount * sm;
-				updateNorm();
-				(*vp)[sidx] = bestVal;
+					valSum += model.pNext * (*vpOld)[model.sNext];
+					model.updateNext(s, model.policy[s], model.sNext);
+				} while (model.sNext != sf);
+				val = model.reward(s, model.policy[s]) + discount * valSum;
+				updateNorm(s, val);
+				(*vp)[s] = val;
 			}
 			swapPointers(); //for standard update	
 		} else {
@@ -229,73 +246,71 @@ void modifiedPolicyIteration::partialEvaluation(Model& model){
 	}
 }
 
-
 void modifiedPolicyIteration::improvePolicySOR(Model& model) {
 	//improves the policy based on the current v
 
-	nChanges = 0;
-
+	polChanges = 0;
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
+	int sf, aBest;
+	double val, valBest, valSum;
+	for (int s = 0; s < model.numberOfStates; s++) {
 
-	for (sidx = 0; sidx < model.numberOfStates; sidx++) {
-
-		//maximize v getting the current best action
-		bestVal = -numeric_limits<double>::infinity();
-		for (aidx = 0; aidx < model.numberOfActions; aidx++) { //enumerates all actions
-			sm = 0;
-			pdidx = model.postDecisionIdx(sidx, aidx);
-			model.transProb(sidx, aidx, pdidx);
+		//find the best action
+		valBest = -numeric_limits<double>::infinity();
+		for (int a = 0; a < model.numberOfActions; a++) {
+			valSum = 0;
+			sf = model.sFirst(s, a);
+			model.transProb(s, a, sf);
 			do {
-				if (model.nextState != sidx) { //skip diagonal element
-					sm += model.psj * (*vpOld)[model.nextState];
+				if (model.sNext != s) { //skip diagonal element
+					valSum += model.pNext * (*vpOld)[model.sNext];
 				}
-				model.updateTransProbNextState(sidx, aidx, model.nextState);
-			} while (model.nextState != pdidx);
-			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - model.discount * model.transProb(sidx, aidx, sidx)) *
-				(model.reward(sidx, aidx) + model.discount * sm); //SOR equation in paper
-			if (val > bestVal) {
-				bestVal = val;
-				bestAidx = aidx;
+				model.updateNext(s, a, model.sNext);
+			} while (model.sNext != sf);
+			val = (1 - SORrelaxation) * (*vpOld)[s] +
+				SORrelaxation / (1 - model.discount * model.transProb(s, a, s)) *
+				(model.reward(s, a) + model.discount * valSum); //SOR update equation
+			if (val > valBest) {
+				valBest = val;
+				aBest = a;
 			}
 		}
-		//update action if necessary
-		if (model.policy[sidx] != bestAidx) {
-			nChanges++;
-			model.policy[sidx] = bestAidx;
+		//update policy if necessary
+		if (model.policy[s] != aBest) {
+			polChanges++;
+			model.policy[s] = aBest;
 		}
-		updateNorm();
-		(*vp)[sidx] = bestVal;
-	}
-	if (M == 1000000 && nChanges == 0) {
-		PIconvergence = true;
+		updateNorm(s, valBest);
+		(*vp)[s] = valBest;
 	}
 }
 
 void modifiedPolicyIteration::partialEvaluationSOR(Model& model) {
-	for (k = 0; k < M; k++) {
-		if (norm >= tolerance) { //We always allow early termination before M iterations
+	int sf;
+	double val, valSum;
+	for (parIter = 0; parIter < parIterLim; parIter++) {
+		if (norm >= tolerance) { //we allow early termination before parIterLim iterations
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
 
-			for (sidx = 0; sidx < model.numberOfStates; sidx++) {
-				sm = 0;
-				pdidx = model.postDecisionIdx(sidx, model.policy[sidx]);
-				model.transProb(sidx, model.policy[sidx], pdidx);
+			for (int s = 0; s < model.numberOfStates; s++) {
+				valSum = 0;
+				sf = model.sFirst(s, model.policy[s]);
+				model.transProb(s, model.policy[s], sf);
 				do {
-					if (model.nextState != sidx) { //skip diagonal element
-						sm += model.psj * (*vpOld)[model.nextState];
+					if (model.sNext != s) { //skip diagonal element
+						valSum += model.pNext * (*vpOld)[model.sNext];
 					}
-					model.updateTransProbNextState(sidx, model.policy[sidx], model.nextState);
-				} while (model.nextState != pdidx);
-				bestVal = (1 - SORrelaxation) * (*vpOld)[sidx] +
-					SORrelaxation / (1 - model.discount * model.transProb(sidx, model.policy[sidx], sidx)) *
-					(model.reward(sidx, model.policy[sidx]) + model.discount * sm); //SOR equation in paper
-				updateNorm(); //this uses bestVal and not val
-				(*vp)[sidx] = bestVal;
+					model.updateNext(s, model.policy[s], model.sNext);
+				} while (model.sNext != sf);
+				val = (1 - SORrelaxation) * (*vpOld)[s] +
+					SORrelaxation / (1 - model.discount * model.transProb(s, model.policy[s], s)) *
+					(model.reward(s, model.policy[s]) + model.discount * valSum); //SOR equation in paper
+				updateNorm(s, val);
+				(*vp)[s] = val;
 			}
 		} else {
 			break; //stop partial evaluation earlier
@@ -311,14 +326,14 @@ void modifiedPolicyIteration::initValue(Model& model){
 	double maxMaxRew = -numeric_limits<double>::infinity();
 	double minMaxRew = numeric_limits<double>::infinity();
 	double maxRew;
-	for (sidx = 0; sidx < model.numberOfStates; ++sidx) {
+	for (int s = 0; s < model.numberOfStates; ++s) {
 		
 		maxRew = -numeric_limits<double>::infinity();
 		
-		for (aidx = 0; aidx < model.numberOfActions; ++aidx) {
-			if (model.reward(sidx, aidx) > maxRew) { 
-				model.policy[sidx] = aidx; //argmax_a r(s,a)
-				maxRew = model.reward(sidx, aidx); //max_a r(s,a)
+		for (int a = 0; a < model.numberOfActions; ++a) {
+			if (model.reward(s, a) > maxRew) { 
+				model.policy[s] = a; //argmax_a r(s,a)
+				maxRew = model.reward(s, a); //max_a r(s,a)
 			}
 		}
 
@@ -329,12 +344,12 @@ void modifiedPolicyIteration::initValue(Model& model){
 			maxMaxRew = maxRew;
 		}
 
-		v[sidx] = maxRew;
+		v[s] = maxRew;
 	}
 
 	//initialize v
-	for (int sidx = 0; sidx < model.numberOfStates; ++sidx) {
-		v[sidx] += model.discount / (1 - model.discount) * minMaxRew;
+	for (int s = 0; s < model.numberOfStates; ++s) {
+		v[s] += model.discount / (1 - model.discount) * minMaxRew;
 	}
 
 	//initialize  diffMin and diffMax
@@ -351,34 +366,35 @@ void modifiedPolicyIteration::swapPointers() {
 	vpOld = vpTemp;
 }
 
-void modifiedPolicyIteration::updateNorm() {
+void modifiedPolicyIteration::updateNorm(int s, double val) {
 	//calculate difference from last iteration and update diffMax, diffMin, and supNorm
-	diff0 = bestVal - (*vpOld)[sidx];
-	if (diff0>diffMax) {
-		diffMax = diff0;
+	double diff = val - (*vpOld)[s];
+	if (diff>diffMax) {
+		diffMax = diff;
 	}
-	if (diff0<diffMin) {
-		diffMin = diff0;
+	if (diff<diffMin) {
+		diffMin = diff;
 	}
-	if (useSpan) {
+	if (useStd) { //span norm
 		norm = diffMax - diffMin;
 	} else { //supremum norm
-		if (fabs(diff0) > norm) {
-			norm = fabs(diff0);
+		if (fabs(diff) > norm) {
+			norm = fabs(diff);
 		}
 	}
 }
 
 void modifiedPolicyIteration::checkFinalValue(Model& model) {
-	//see if final value vector is within reason
+	//See if final value vector is within reason
+	//NB!! this function is specific to the TBMmodel replacement problem.. 
 
 	//derive minimum reward
 	double minRew = 0;
 	double r;
 
-	for (int sidx = 0; sidx < model.numberOfStates; sidx++) {
-		for (int aidx = 0; aidx < model.numberOfActions; aidx++) {
-			r = model.reward(sidx, aidx);
+	for (int s = 0; s < model.numberOfStates; s++) {
+		for (int a = 0; a < model.numberOfActions; a++) {
+			r = model.reward(s, a);
 			if (r < minRew) {
 				minRew = r;
 			}
@@ -390,9 +406,9 @@ void modifiedPolicyIteration::checkFinalValue(Model& model) {
 	//smallest possible value in value vector
 	minRew *= 1 / (1 - model.discount);
 
-	for (int sidx = 0; sidx < model.numberOfStates; ++sidx) {
-		if (isnan(v[sidx]) || v[sidx] < minRew || v[sidx] > 0) {
-			cout << "NOT CONVERGED! Final value vector is crazy at v[" << sidx << "] = " << v[sidx] << endl;
+	for (int s = 0; s < model.numberOfStates; ++s) {
+		if (isnan(v[s]) || v[s] < minRew || v[s] > 0) {
+			cout << "NOT CONVERGED! Final value vector is crazy at v[" << s << "] = " << v[s] << endl;
 			converged = false;
 			break;
 		}

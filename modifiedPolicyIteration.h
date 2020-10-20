@@ -21,8 +21,9 @@
  * Created on 20. november 2019, 12:32
  */
 
-#include "Model.h"
+#include "TBMmodel.h"
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -31,37 +32,33 @@ using namespace std;
 
 class modifiedPolicyIteration {
 public:
+    //constructor and destructor
+    modifiedPolicyIteration(Model& model, double eps, string algorithm = "MPI", string update = "Standard",
+        int parIterLim = 100, double SORrelaxation = 1.0);
+    modifiedPolicyIteration(const modifiedPolicyIteration& orig);
+    virtual ~modifiedPolicyIteration();
 
     //value vector
     vector<double> v;
 	
-    //some other parameters
+    //other parameters
     double duration;
 	int iter;
 	bool converged;
-    int nChanges; //count changes in policy in each iteration
+    int polChanges; //count changes in policy in each iteration
     
-    //methods
+    //medthods
     void solve(Model& model);
     
-    //constructor and destructor
-    modifiedPolicyIteration(Model& model, double eps, bool useSpan=false, int update=1, int M=200, double SORrelaxation = 1.0);
-    modifiedPolicyIteration(const modifiedPolicyIteration& orig);
-    virtual ~modifiedPolicyIteration();
-	
 private:
-    
-    //non-zero column counter
-    vector<unsigned int> nz;
-    
-    //parameters
-    double epsilon, diff0, diffMax, norm, diffMin, tolerance, val, bestVal, sm, vjidx, discount, SORrelaxation;
-    int k, M, sidx, aidx, pdidx, iterLim, bestAidx;
-    bool useSpan, printStuff, PIconvergence;
-    int update; //1=standard, 2=Gauss-Seidel, 3=SOR
 
-	//non-Gauss-Seidel pointers so we don't have to copy full vectors (e.g. in Avg reward criterion)
-	vector<double> v2; //second value vector required when not using Gauss-Seidel updates
+    //parameters
+    double epsilon, diffMax, diffMin, norm, tolerance, discount, SORrelaxation;
+    int iterLim, parIter, parIterLim, PIparIterLim;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, printStuff;
+
+	//Pointers so we don't have to copy full vectors (for standard value function updates)
+	vector<double> v2; //second value vector required when using standard updates
 	vector<double> *vp; //pointer to last updated v
 	vector<double> *vpOld; //pointer to old v
 	vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
@@ -73,7 +70,7 @@ private:
     void partialEvaluationSOR(Model& model);
 	void initValue(Model& model); //initializes policy, v, and span
 	void swapPointers(); //swaps vp and vpOld.
-	void updateNorm(); //updates diffMax, diffMin, and span/supNorm
+	void updateNorm(int s, double valBest); //updates diffMax, diffMin, and span/supNorm
     void checkFinalValue(Model& model);
 };
 

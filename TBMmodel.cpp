@@ -1,25 +1,11 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /* 
- * File:   Model.cpp
+ * File:   TBMmodel.cpp
  * Author: jfan
  * 
- * Created on 8. november 2019, 08:56
+ * Created on 18. september 2020, 12:00
  */
 
-//#include <iostream>
-#include <fstream> //to import component probabilities
-#include <string>  //
-#include <sstream> // 
-#include <math.h> //for the fabs
-#include <assert.h>
-#include <limits>
-#include <random> //for initializing rj_vec and lj_vec
-#include "Model.h"
+#include "TBMmodel.h"
 
 using namespace std;
 
@@ -42,7 +28,7 @@ Model::Model(int N, int L, double discount):
 	aidxMat(numberOfActions, vector<int>(N)),
 	sidxSumMat(numberOfStates, 0)
 {
-	int sidxTemp, sm, aidxTemp;
+	int s_i, a_i, sidxTemp, sm, aidxTemp;
 	//initialize sidxMat 
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidxTemp = sidx;
@@ -91,7 +77,8 @@ double Model::reward(int sidx,int aidx) {
 			} else if (s_i > 1) {
 				// probability of not failing
 				if (N > 1) {
-					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0) + fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L));
+					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0) 
+						+ fhat * ((N - 1.0)*L - (sidxSumMat[sidx] - s_i)) / ((N - 1.0)*L));
 				} else {
 					noFailProb *= 1.0 - (f - (f - fmin)*(s_i - 1.0) / (L - 1.0));
 				}
@@ -110,7 +97,6 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 	int s_i, j_i, a_i;
 	double prob = 1;
 	double failProb;
-
 
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i];
@@ -139,12 +125,12 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 			prob *= 0;
 		}
 	}
-	psj = prob; //store transition probability
+	pNext = prob; //store transition probability
 	return prob;
 }
 
-void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
-	//updates psj and nextState. Assumes that transProb(sidx,aidx,pdidx) has been run,
+void Model::updateNext(int sidx, int aidx, int jidx) {
+	//updates pNext and sNext. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
 	
@@ -154,35 +140,35 @@ void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 		a_i = aidxMat[aidx][i];
 		if (a_i==0 && 0<j_i && s_i != 0) { //non-replacements, working component
 			if ((j_i - s_i) == -1) {
-				nextState -= j_i * intPow(L + 1, i); //decrease to 0  (failure)
-				psj *= failOddsVec[i]; //failOdds=failProb/(1-failProb)
+				sNext -= j_i * intPow(L + 1, i); //decrease to 0  (failure)
+				pNext *= failOddsVec[i]; //failOdds=failProb/(1-failProb)
 			}
 			break; //the remaining components don't change
 		} else if (a_i==0 && s_i > 1) { //only if i'th component was able to fail
-			nextState -= (j_i - (s_i - 1))*intPow(L + 1, i); //reset back to s_i-1 (not failed)
-			psj /= failOddsVec[i]; //failOdds=(1-failProb)/failProb
+			sNext -= (j_i - (s_i - 1))*intPow(L + 1, i); //reset back to s_i-1 (not failed)
+			pNext /= failOddsVec[i]; //failOdds=(1-failProb)/failProb
 		}
 	}
 }
 
-int Model::postDecisionIdx(int sidx, int aidx) {
+int Model::sFirst(int s, int a) {
 	//returns state index after replacements
     //replaced components reset to L 
     //other components age by 1
-	int s_i, j_i, a_i;
+	int s_i, a_i;
     
-    int pdidx = sidx;
+    int sf = s;
     for (int i=0; i<N; ++i) {
-		s_i = sidxMat[sidx][i];
-		a_i = aidxMat[aidx][i];
+		s_i = sidxMat[s][i];
+		a_i = aidxMat[a][i];
         if (a_i==1) {
-            pdidx += (L-s_i)*intPow(L+1,i); // sets it to L
+            sf += (L-s_i)*intPow(L+1,i); // sets it to L
         } else if (0<s_i) {
-            pdidx -= intPow(L+1,i); // working components age by 1
+            sf -= intPow(L+1,i); // working components age by 1
         }
     }
-	nextState = pdidx; //store as the "first" next state
-    return pdidx;
+	sNext = sf; //store as the "first" next state
+    return sf;
 }
 
 int Model::intPow(int a, int b) {

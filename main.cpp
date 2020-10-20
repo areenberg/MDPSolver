@@ -1,74 +1,51 @@
-
 /*
-* To change this license header, choose License Headers in Project Properties.
-* To change this template file, choose Tools | Templates
-* and open the template in the editor.
-*/
-
-/*
-* File:   partialEvaluationTest.cpp
+* File:   main.cpp
 * Author: jfan
 *
-* Created on 21. january 2020, 16:11
+* Created on 18. september 2020, 12:00
 */
 
 #include <cstdlib>
 #include <iostream>
-#include "Model.h"
-#include "modifiedPolicyIterationSOR.h"
-#include <iomanip> //set precision
 #include <string>
-#include <fstream> 
+#include "TBMModel.h"
+#include "modifiedPolicyIteration.h"
 
 using namespace std;
 
 int main(int argc, char** argv) {
 	
-	//Compare update schemes, standard, GS, and SOR, for VI (M=0), PI (M="infinity"), and MPI (M=100)
-	int inputID, N, M, update;
-	bool useSpan;
-	double SORrelaxation; //if update=3 
-	cin >> inputID >> N >> update >> useSpan >> M >> SORrelaxation; // read from input file
-	cout << "inputID " << inputID << " N " << N
-		<< " update " << update << " useSpan " << useSpan << " SORrelaxation " << SORrelaxation << endl;
+	//Solve Time-Based Maintenance (TBM) replacement problem
+	int N = 4; //two components
+	int L = 10; //maximum component age
+	double discount = 0.99; //discount factor
 	
-	//default parameters used
-	int L = 5;
-	double discount = 0.99;
-	double epsilon = 1e-3;
+	// generate model object
+	Model mdl(N, L, discount);
+
+	//Solver arguments
+	double epsilon = 1e-3; //epsilon-optimal policy is found
+	string algorithm = "PI"; //VI, PI, or MPI
+	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
+	int M = 100; //Partial evaluation iteration limit
+	double SORrelaxation = 1.1; //SOR relaxation parameter
+	//create solver object
+	modifiedPolicyIteration mpi(mdl, epsilon, algorithm, update, M, SORrelaxation);
 	
-	
-	// write results to a file
-	cout << fixed;
-	cout << setprecision(6);
-	string filename = "results/resultInput" + to_string(inputID) + ".txt";
-	cout << "saving to " + filename << endl;
-	ofstream outfile;
-	outfile.open(filename);
-
-	string inputpath = "../.././componentProbabilities/component_p_mat_N"
-		+ to_string(N) + "_L" + to_string(L) + ".txt";
-
-	// generate model
-	Model mdl(N, L, discount,inputpath);
-
-	//MPI solution
-	//		input       ( model, epsilon, useSpan, update, M, SORrelaxation)
-	modifiedPolicyIteration mpi(mdl, epsilon, useSpan, update, M, SORrelaxation);
-
+	//solve the MDP
 	mpi.solve(mdl);
-	
-	//write to file
-	//inputID,useGS,useAvg,useSpan,N,iterations,duration,v0,converged //resulting combined file will have these columns
-	outfile << inputID << "," << update << "," << useSpan << "," << M << "," << SORrelaxation << "," 
-		<< N << "," << mpi.iter << "," << mpi.duration << "," << mpi.v[0] << "," << mpi.converged << "\n";
 
-	// stop writing to file
-	outfile.close();
-	cout << update << "," << useSpan << "," << M << "," << SORrelaxation << ","
-		<< N << "," << mpi.iter << "," << mpi.duration << "," << mpi.v[0] << "," << mpi.converged << "\n";
-
-	cout << "we are done." << endl;
+	//output final policy
+	/*
+	cout << endl << "Optimal policy";
+	for (int sidx = 0; sidx < mdl.numberOfStates; ++sidx) {
+		if (sidx % (mdl.L + 1) == 0) {
+			cout << endl;
+		}
+		cout << mdl.policy[sidx] << " ";
+	}
+	cout << endl;
+	*/
 	return 0;
 }
 
