@@ -25,7 +25,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
-#include "TBMModel.h"
+#include "TBMmodel.h" //Time-based maintenance model
+//#include "CBMmodel.h" //Condition-based maintenance model
 #include "modifiedPolicyIteration.h"
 
 using namespace std;
@@ -33,35 +34,35 @@ using namespace std;
 int main(int argc, char** argv) {
 
 	//Solve Time-Based Maintenance (TBM) replacement problem
-	int N = 4; //number of components
+	int N = 2; //number of components
 	int L = 10; //maximum component age
 	double discount = 0.99; //discount factor
 
 	// generate model object
-	Model mdl(N, L, discount);
+	Model model(N, L, discount); //Time-based maintenance model
+	//Model model(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
 
 	//Solver arguments
 	double epsilon = 1e-3; //epsilon-optimal policy is found
 	string algorithm = "PI"; //VI, PI, or MPI
 	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
-	int M = 100; //Partial evaluation iteration limit
+	int parIterLim = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
 	//create solver object
-	modifiedPolicyIteration mpi(mdl, epsilon, algorithm, update, M, SORrelaxation);
+	modifiedPolicyIteration mpi(model, epsilon, algorithm, update, parIterLim, SORrelaxation);
 
 	//solve the MDP
-	mpi.solve(mdl);
+	mpi.solve(model);
 
 	//output final policy
-	/*
 	cout << endl << "Optimal policy";
-	for (int sidx = 0; sidx < mdl.numberOfStates; ++sidx) {
-		if (sidx % (mdl.L + 1) == 0) {
+	for (int sidx = 0; sidx < model.numberOfStates; ++sidx) {
+		if (sidx % (model.L + 1) == 0) {
 			cout << endl;
 		}
-		cout << mdl.policy[sidx] << " ";
+		cout << model.policy[sidx] << " ";
 	}
 	cout << endl;
-	*/
+	
 	return 0;
 }
