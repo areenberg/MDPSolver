@@ -35,7 +35,7 @@
 
 using namespace std;
 
-CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //default constructor
+Model::Model(int N, int L, double discount, string importProbPath): //default constructor
     N(N),
     L(L),
     discount(discount),
@@ -86,14 +86,14 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
 	}
 }
 
-CBMmodel::CBMmodel(const CBMmodel& orig) {
+Model::Model(const Model& orig) {
 }
 
-CBMmodel::~CBMmodel() {
+Model::~Model() {
 }
 
 //class functions
-double CBMmodel::reward(int sidx,int aidx) {
+double Model::reward(int sidx,int aidx) {
     //reward function
     double r = 0;
     bool set_up = false;
@@ -117,7 +117,7 @@ double CBMmodel::reward(int sidx,int aidx) {
     return r;
 }
 
-double CBMmodel::transProb(int sidx, int aidx, int jidx) {
+double Model::transProb(int sidx, int aidx, int jidx) {
 	//transition probability function
 
 	int step;
@@ -143,7 +143,7 @@ double CBMmodel::transProb(int sidx, int aidx, int jidx) {
 	return prob;
 }
 
-void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
+void Model::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	//void CBMmodel::updateTransProbNextStateOptimized(int sidx, int aidx, int jidx) {
 	//updates psj and nextState, which are assumed to match.
 	//That is, input jidx should be nextState.
@@ -190,7 +190,7 @@ void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int CBMmodel::postDecisionIdx(int sidx, int aidx) {
+int Model::postDecisionIdx(int sidx, int aidx) {
 	//int CBMmodel::postDecisionIdxOptimized(int sidx, int aidx) {
 	//state index right after replacement, which is
 	//assumed instantaneous so components are set to age 0
@@ -208,7 +208,7 @@ int CBMmodel::postDecisionIdx(int sidx, int aidx) {
 }
 
 
-void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
+void Model::updateNextState(int sidx, int aidx, int jidx) {
 	//increment one component's deterioration level.
 	if (jidx != -1) {
 		nextState = jidx;
@@ -236,13 +236,13 @@ void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
 }
 
 
-int CBMmodel::intPow(int a, int b) {
+int Model::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;
 }
 
-void CBMmodel::importComponentProbs(string path) {
+void Model::importComponentProbs(string path) {
     string line;
     ifstream inputFile (path);
     try {

@@ -22,7 +22,8 @@
 * SOFTWARE.
 */
 
-#include "TBMmodel.h"
+#include "TBMmodel.h" //Time-based maintenance model
+//#include "CBMmodel.h" //Condition-based maintenance model
 #include <vector>
 #include <string>
 

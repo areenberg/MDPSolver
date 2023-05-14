@@ -7,13 +7,13 @@ class for the solver are presented below.
 
 # Getting started
 
-In order to get started, one only needs the **solver**- and **model**-class. To import these:
+In order to get started, one only needs the **solver**- and **model**-class. To import these in your main-file:
 ```
 #include "modifiedPolicyIteration.h" //import the solver
-#include "CBMmodel.h" //import a model
+#include "TBMmodel.h" //import a model
 
 ```
-Here `CBMmodel.h` accounts for the class that contains the MDP-model (in this example a condition-based maintenance problem). A guide on how to write your own model class is described later in this file.
+Now go to `modifiedPolicyIteration.h` and import the model file (e.g. `TBMmodel.h`) here as well. In this example, `TBMmodel.h` accounts for the class that contains the MDP-model (in this case a time-based maintenance problem). A guide on how to write your own model class is described later in this file.
 
 Now define the parameters:
 ```
@@ -49,7 +49,7 @@ mpi.solve(mdl);
 
 The resulting policy is stored in the model object in the vector `policy`. To get the action associated with state-index `sidx` run `model.policy[sidx]`. 
 
-The following is an example on how to print the entire policy: 
+The following is an example of how to print the entire policy: 
 
 ```
 //output final policy
@@ -111,28 +111,28 @@ The required functions are:
 
 * `double transProb(int s, int a, int j);` This returns the probability *p*(*j*|*s*,*a*) of transitioning to state *j* given that we are in state *s* and take action *a*.
 
-* `void updateNext(int s, int a, int j);`
-* `int sFirst(int s, int a);`
+* `void updateNextState(int s, int a, int j);`
+* `int postDecisionIdx(int s, int a);`
 
 The last two function are used to keep track of the states *j* that can be reached in a single transition from a state *s*. Consider the standard update equation for the value iteration shown here:
 
 <img src="https://github.com/areenberg/MDPSolver/blob/master/VIupdate.JPG" width="435" height="90">
 
-In the solver, the sum in the above equation is calculated for each state *s* and action *a* by going through only the states *j* for which the probability *p*(*j*|*s*,*a*) is nonzero. Probabilities and rewards are calculated on the fly. This is practical for large MDPs where full transition matrices are too large to store in memory. The `Model` class has two private fields `sNext` and `pNext`, which holds the values of *j* and *p*(*j*|*s*,*a*), respectively. Let `s` and `a` be the current state action pair under consideration. The process for calculating the sum is the following:
-1. Initially, the function `sFirst(s,a)` is used to set the value of `sNext` to the first state in the sum. 
-2. Then `transProb(s,a,sNext)` is used to set the first value of `pNext`.
-3. The function `updateNext(s,a,sNext)` is then used repeatedly to update both values of `sNext` and `pNext`  the next term in the equation sum. 
-4. When `sNext` is the final state in the sum, the `updateNext(s,a,sNext)` changes the value of `sNext` back to the initial state, which triggers the termination of the calculation. 
+In the solver, the sum in the above equation is calculated for each state *s* and action *a* by going through only the states *j* for which the probability *p*(*j*|*s*,*a*) is nonzero. Probabilities and rewards are calculated on the fly. This is practical for large MDPs where full transition matrices are too large to store in memory. The `Model` class has two private fields `nextState` and `psj`, which holds the values of *j* and *p*(*j*|*s*,*a*), respectively. Let `s` and `a` be the current state action pair under consideration. The process for calculating the sum is the following:
+1. Initially, the function `postDecisionIdx(s,a)` is used to set the value of `nextState` to the first state in the sum. 
+2. Then `transProb(s,a,nextState)` is used to set the first value of `psj`.
+3. The function `updateNextState(s,a,nextState)` is then used repeatedly to update both values of `nextState` and `psj`  the next term in the equation sum. 
+4. When `nextState` is the final state in the sum, the `updateNextState(s,a,nextState)` changes the value of `nextState` back to the initial state, which triggers the termination of the calculation. 
 
 In the solver code `modifiedPolicyIteration.cpp`, the calculation of the sum looks like this: 
 ```
 valSum = 0;
-sf = model.sFirst(s, a);
+sf = model.postDecisionIdx(s, a);
 model.transProb(s, a, sf);
 do {
-	valSum += model.pNext * (*vp)[model.sNext];
-	model.updateNext(s, a, model.sNext);
-} while (model.sNext != sf);
+	valSum += model.psj * (*vp)[model.nextState];
+	model.updateNextState(s, a, model.nextState);
+} while (model.nextState != sf);
 ```
 where `vp` is a pointer to the value function.
 

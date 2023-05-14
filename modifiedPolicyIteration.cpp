@@ -198,12 +198,12 @@ void modifiedPolicyIteration::improvePolicy(Model& model) {
 		valBest = -numeric_limits<double>::infinity();
 		for (int a = 0; a < model.numberOfActions; a++) {
 			valSum = 0;
-			sf = model.sFirst(s, a);
+			sf = model.postDecisionIdx(s, a);
 			model.transProb(s, a, sf);
 			do {
-				valSum += model.pNext * (*vpOld)[model.sNext];
-				model.updateNext(s, a, model.sNext);
-			} while (model.sNext != sf);
+				valSum += model.psj * (*vpOld)[model.nextState];
+				model.updateNextState(s, a, model.nextState);
+			} while (model.nextState != sf);
 			val = model.reward(s, a) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
@@ -231,12 +231,12 @@ void modifiedPolicyIteration::partialEvaluation(Model& model){
 			diffMin = numeric_limits<double>::infinity();
 			for (int s = 0; s < model.numberOfStates; s++) {
 				valSum = 0;
-				sf = model.sFirst(s, model.policy[s]);
+				sf = model.postDecisionIdx(s, model.policy[s]);
 				model.transProb(s, model.policy[s], sf);
 				do {
-					valSum += model.pNext * (*vpOld)[model.sNext];
-					model.updateNext(s, model.policy[s], model.sNext);
-				} while (model.sNext != sf);
+					valSum += model.psj * (*vpOld)[model.nextState];
+					model.updateNextState(s, model.policy[s], model.nextState);
+				} while (model.nextState != sf);
 				val = model.reward(s, model.policy[s]) + discount * valSum;
 				updateNorm(s, val);
 				(*vp)[s] = val;
@@ -263,14 +263,14 @@ void modifiedPolicyIteration::improvePolicySOR(Model& model) {
 		valBest = -numeric_limits<double>::infinity();
 		for (int a = 0; a < model.numberOfActions; a++) {
 			valSum = 0;
-			sf = model.sFirst(s, a);
+			sf = model.postDecisionIdx(s, a);
 			model.transProb(s, a, sf);
 			do {
-				if (model.sNext != s) { //skip diagonal element
-					valSum += model.pNext * (*vpOld)[model.sNext];
+				if (model.nextState != s) { //skip diagonal element
+					valSum += model.psj * (*vpOld)[model.nextState];
 				}
-				model.updateNext(s, a, model.sNext);
-			} while (model.sNext != sf);
+				model.updateNextState(s, a, model.nextState);
+			} while (model.nextState != sf);
 			val = (1 - SORrelaxation) * (*vpOld)[s] +
 				SORrelaxation / (1 - model.discount * model.transProb(s, a, s)) *
 				(model.reward(s, a) + model.discount * valSum); //SOR update equation
@@ -300,14 +300,14 @@ void modifiedPolicyIteration::partialEvaluationSOR(Model& model) {
 
 			for (int s = 0; s < model.numberOfStates; s++) {
 				valSum = 0;
-				sf = model.sFirst(s, model.policy[s]);
+				sf = model.postDecisionIdx(s, model.policy[s]);
 				model.transProb(s, model.policy[s], sf);
 				do {
-					if (model.sNext != s) { //skip diagonal element
-						valSum += model.pNext * (*vpOld)[model.sNext];
+					if (model.nextState != s) { //skip diagonal element
+						valSum += model.psj * (*vpOld)[model.nextState];
 					}
-					model.updateNext(s, model.policy[s], model.sNext);
-				} while (model.sNext != sf);
+					model.updateNextState(s, model.policy[s], model.nextState);
+				} while (model.nextState != sf);
 				val = (1 - SORrelaxation) * (*vpOld)[s] +
 					SORrelaxation / (1 - model.discount * model.transProb(s, model.policy[s], s)) *
 					(model.reward(s, model.policy[s]) + model.discount * valSum); //SOR equation in paper

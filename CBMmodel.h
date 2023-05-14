@@ -31,12 +31,12 @@
 
 using namespace std;
 
-class CBMmodel {
+class Model {
 public:
-    CBMmodel(int Ninput,int Linput,double discountInput,
+    Model(int Ninput,int Linput,double discountInput,
             string importProbPath = "");
-    CBMmodel(const CBMmodel& orig);
-    virtual ~CBMmodel();
+    Model(const Model& orig);
+    virtual ~Model();
 
     //general MDP parameters
     int N;
@@ -56,7 +56,7 @@ public:
 	vector<vector<double>> pFailCompMat; //sum of element in pCompMat
     //auxiliary variables
     int nextState; //next state to process
-    double psj; //transition probability
+    double psj; //transition probability from state s to j
 	int s_i, a_i, j_i;
 	vector<vector<int>> sidxMat; // (sidx,i)'th element contains s_i for state index sidx
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
