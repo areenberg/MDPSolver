@@ -25,7 +25,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
-#include "TBMModel.h"
+#include "TBMmodel.h"
 #include "modifiedPolicyIteration.h"
 
 using namespace std;
