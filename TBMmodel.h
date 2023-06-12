@@ -30,12 +30,14 @@
 
 using namespace std;
 
-class Model {
+class TBMmodel {
 public:
     //contsructor and destructer
-    Model(int N,int L,double discount);
-    Model(const Model& orig);
-    virtual ~Model();
+    //dummy constructor (not included in cpp-file) 
+    TBMmodel() {};
+    TBMmodel(int N,int L,double discount);
+    TBMmodel(const TBMmodel& orig);
+    virtual ~TBMmodel();
 
     //general MDP parameters
     int N; //number of components

@@ -26,7 +26,7 @@
 #include <iostream>
 #include <string>
 #include "TBMmodel.h" //Time-based maintenance model
-//#include "CBMmodel.h" //Condition-based maintenance model
+#include "CBMmodel.h" //Condition-based maintenance model
 #include "modifiedPolicyIteration.h"
 
 using namespace std;
@@ -38,9 +38,9 @@ int main(int argc, char** argv) {
 	int L = 10; //maximum component age
 	double discount = 0.99; //discount factor
 
-	// generate model object
-	Model model(N, L, discount); //Time-based maintenance model
-	//Model model(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
+	//create model objects
+        TBMmodel tbm(N, L, discount); //Time-based maintenance model
+	CBMmodel cbm(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
 
 	//Solver arguments
 	double epsilon = 1e-3; //epsilon-optimal policy is found
@@ -48,21 +48,35 @@ int main(int argc, char** argv) {
 	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
 	int parIterLim = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
-	//create solver object
-	modifiedPolicyIteration mpi(model, epsilon, algorithm, update, parIterLim, SORrelaxation);
+	//create solver objects
+	modifiedPolicyIteration tbmSolver(tbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
+        modifiedPolicyIteration cbmSolver(cbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
 
 	//solve the MDP
-	mpi.solve(model);
-
-	//output final policy
-	cout << endl << "Optimal policy";
-	for (int sidx = 0; sidx < model.numberOfStates; ++sidx) {
-		if (sidx % (model.L + 1) == 0) {
+	tbmSolver.solve(tbm);
+        cbmSolver.solve(cbm);
+        
+	//output final policies
+	cout << endl << "Optimal TBM policy";
+	for (int sidx = 0; sidx < tbm.numberOfStates; ++sidx) {
+		if (sidx % (tbm.L + 1) == 0) {
 			cout << endl;
 		}
-		cout << model.policy[sidx] << " ";
+		cout << tbm.policy[sidx] << " ";
 	}
 	cout << endl;
 	
+        
+        cout << endl << "Optimal CBM policy";
+	for (int sidx = 0; sidx < cbm.numberOfStates; ++sidx) {
+		if (sidx % (cbm.L + 1) == 0) {
+			cout << endl;
+		}
+		cout << cbm.policy[sidx] << " ";
+	}
+	cout << endl;
+	
+        
+        
 	return 0;
 }

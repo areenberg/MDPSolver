@@ -31,12 +31,15 @@
 
 using namespace std;
 
-class Model {
+class CBMmodel {
 public:
-    Model(int Ninput,int Linput,double discountInput,
+    
+    //dummy constructor (not included in cpp-file) 
+    CBMmodel() {};
+    CBMmodel(int Ninput,int Linput,double discountInput,
             string importProbPath = "");
-    Model(const Model& orig);
-    virtual ~Model();
+    CBMmodel(const CBMmodel& orig);
+    virtual ~CBMmodel();
 
     //general MDP parameters
     int N;
@@ -71,4 +74,4 @@ public:
 private:
 };
 
-#endif /* MODEL_H */
+#endif /* CBMMODEL_H */

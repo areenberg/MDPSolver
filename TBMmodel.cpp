@@ -27,7 +27,7 @@
 
 using namespace std;
 
-Model::Model(int N, int L, double discount):
+TBMmodel::TBMmodel(int N, int L, double discount):
 	N(N),
 	L(L),
 	discount(discount),
@@ -71,14 +71,14 @@ Model::Model(int N, int L, double discount):
 	}
 }
 
-Model::Model(const Model& orig) {
+TBMmodel::TBMmodel(const TBMmodel& orig) {
 }
 
-Model::~Model() {
+TBMmodel::~TBMmodel() {
 }
 
 //class functions
-double Model::reward(int sidx,int aidx) {
+double TBMmodel::reward(int sidx,int aidx) {
 	//reward function
 	int s_i, a_i;
     double r = 0;
@@ -110,7 +110,7 @@ double Model::reward(int sidx,int aidx) {
     return r;
 }
 
-double Model::transProb(int sidx, int aidx, int jidx) {
+double TBMmodel::transProb(int sidx, int aidx, int jidx) {
 	//probability of transitioning to state j given we are in state s and take action a
 	int s_i, j_i, a_i;
 	double prob = 1;
@@ -147,7 +147,7 @@ double Model::transProb(int sidx, int aidx, int jidx) {
 	return prob;
 }
 
-void Model::updateNextState(int sidx, int aidx, int jidx) {
+void TBMmodel::updateNextState(int sidx, int aidx, int jidx) {
 	//updates pNext and sNext. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
 	int s_i, j_i, a_i;
@@ -169,7 +169,7 @@ void Model::updateNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int Model::postDecisionIdx(int s, int a) {
+int TBMmodel::postDecisionIdx(int s, int a) {
 	//returns state index after replacements
     //replaced components reset to L
     //other components age by 1
@@ -189,7 +189,7 @@ int Model::postDecisionIdx(int s, int a) {
     return sf;
 }
 
-int Model::intPow(int a, int b) {
+int TBMmodel::intPow(int a, int b) {
     int i = 1;
     for(int j = 1; j <= b; ++j) i *= a;
     return i;
