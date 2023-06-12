@@ -39,22 +39,6 @@ public:
     ModifiedPolicyIteration(ModelType& model, double eps=1e-3, string algorithm = "MPI", string update = "Standard",
             int parIterLim = 100, double SORrelaxation = 1.0);
     
-    // ------- CONSTRUCTORS -------
-    
-//    //TBM model constructor
-//    modifiedPolicyIteration(TBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
-//        int parIterLim = 100, double SORrelaxation = 1.0);
-//    
-//    //CBM model constructor
-//    modifiedPolicyIteration(CBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
-//        int parIterLim = 100, double SORrelaxation = 1.0);
-    
-    
-    // CONSTRUCTORS FOR ADDITIONAL MODELS CAN BE ADDED HERE
-    
-    
-    // ---------------------------
-    
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
 
@@ -87,29 +71,12 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
-    
     void improvePolicy(ModelType& model);
     void partialEvaluation(ModelType& model);
     void improvePolicySOR(ModelType& model);
     void partialEvaluationSOR(ModelType& model);
     void initValue(ModelType& model); //initializes policy, v, and span
     void checkFinalValue(ModelType& model);
-    
-//    //TBM model    
-//    void improvePolicy(TBMmodel& model);
-//    void partialEvaluation(TBMmodel& model);
-//    void improvePolicySOR(TBMmodel& model);
-//    void partialEvaluationSOR(TBMmodel& model);
-//    void initValue(TBMmodel& model); //initializes policy, v, and span
-//    void checkFinalValue(TBMmodel& model);
-//    
-//    //CBM model
-//    void improvePolicy(CBMmodel& model);
-//    void partialEvaluation(CBMmodel& model);
-//    void improvePolicySOR(CBMmodel& model);
-//    void partialEvaluationSOR(CBMmodel& model);
-//    void initValue(CBMmodel& model); //initializes policy, v, and span
-//    void checkFinalValue(CBMmodel& model);
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.
