@@ -26,15 +26,15 @@
 #ifndef TBMMODEL_H
 #define TBMMODEL_H
 
+#include "ModelType.h"
 #include <vector>
 
 using namespace std;
 
-class TBMmodel {
+class TBMmodel : public ModelType{
 public:
-    //contsructor and destructer
-    //dummy constructor (not included in cpp-file) 
-    TBMmodel() {};
+    
+    //constructor and destructor
     TBMmodel(int N,int L,double discount);
     TBMmodel(const TBMmodel& orig);
     virtual ~TBMmodel();
@@ -64,14 +64,22 @@ public:
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
 	vector<int> sidxSumMat; // sidx'th element contains the sum of component states
 
-    //methods
-    double reward(int, int);
-    double transProb(int, int, int);
-    void updateNextState(int, int, int); //void updateNext(int, int, int);
-    int postDecisionIdx(int, int); //int sFirst(int, int);
+    //METHODS
+        
+    //GENERIC METHODS    
+    double reward(int, int) override;
+    double transProb(int, int, int) override;
+    void updateNextState(int, int, int) override; //void updateNext(int, int, int);
+    int postDecisionIdx(int, int) override; //int sFirst(int, int);
+    double getDiscount() override;
+    int getNumberOfStates() override;
+    int getNumberOfActions() override;
+    int getNextState() override;
+    double getPsj() override;
+    int getPolicy(int) override;
+    void assignPolicy(int,int) override;
     
-
-	//auxiliary methods
+    //SPECIAL METHODS
     int intPow(int, int);
 private:
 };

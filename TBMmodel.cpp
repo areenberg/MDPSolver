@@ -194,3 +194,31 @@ int TBMmodel::intPow(int a, int b) {
     for(int j = 1; j <= b; ++j) i *= a;
     return i;
 }
+
+double TBMmodel::getDiscount(){
+    return discount;
+}
+
+int TBMmodel::getNumberOfStates(){
+    return numberOfStates;
+}
+
+int TBMmodel::getNumberOfActions(){
+    return numberOfActions;
+}
+
+int TBMmodel::getNextState(){
+    return nextState;
+}
+
+double TBMmodel::getPsj(){
+    return psj;
+}
+
+int TBMmodel::getPolicy(int sidx){
+    return policy[sidx];
+}
+
+void TBMmodel::assignPolicy(int sidx, int action){
+    policy[sidx] = action;
+}

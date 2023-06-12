@@ -25,9 +25,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include "ModelType.h"
 #include "TBMmodel.h" //Time-based maintenance model
 #include "CBMmodel.h" //Condition-based maintenance model
-#include "modifiedPolicyIteration.h"
+#include "ModifiedPolicyIteration.h"
 
 using namespace std;
 
@@ -49,11 +50,11 @@ int main(int argc, char** argv) {
 	int parIterLim = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
 	//create solver objects
-	modifiedPolicyIteration tbmSolver(tbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
-        modifiedPolicyIteration cbmSolver(cbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
+        ModifiedPolicyIteration tbmSolver(tbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
+        ModifiedPolicyIteration cbmSolver(cbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
 
 	//solve the MDP
-	tbmSolver.solve(tbm);
+        tbmSolver.solve(tbm);
         cbmSolver.solve(cbm);
         
 	//output final policies

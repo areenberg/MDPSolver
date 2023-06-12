@@ -26,16 +26,15 @@
 #ifndef CBMMODEL_H
 #define CBMMODEL_H
 
+#include "ModelType.h"
 #include <vector>
 #include <string>
 
 using namespace std;
 
-class CBMmodel {
+class CBMmodel : public ModelType{
 public:
     
-    //dummy constructor (not included in cpp-file) 
-    CBMmodel() {};
     CBMmodel(int Ninput,int Linput,double discountInput,
             string importProbPath = "");
     CBMmodel(const CBMmodel& orig);
@@ -63,14 +62,27 @@ public:
 	int s_i, a_i, j_i;
 	vector<vector<int>> sidxMat; // (sidx,i)'th element contains s_i for state index sidx
 	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
-    // functions
-    double reward(int, int);
-    double transProb(int, int, int);
-    void updateNextState(int, int, int);
+    
+    // METHODS
+        
+    //GENERIC METHODS    
+    double reward(int, int) override;
+    double transProb(int, int, int) override;
+    void updateNextState(int, int, int) override;
+    int postDecisionIdx(int, int) override;
+    double getDiscount() override;
+    int getNumberOfStates() override;
+    int getNumberOfActions() override;
+    int getNextState() override;
+    double getPsj()override ;
+    int getPolicy(int) override;
+    void assignPolicy(int,int) override;
+    
+    //SPECIAL METHODS
     void updateTransProbNextState(int, int, int);
-    int postDecisionIdx(int, int);
     int intPow(int, int);
     void importComponentProbs(string path);
+    
 private:
 };
 

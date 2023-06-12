@@ -22,6 +22,7 @@
 * SOFTWARE.
 */
 
+#include "ModelType.h"
 #include "TBMmodel.h" //Time-based maintenance model
 #include "CBMmodel.h" //Condition-based maintenance model
 #include <vector>
@@ -32,17 +33,21 @@ using namespace std;
 #ifndef MODIFIEDPOLICYITERATION_H
 #define MODIFIEDPOLICYITERATION_H
 
-class modifiedPolicyIteration {
+class ModifiedPolicyIteration {
 public:
+    
+    ModifiedPolicyIteration(ModelType& model, double eps=1e-3, string algorithm = "MPI", string update = "Standard",
+            int parIterLim = 100, double SORrelaxation = 1.0);
+    
     // ------- CONSTRUCTORS -------
     
-    //TBM model constructor
-    modifiedPolicyIteration(TBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
-        int parIterLim = 100, double SORrelaxation = 1.0);
-    
-    //CBM model constructor
-    modifiedPolicyIteration(CBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
-        int parIterLim = 100, double SORrelaxation = 1.0);
+//    //TBM model constructor
+//    modifiedPolicyIteration(TBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
+//        int parIterLim = 100, double SORrelaxation = 1.0);
+//    
+//    //CBM model constructor
+//    modifiedPolicyIteration(CBMmodel& model, double eps, string algorithm = "MPI", string update = "Standard",
+//        int parIterLim = 100, double SORrelaxation = 1.0);
     
     
     // CONSTRUCTORS FOR ADDITIONAL MODELS CAN BE ADDED HERE
@@ -50,8 +55,8 @@ public:
     
     // ---------------------------
     
-    modifiedPolicyIteration(const modifiedPolicyIteration& orig);
-    virtual ~modifiedPolicyIteration();
+    ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
+    virtual ~ModifiedPolicyIteration();
 
     //value vector
     vector<double> v;
@@ -62,9 +67,10 @@ public:
     bool converged;
     int polChanges; //count changes in policy in each iteration
 
-    //medthods
-    void solve(TBMmodel& model);
-    void solve(CBMmodel& model);
+    //methods
+    void solve(ModelType& model);
+    //void solve(TBMmodel& model);
+    //void solve(CBMmodel& model);
 
     
 private:
@@ -81,22 +87,29 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
-        
-    //TBM model    
-    void improvePolicy(TBMmodel& model);
-    void partialEvaluation(TBMmodel& model);
-    void improvePolicySOR(TBMmodel& model);
-    void partialEvaluationSOR(TBMmodel& model);
-    void initValue(TBMmodel& model); //initializes policy, v, and span
-    void checkFinalValue(TBMmodel& model);
     
-    //CBM model
-    void improvePolicy(CBMmodel& model);
-    void partialEvaluation(CBMmodel& model);
-    void improvePolicySOR(CBMmodel& model);
-    void partialEvaluationSOR(CBMmodel& model);
-    void initValue(CBMmodel& model); //initializes policy, v, and span
-    void checkFinalValue(CBMmodel& model);
+    void improvePolicy(ModelType& model);
+    void partialEvaluation(ModelType& model);
+    void improvePolicySOR(ModelType& model);
+    void partialEvaluationSOR(ModelType& model);
+    void initValue(ModelType& model); //initializes policy, v, and span
+    void checkFinalValue(ModelType& model);
+    
+//    //TBM model    
+//    void improvePolicy(TBMmodel& model);
+//    void partialEvaluation(TBMmodel& model);
+//    void improvePolicySOR(TBMmodel& model);
+//    void partialEvaluationSOR(TBMmodel& model);
+//    void initValue(TBMmodel& model); //initializes policy, v, and span
+//    void checkFinalValue(TBMmodel& model);
+//    
+//    //CBM model
+//    void improvePolicy(CBMmodel& model);
+//    void partialEvaluation(CBMmodel& model);
+//    void improvePolicySOR(CBMmodel& model);
+//    void partialEvaluationSOR(CBMmodel& model);
+//    void initValue(CBMmodel& model); //initializes policy, v, and span
+//    void checkFinalValue(CBMmodel& model);
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.

@@ -30,7 +30,8 @@
 #include <math.h>
 #include <assert.h>
 #include <exception> //for exiting if probabilities cannot be loaded
-#include <algorithm> //for min and max function
+#include <algorithm>
+#include <valarray> //for min and max function
 #include "CBMmodel.h"
 
 using namespace std;
@@ -271,4 +272,32 @@ void CBMmodel::importComponentProbs(string path) {
         ++i;
     }
     inputFile.close();
+}
+
+double CBMmodel::getDiscount(){
+    return discount;
+}
+
+int CBMmodel::getNumberOfStates(){
+    return numberOfStates;
+}
+
+int CBMmodel::getNumberOfActions(){
+    return numberOfActions;
+}      
+
+int CBMmodel::getNextState(){
+    return nextState;
+}
+
+double CBMmodel::getPsj(){
+    return psj;
+}
+
+int CBMmodel::getPolicy(int sidx){
+    return policy[sidx];
+}
+
+void CBMmodel::assignPolicy(int sidx, int action){
+    policy[sidx] = action;
 }
