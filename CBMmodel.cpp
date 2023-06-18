@@ -50,10 +50,11 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
     importProbs(!importProbPath.empty()),
     pCompMat(N,vector<double>(L+1)),
 	pFailCompMat(N, vector<double>(L + 1)),
-    policy(numberOfStates,0),
+    //policy(numberOfStates,0),
 	sidxMat(numberOfStates, vector<int>(N)),
 	aidxMat(numberOfActions, vector<int>(N))
 {
+    
     //import component probabilities
     if (importProbs) {
         importComponentProbs(importProbPath);
@@ -294,10 +295,10 @@ double CBMmodel::getPsj(){
     return psj;
 }
 
-int CBMmodel::getPolicy(int sidx){
-    return policy[sidx];
-}
-
-void CBMmodel::assignPolicy(int sidx, int action){
-    policy[sidx] = action;
-}
+//int CBMmodel::getPolicy(int sidx){
+//    return policy[sidx];
+//}
+//
+//void CBMmodel::assignPolicy(int sidx, int action){
+//    policy[sidx] = action;
+//}

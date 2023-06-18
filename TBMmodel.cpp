@@ -24,6 +24,7 @@
 
 
 #include "TBMmodel.h"
+#include "Policy.h"
 
 using namespace std;
 
@@ -40,14 +41,14 @@ TBMmodel::TBMmodel(int N, int L, double discount):
 	f(0.1),
 	fmin(0.01),
 	fhat(0.1),
-	policy(numberOfStates, 0),
+	//policy(numberOfStates, 0),
 	failOddsVec(N,0),
 	sidxMat(numberOfStates, vector<int>(N)),
 	aidxMat(numberOfActions, vector<int>(N)),
 	sidxSumMat(numberOfStates, 0)
 {
+        //initialize sidxMat
 	int s_i, a_i, sidxTemp, sm, aidxTemp;
-	//initialize sidxMat
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidxTemp = sidx;
 		sm = 0;
@@ -215,10 +216,10 @@ double TBMmodel::getPsj(){
     return psj;
 }
 
-int TBMmodel::getPolicy(int sidx){
-    return policy[sidx];
-}
-
-void TBMmodel::assignPolicy(int sidx, int action){
-    policy[sidx] = action;
-}
+//int TBMmodel::getPolicy(int sidx){
+//    return policy[sidx];
+//}
+//
+//void TBMmodel::assignPolicy(int sidx, int action){
+//    policy[sidx] = action;
+//}

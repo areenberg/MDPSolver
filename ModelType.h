@@ -4,8 +4,8 @@
 class ModelType {
 public:
     
-    virtual int getPolicy(int) = 0;
-    virtual void assignPolicy(int,int) = 0;
+    //virtual int getPolicy(int) = 0;
+    //virtual void assignPolicy(int,int) = 0;
     virtual double getDiscount() = 0;
     virtual int getNumberOfStates() = 0;
     virtual int getNumberOfActions() = 0;

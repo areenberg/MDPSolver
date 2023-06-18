@@ -25,6 +25,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include "Policy.h"
+#include "ValueVector.h"
 #include "ModelType.h"
 #include "TBMmodel.h" //Time-based maintenance model
 #include "CBMmodel.h" //Condition-based maintenance model
@@ -34,7 +36,7 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
-	//Solve Time-Based Maintenance (TBM) replacement problem
+	//Parameters for the replacement problems
 	int N = 2; //number of components
 	int L = 10; //maximum component age
 	double discount = 0.99; //discount factor
@@ -42,8 +44,12 @@ int main(int argc, char** argv) {
 	//create model objects
         TBMmodel tbm(N, L, discount); //Time-based maintenance model
 	CBMmodel cbm(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
-
-	//Solver arguments
+        
+        //create fundamental problem objects
+        Policy TBMpolicy; ValueVector TBMvalueVector;
+        Policy CBMpolicy; ValueVector CBMvalueVector;
+        
+        //solver arguments
 	double epsilon = 1e-3; //epsilon-optimal policy is found
 	string algorithm = "PI"; //VI, PI, or MPI
 	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
@@ -54,8 +60,8 @@ int main(int argc, char** argv) {
         ModifiedPolicyIteration cbmSolver(cbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
 
 	//solve the MDP
-        tbmSolver.solve(tbm);
-        cbmSolver.solve(cbm);
+        tbmSolver.solve(tbm,TBMpolicy,TBMvalueVector);
+        cbmSolver.solve(cbm,CBMpolicy,CBMvalueVector);
         
 	//output final policies
 	cout << endl << "Optimal TBM policy";
@@ -63,7 +69,7 @@ int main(int argc, char** argv) {
 		if (sidx % (tbm.L + 1) == 0) {
 			cout << endl;
 		}
-		cout << tbm.policy[sidx] << " ";
+		cout << *TBMpolicy.getPolicy(sidx) << " ";
 	}
 	cout << endl;
 	
@@ -73,7 +79,7 @@ int main(int argc, char** argv) {
 		if (sidx % (cbm.L + 1) == 0) {
 			cout << endl;
 		}
-		cout << cbm.policy[sidx] << " ";
+		cout << *CBMpolicy.getPolicy(sidx) << " ";
 	}
 	cout << endl;
 	

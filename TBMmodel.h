@@ -27,6 +27,7 @@
 #define TBMMODEL_H
 
 #include "ModelType.h"
+#include "Policy.h"
 #include <vector>
 
 using namespace std;
@@ -35,6 +36,7 @@ class TBMmodel : public ModelType{
 public:
     
     //constructor and destructor
+    TBMmodel() {}; //dummy-constructor
     TBMmodel(int N,int L,double discount);
     TBMmodel(const TBMmodel& orig);
     virtual ~TBMmodel();
@@ -76,8 +78,8 @@ public:
     int getNumberOfActions() override;
     int getNextState() override;
     double getPsj() override;
-    int getPolicy(int) override;
-    void assignPolicy(int,int) override;
+    //int getPolicy(int) override;
+    //void assignPolicy(int,int) override;
     
     //SPECIAL METHODS
     int intPow(int, int);

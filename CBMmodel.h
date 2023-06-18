@@ -27,6 +27,7 @@
 #define CBMMODEL_H
 
 #include "ModelType.h"
+#include "Policy.h"
 #include <vector>
 #include <string>
 
@@ -35,8 +36,10 @@ using namespace std;
 class CBMmodel : public ModelType{
 public:
     
+    //constructor and destructor
+    CBMmodel() {}; //dummy-constructor
     CBMmodel(int Ninput,int Linput,double discountInput,
-            string importProbPath = "");
+            string importProbPath);
     CBMmodel(const CBMmodel& orig);
     virtual ~CBMmodel();
 
@@ -75,8 +78,8 @@ public:
     int getNumberOfActions() override;
     int getNextState() override;
     double getPsj()override ;
-    int getPolicy(int) override;
-    void assignPolicy(int,int) override;
+//    int getPolicy(int) override;
+//    void assignPolicy(int,int) override;
     
     //SPECIAL METHODS
     void updateTransProbNextState(int, int, int);

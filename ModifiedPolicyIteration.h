@@ -23,6 +23,8 @@
 */
 
 #include "ModelType.h"
+#include "Policy.h"
+#include "ValueVector.h"
 #include "TBMmodel.h" //Time-based maintenance model
 #include "CBMmodel.h" //Condition-based maintenance model
 #include <vector>
@@ -36,6 +38,7 @@ using namespace std;
 class ModifiedPolicyIteration {
 public:
     
+    ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(ModelType& model, double eps=1e-3, string algorithm = "MPI", string update = "Standard",
             int parIterLim = 100, double SORrelaxation = 1.0);
     
@@ -43,7 +46,7 @@ public:
     virtual ~ModifiedPolicyIteration();
 
     //value vector
-    vector<double> v;
+    //vector<double> v;
 
     //other parameters
     double duration;
@@ -52,10 +55,8 @@ public:
     int polChanges; //count changes in policy in each iteration
 
     //methods
-    void solve(ModelType& model);
-    //void solve(TBMmodel& model);
-    //void solve(CBMmodel& model);
-
+    void solve(ModelType& model, Policy& policy, ValueVector& valueVector);
+    
     
 private:
 
@@ -71,12 +72,12 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
-    void improvePolicy(ModelType& model);
-    void partialEvaluation(ModelType& model);
-    void improvePolicySOR(ModelType& model);
-    void partialEvaluationSOR(ModelType& model);
-    void initValue(ModelType& model); //initializes policy, v, and span
-    void checkFinalValue(ModelType& model);
+    void improvePolicy(ModelType& model, Policy& policy);
+    void partialEvaluation(ModelType& model, Policy& policy);
+    void improvePolicySOR(ModelType& model, Policy& policy);
+    void partialEvaluationSOR(ModelType& model, Policy& policy);
+    void initValue(ModelType& model, Policy& policy, ValueVector& valueVector); //initializes policy, v, and span
+    void checkFinalValue(ModelType& model, ValueVector& valueVector);
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.
