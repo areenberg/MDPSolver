@@ -39,14 +39,11 @@ class ModifiedPolicyIteration {
 public:
     
     ModifiedPolicyIteration() {};
-    ModifiedPolicyIteration(ModelType& model, double eps=1e-3, string algorithm = "MPI", string update = "Standard",
+    ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
             int parIterLim = 100, double SORrelaxation = 1.0);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
-
-    //value vector
-    //vector<double> v;
 
     //other parameters
     double duration;
@@ -55,16 +52,20 @@ public:
     int polChanges; //count changes in policy in each iteration
 
     //methods
-    void solve(ModelType& model, Policy& policy, ValueVector& valueVector);
-    
+    void solve(ModelType * mdl, Policy * ply, ValueVector * vv);
     
 private:
 
     //parameters
-    double epsilon, diffMax, diffMin, norm, tolerance, discount, SORrelaxation;
+    double epsilon, diffMax, diffMin, norm, tolerance, SORrelaxation;
     int iterLim, parIter, parIterLim, PIparIterLim;
     bool useMPI, usePI, useVI, useStd, useGS, useSOR, printStuff;
 
+    //pointer to model, policy, and value vector
+    ModelType * model;
+    Policy * policy;
+    ValueVector * valueVector;
+    
     //Pointers so we don't have to copy full vectors (for standard value function updates)
     vector<double> v2; //second value vector required when using standard updates
     vector<double> *vp; //pointer to last updated v
@@ -72,12 +73,12 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
-    void improvePolicy(ModelType& model, Policy& policy);
-    void partialEvaluation(ModelType& model, Policy& policy);
-    void improvePolicySOR(ModelType& model, Policy& policy);
-    void partialEvaluationSOR(ModelType& model, Policy& policy);
-    void initValue(ModelType& model, Policy& policy, ValueVector& valueVector); //initializes policy, v, and span
-    void checkFinalValue(ModelType& model, ValueVector& valueVector);
+    void improvePolicy();
+    void partialEvaluation();
+    void improvePolicySOR();
+    void partialEvaluationSOR();
+    void initValue(); //initializes policy, v, and span
+    void checkFinalValue();
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.

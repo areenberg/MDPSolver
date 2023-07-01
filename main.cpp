@@ -56,12 +56,11 @@ int main(int argc, char** argv) {
 	int parIterLim = 100; //Partial evaluation iteration limit
 	double SORrelaxation = 1.1; //SOR relaxation parameter
 	//create solver objects
-        ModifiedPolicyIteration tbmSolver(tbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
-        ModifiedPolicyIteration cbmSolver(cbm, epsilon, algorithm, update, parIterLim, SORrelaxation);
-
+        ModifiedPolicyIteration solver(epsilon, algorithm, update, parIterLim, SORrelaxation);
+        
 	//solve the MDP
-        tbmSolver.solve(tbm,TBMpolicy,TBMvalueVector);
-        cbmSolver.solve(cbm,CBMpolicy,CBMvalueVector);
+        solver.solve(&tbm,&TBMpolicy,&TBMvalueVector);
+        solver.solve(&cbm,&CBMpolicy,&CBMvalueVector);
         
 	//output final policies
 	cout << endl << "Optimal TBM policy";
