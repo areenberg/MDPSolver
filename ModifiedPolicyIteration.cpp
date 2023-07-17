@@ -36,12 +36,12 @@ using namespace std;
 ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorithm,
 	string update, int parIterLim, double SORrelaxation):
 	epsilon(epsilon),
-	useMPI(algorithm.compare("MPI") == 0),
-	usePI(algorithm.compare("PI") == 0),
-	useVI(algorithm.compare("VI") == 0),
-	useStd(update.compare("Standard") == 0),
-	useGS(update.compare("GS") == 0),
-	useSOR(update.compare("SOR") == 0),
+	useMPI(algorithm.compare("mpi") == 0),
+	usePI(algorithm.compare("pi") == 0),
+	useVI(algorithm.compare("vi") == 0),
+	useStd(update.compare("standard") == 0),
+	useGS(update.compare("gs") == 0),
+	useSOR(update.compare("sor") == 0),
 	parIterLim(parIterLim), //partial evaluation iteration limit in MPI
 	SORrelaxation(SORrelaxation),
 	//others
@@ -53,8 +53,8 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	parIter(0)
 {
 	//check valid string input
-	assert(update.compare("Standard")==0 || update.compare("GS")==0 || update.compare("SOR")==0);
-	assert(algorithm.compare("VI")==0 || algorithm.compare("PI")==0 || algorithm.compare("MPI")==0);
+	assert(update.compare("standard")==0 || update.compare("gs")==0 || update.compare("sor")==0);
+	assert(algorithm.compare("vi")==0 || algorithm.compare("pi")==0 || algorithm.compare("mpi")==0);
 }
 
 
@@ -100,7 +100,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	}
 
 	if (printStuff) {
-		cout << "solving with ";
+		cout << "Solving with ";
 		if (useVI) {
 			cout << "VI";
 		} else if (usePI) {
@@ -118,9 +118,9 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		}
 		cout << " value function updates, and ";
 		if (useStd) {
-			cout << "span";
+			cout << "Span";
 		} else {
-			cout << "supremum";
+			cout << "Supremum";
 		}
 		cout << " norm stopping criterion." << endl;
 	}

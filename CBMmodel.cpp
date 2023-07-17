@@ -88,6 +88,54 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
 	}
 }
 
+CBMmodel::CBMmodel(int N, int L, double discount, vector<vector<double>> pcm): //default constructor
+    N(N),
+    L(L),
+    discount(discount),
+    numberOfStates(intPow(L+1,N)), //unsigned INT_MAX is 2147483647
+    numberOfActions(intPow(2,N)),
+    cp(-5),
+    cc(-11),
+    cs(-4),
+    p(-300),
+	kN(max(1,N-1)),
+    pCompMat(pcm),
+	pFailCompMat(N, vector<double>(L + 1)),
+    //policy(numberOfStates,0),
+	sidxMat(numberOfStates, vector<int>(N)),
+	aidxMat(numberOfActions, vector<int>(N))
+{
+    
+	// calculate tail probabilities
+	for (int i = 0; i < N; ++i) {
+		pFailCompMat[i][0] = pCompMat[i][L];
+		for (int j = 1; j <= L; ++j) {
+			pFailCompMat[i][j] = pFailCompMat[i][j - 1] + pCompMat[i][L-j];
+		}
+	}
+	//initialize sidxMat
+	int sidx_temp,s_i;
+	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
+		sidx_temp = sidx;
+		for (int i = 0; i < N; ++i) {
+			s_i = sidx_temp % (L+1);
+			sidxMat[sidx][i] = s_i;
+			sidx_temp /= (L+1);
+		}
+	}
+	//initialize aidxMat
+	int aidx_temp, a_i;
+	for (int aidx = 0; aidx < numberOfActions; ++aidx) {
+		aidx_temp = aidx;
+		for (int i = 0; i < N; ++i) {
+			a_i = aidx_temp % 2;
+			aidxMat[aidx][i] = a_i;
+			aidx_temp /= 2;
+		}
+	}
+}
+
+
 CBMmodel::CBMmodel(const CBMmodel& orig) {
 }
 

@@ -40,6 +40,8 @@ public:
     CBMmodel() {}; //dummy-constructor
     CBMmodel(int Ninput,int Linput,double discountInput,
             string importProbPath);
+    CBMmodel(int Ninput,int Linput,double discountInput,
+        vector<vector<double>> pcm);
     CBMmodel(const CBMmodel& orig);
     virtual ~CBMmodel();
 

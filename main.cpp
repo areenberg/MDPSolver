@@ -36,31 +36,31 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
-	//Parameters for the replacement problems
-	int N = 2; //number of components
-	int L = 10; //maximum component age
-	double discount = 0.99; //discount factor
+    //Parameters for the replacement problems
+    int N = 2; //number of components
+    int L = 10; //maximum component age
+    double discount = 0.99; //discount factor
 
-	//create model objects
-        TBMmodel tbm(N, L, discount); //Time-based maintenance model
-	CBMmodel cbm(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
+    //create model objects
+    TBMmodel tbm(N, L, discount); //Time-based maintenance model
+    CBMmodel cbm(N, L, discount,"pCompMat.csv"); //Condition-based maintenance model
         
-        //create fundamental problem objects
-        Policy TBMpolicy; ValueVector TBMvalueVector;
-        Policy CBMpolicy; ValueVector CBMvalueVector;
+    //create fundamental problem objects
+    Policy TBMpolicy; ValueVector TBMvalueVector;
+    Policy CBMpolicy; ValueVector CBMvalueVector;
         
-        //solver arguments
-	double epsilon = 1e-3; //epsilon-optimal policy is found
-	string algorithm = "PI"; //VI, PI, or MPI
-	string update = "SOR"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
-	int parIterLim = 100; //Partial evaluation iteration limit
-	double SORrelaxation = 1.1; //SOR relaxation parameter
-	//create solver objects
-        ModifiedPolicyIteration solver(epsilon, algorithm, update, parIterLim, SORrelaxation);
+    //solver arguments
+    double epsilon = 1e-3; //epsilon-optimal policy is found
+    string algorithm = "mpi"; //VI, PI, or MPI
+    string update = "standard"; //Standard, GS (Gauss-Seidel), or SOR (Successive Over-Relaxation)
+    int parIterLim = 100; //Partial evaluation iteration limit
+    double SORrelaxation = 1.1; //SOR relaxation parameter
+    //create solver objects
+    ModifiedPolicyIteration solver(epsilon, algorithm, update, parIterLim, SORrelaxation);
         
-	//solve the MDP
-        solver.solve(&tbm,&TBMpolicy,&TBMvalueVector);
-        solver.solve(&cbm,&CBMpolicy,&CBMvalueVector);
+    //solve the MDP
+    solver.solve(&tbm,&TBMpolicy,&TBMvalueVector);
+    solver.solve(&cbm,&CBMpolicy,&CBMvalueVector);
         
 	//output final policies
 	cout << endl << "Optimal TBM policy";

@@ -25,6 +25,7 @@
 
 #include "TBMmodel.h"
 #include "Policy.h"
+#include <iostream>
 
 using namespace std;
 
@@ -47,7 +48,7 @@ TBMmodel::TBMmodel(int N, int L, double discount):
 	aidxMat(numberOfActions, vector<int>(N)),
 	sidxSumMat(numberOfStates, 0)
 {
-        //initialize sidxMat
+	//initialize sidxMat
 	int s_i, a_i, sidxTemp, sm, aidxTemp;
 	for (int sidx = 0; sidx < numberOfStates; ++sidx) {
 		sidxTemp = sidx;
