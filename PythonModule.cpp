@@ -30,7 +30,7 @@ PYBIND11_MODULE(mdpsolver, m) {
         py::arg("algorithm")="mpi",
         py::arg("tolerance")=1e-3,
         py::arg("update")="standard",
-        py::arg("parIterLim")=1000,
+        py::arg("parIterLim")=100,
         py::arg("SORrelaxation")=1.0)
         .def("printPolicy", &ModuleInterface::printPolicy,"Prints the entire policy.");
 
