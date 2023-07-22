@@ -29,43 +29,36 @@
 using namespace std;
 namespace py = pybind11;
 
-#ifndef TRANSITIONMATRIX_H
-#define TRANSITIONMATRIX_H
+#ifndef REWARDS_H
+#define REWARDS_H
 
-class TransitionMatrix {
+class Rewards {
 public:
     
-    TransitionMatrix();
-    TransitionMatrix(const TransitionMatrix& orig);
-    virtual ~TransitionMatrix();
+    Rewards();
+    Rewards(const Rewards& orig);
+    virtual ~Rewards();
     
     //METHODS
     
     //read and write values
-    double* getProb(int& sidx, int& aidx, int& cidx);
-    int* getColumn(int& sidx, int& aidx, int& cidx);
-    void assignProb(double prob, int& sidx, int& aidx, int& cidx); //assign single probability
-    void assignColumn(int column, int& sidx, int& aidx, int& cidx); //assign single column
-    void assignProbsFromList(py::list pyProbs); //cast probabilities directly from Python list
-    void assignColumnsFromList(py::list pyCols); //cast column indices directly from Python list
-    
+    double * getReward(int& sidx, int& aidx);
+    void assignReward(double reward, int& sidx, int& aidx); //assign single probability
+    void assignRewardsFromList(py::list pyRewards); //cast probabilities directly from Python list
     
     //set size of array
     void setNumberOfRows(int numberOfStates);
     void setNumberOfActions(int nActions, int& sidx);
-    void setNumberOfColumns(int nJumps, int& sidx, int& aidx);
     
-    int numberOfColumns(int& sidx, int& aidx);
     int numberOfActions(int& sidx);
     int numberOfRows();
     
 private:
 
     //VARIABLES
-    vector<vector<vector<double>>> probs; //non-zero probabilities in the transition matrix (index1: state, index2: action, index3: column/new_state)
-    vector<vector<vector<int>>> cols; //corresponding column indices in the transition matrix (index1: state, index2: action, index3: column/new_state)
+    vector<vector<double>> rewards; //array of rewards (index1: state, index2: action)
     
 };
 
-#endif /* TRANSITIONMATRIX_H */
+#endif /* REWARDS_H */
 

@@ -24,7 +24,7 @@
 
 
 #include "TBMmodel.h"
-#include "Policy.h"
+//#include "Policy.h"
 #include <iostream>
 
 using namespace std;
@@ -80,13 +80,13 @@ TBMmodel::~TBMmodel() {
 }
 
 //class functions
-double TBMmodel::reward(int sidx,int aidx) {
+double * TBMmodel::reward(int &sidx,int &aidx) {
 	//reward function
-	int s_i, a_i;
-    double r = 0;
-    bool setUp = false;
-	double noFailProb=1;
-	bool payPenalty = false;
+	//int s_i, a_i;
+	r = 0;
+    setUp = false;
+	noFailProb=1;
+	payPenalty = false;
 
     for(int i = 0; i < N; ++i) {
 		s_i = sidxMat[sidx][i];
@@ -109,14 +109,14 @@ double TBMmodel::reward(int sidx,int aidx) {
         }
     }
     r += setUp*Rs + (1-noFailProb)*Rf + payPenalty*penalty;
-    return r;
+    return &r;
 }
 
-double TBMmodel::transProb(int sidx, int aidx, int jidx) {
+double * TBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 	//probability of transitioning to state j given we are in state s and take action a
-	int s_i, j_i, a_i;
-	double prob = 1;
-	double failProb;
+	//int s_i, j_i, a_i;
+	prob = 1;
+	//double failProb;
 
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i];
@@ -146,13 +146,13 @@ double TBMmodel::transProb(int sidx, int aidx, int jidx) {
 		}
 	}
 	psj = prob; //store transition probability
-	return prob;
+	return &prob;
 }
 
-void TBMmodel::updateNextState(int sidx, int aidx, int jidx) {
+void TBMmodel::updateNextState(int &sidx, int &aidx, int &jidx) {
 	//updates pNext and sNext. Assumes that transProb(sidx,aidx,pdidx) has been run,
 	//such that failOddsVec is up to date.
-	int s_i, j_i, a_i;
+	//int s_i, j_i, a_i;
 
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i];
@@ -171,13 +171,13 @@ void TBMmodel::updateNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int TBMmodel::postDecisionIdx(int s, int a) {
+int * TBMmodel::postDecisionIdx(int &s, int &a) {
 	//returns state index after replacements
     //replaced components reset to L
     //other components age by 1
-	int s_i, a_i;
+	//int s_i, a_i;
 
-    int sf = s;
+    sf = s;
     for (int i=0; i<N; ++i) {
 		s_i = sidxMat[s][i];
 		a_i = aidxMat[a][i];
@@ -188,7 +188,7 @@ int TBMmodel::postDecisionIdx(int s, int a) {
         }
     }
 	nextState = sf; //store as the "first" next state
-    return sf;
+    return &sf;
 }
 
 int TBMmodel::intPow(int a, int b) {
@@ -197,24 +197,27 @@ int TBMmodel::intPow(int a, int b) {
     return i;
 }
 
-double TBMmodel::getDiscount(){
-    return discount;
+double * TBMmodel::getDiscount(){
+    return &discount;
 }
 
-int TBMmodel::getNumberOfStates(){
-    return numberOfStates;
+int * TBMmodel::getNumberOfStates(){
+    return &numberOfStates;
 }
 
-int TBMmodel::getNumberOfActions(){
-    return numberOfActions;
+void TBMmodel::updateNumberOfActions(int &sidx){	
 }
 
-int TBMmodel::getNextState(){
-    return nextState;
+int * TBMmodel::getNumberOfActions(){
+    return &numberOfActions;
 }
 
-double TBMmodel::getPsj(){
-    return psj;
+int * TBMmodel::getNextState(){
+    return &nextState;
+}
+
+double * TBMmodel::getPsj(){
+    return &psj;
 }
 
 //int TBMmodel::getPolicy(int sidx){

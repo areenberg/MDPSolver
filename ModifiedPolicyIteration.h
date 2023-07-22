@@ -82,7 +82,7 @@ private:
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.
-    void updateNorm(int s, double valBest); //updates diffMax, diffMin, and span/supNorm
+    void updateNorm(int &s, double &valBest); //updates diffMax, diffMin, and span/supNorm
     
 };
 

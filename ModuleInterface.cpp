@@ -33,6 +33,40 @@ ModuleInterface::ModuleInterface(const ModuleInterface& orig) {
 ModuleInterface::~ModuleInterface() {
 }
 
+void ModuleInterface::mdp(double discount,
+    py::list rewards, 
+    py::list rewardsElementwise,
+    string rewardsFromFile,
+    py::list tranMatWithZeros,
+    py::list tranMatElementwise,
+    py::list tranMatProbs,
+    py::list tranMatColumns, 
+    string tranMatFromFile){
+    //select the general MDP problem
+    problem.problemType="mdp";
+    problem.discount=discount;
+
+    //load the rewards
+    if (rewards.size()!=0){
+        problem.rewards.assignRewardsFromList(rewards);
+    }else if(rewardsElementwise.size()!=0){
+
+    }else{
+        //from file
+    }
+
+    //load the transition probabilities
+    if (tranMatWithZeros.size()!=0){
+        loadTranMatWithZeros(tranMatWithZeros);
+    }else if(tranMatElementwise.size()!=0){
+
+    }else if(tranMatProbs.size()!=0&&tranMatColumns.size()!=0){
+
+    }else{
+        //from file
+    }
+
+}
 
 void ModuleInterface::tbm(double discount,int components,int stages){
     //selects the TBM problem
@@ -57,14 +91,24 @@ py::list pCompMat){
 }
 
 
-void ModuleInterface::solve(){
+void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation){
+
+    //store solver settings
+    settings.algorithm=algorithm;
+    settings.tolerance=tolerance;
+    settings.update=update;
+    settings.parIterLim=parIterLim;
+    settings.SORrelaxation=SORrelaxation;
 
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
     settings.update, settings.parIterLim, settings.SORrelaxation);
 
     //create model object
-    if (problem.problemType.compare("tbm")==0){
+    if (problem.problemType.compare("mdp")==0){
+        GeneralMDPmodel mdl(&problem.rewards,&problem.tranMat,problem.discount); //General MDP model
+        solver.solve(&mdl,&problem.policy,&problem.valueVector);
+    }else if (problem.problemType.compare("tbm")==0){
         TBMmodel mdl(problem.components,problem.stages,problem.discount); //Time-based maintenance model
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }else if(problem.problemType.compare("cbm")==0){
@@ -78,4 +122,30 @@ void ModuleInterface::printPolicy(){
     for (int sidx=0; sidx<problem.policy.policy.size(); sidx++){
         cout << sidx << ": " << problem.policy.policy[sidx] << endl; 
     }
+}
+
+void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
+        vector<vector<vector<double>>> tempMat = tranMatWithZeros.cast< vector<vector<vector<double>>>  >();
+        int cidx;
+        problem.tranMat.setNumberOfRows(tempMat.size());
+        for (int sidx=0; sidx<tempMat.size(); sidx++){
+            problem.tranMat.setNumberOfActions(tempMat[sidx].size(),sidx);
+            for (int aidx=0; aidx<tempMat[sidx].size(); aidx++){
+                cidx=0;
+                for (int jidx=0; jidx<tempMat[sidx][aidx].size(); jidx++){
+                    if (tempMat[sidx][aidx][jidx]>0.0){
+                        cidx++;
+                    }
+                }
+                problem.tranMat.setNumberOfColumns(cidx,sidx,aidx);
+                cidx=0;
+                for (int jidx=0; jidx<tempMat[sidx][aidx].size(); jidx++){
+                    if (tempMat[sidx][aidx][jidx]>0.0){
+                        problem.tranMat.assignColumn(jidx,sidx,aidx,cidx);
+                        problem.tranMat.assignProb(tempMat[sidx][aidx][jidx],sidx,aidx,cidx);
+                        cidx++;
+                    }
+                }
+            } 
+        }
 }

@@ -29,9 +29,14 @@
 #include <iostream>
 
 #include "ModelType.h" //Generic model class
+#include "ModifiedPolicyIteration.h" //The solver
+#include "TransitionMatrix.h" //Stores transition matrix in general MDP model
+#include "Rewards.h" //Stores rewards in general MDP model
+
+//MODEL TYPES
+#include "GeneralMDPmodel.h" //General MDP model
 #include "TBMmodel.h" //Time-based maintenance model
 #include "CBMmodel.h" //Condition-based maintenance model
-#include "ModifiedPolicyIteration.h" //The solver
 
 using namespace std;
 namespace py = pybind11;
@@ -61,8 +66,12 @@ public:
         //policy and value vector
         Policy policy;
         ValueVector valueVector;
+
+        //transition matrix and rewards (only for general MDP model)
+        TransitionMatrix tranMat;
+        Rewards rewards;
     
-        //only for the TBM/CBM problem
+        //only for the TBM/CBM models
         int components;
         int stages;
         vector<vector<double>> pCompMat; //only for CBM
@@ -71,11 +80,11 @@ public:
 
     //solver settings
     struct Settings{
-        string algorithm="mpi";
-        double tolerance=1e-3;
-        string update = "standard";
-        int parIterLim = 100;
-        double SORrelaxation = 1.0;
+        string algorithm;
+        double tolerance;
+        string update;
+        int parIterLim;
+        double SORrelaxation;
     } settings;
 
 
@@ -91,16 +100,31 @@ public:
 
     //------ problem selection ------
 
+    //the general MDP problem
+    void mdp(double discount,
+    py::list rewards, //option1: complete reward list 
+    py::list rewardsElementwise, //option2: rewards where each row is an element and columns specify sidx,aidx,reward
+    string rewardsFromFile, //option3: rewards are loaded from a file
+    py::list tranMatWithZeros, //option1: complete transition mat incl. zeros
+    py::list tranMatElementwise, //option2: tran mat where each row is a non-zero element and columns specify sidx,aidx,jidx,prob
+    py::list tranMatProbs, //option3a: transition mat non-zero probabilities
+    py::list tranMatColumns, //option3b: transition mat column indices 
+    string tranMatFromFile); //option4: transition mat is loaded from a file
+
+    //pre-defined MDP problems  
     void tbm(double discount,int components,int stages); //select TBM problem
     void cbm(double discount,int components,int stages,py::list pCompMat); //select CBM problem
 
     //-------------------------------
 
-    void solve(); //solves the problem
+    void solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation); //solves the problem
     void printPolicy(); //prints the policy
 
      
 private:
+
+    //METHODS
+    void loadTranMatWithZeros(py::list tranMatWithZeros);
 
 };
 

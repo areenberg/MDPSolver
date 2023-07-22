@@ -33,22 +33,32 @@ TransitionMatrix::TransitionMatrix(const TransitionMatrix& orig) {
 TransitionMatrix::~TransitionMatrix() {
 }
 
-inline double* TransitionMatrix::getProb(int& sidx, int& aidx, int& jidx){
-    return &probs[sidx][aidx][jidx];
+double* TransitionMatrix::getProb(int& sidx, int& aidx, int& cidx){
+    return &probs[sidx][aidx][cidx];
 }
  
-inline int* TransitionMatrix::getColumn(int& sidx, int& aidx, int& jidx){
-    return &cols[sidx][aidx][jidx];
+int* TransitionMatrix::getColumn(int& sidx, int& aidx, int& cidx){
+    return &cols[sidx][aidx][cidx];
 }
 
-void TransitionMatrix::assignProb(double prob, int& sidx, int& aidx, int& jidx){
-    probs[sidx][aidx][jidx]=prob; 
+void TransitionMatrix::assignProb(double prob, int& sidx, int& aidx, int& cidx){
+    probs[sidx][aidx][cidx]=prob; 
 }
 
-void TransitionMatrix::assignColumn(int column, int& sidx, int& aidx, int& jidx){
-    cols[sidx][aidx][jidx]=column;
+void TransitionMatrix::assignColumn(int column, int& sidx, int& aidx, int& cidx){
+    cols[sidx][aidx][cidx]=column;
 }
 
+void TransitionMatrix::assignProbsFromList(py::list pyProbs){ 
+    //cast probabilities directly from Python list
+    probs=pyProbs.cast<vector<vector<vector<double>>>>();
+}
+    
+void TransitionMatrix::assignColumnsFromList(py::list pyCols){ 
+    //cast column indices directly from Python list
+    cols=pyCols.cast<vector<vector<vector<int>>>>();
+}    
+    
 void TransitionMatrix::setNumberOfRows(int numberOfStates){
     probs.resize(numberOfStates);
     cols.resize(numberOfStates);
@@ -64,14 +74,14 @@ void TransitionMatrix::setNumberOfColumns(int nJumps, int& sidx, int& aidx){
     cols[sidx][aidx].resize(nJumps,-1);
 }
 
-inline size_t TransitionMatrix::numberOfColumns(int& sidx, int& aidx){
+int TransitionMatrix::numberOfColumns(int& sidx, int& aidx){
     return cols[sidx][aidx].size();
 }
 
-inline size_t TransitionMatrix::numberOfActions(int& sidx){
+int TransitionMatrix::numberOfActions(int& sidx){
     return probs[sidx].size();
 }
 
-inline size_t TransitionMatrix::numberOfRows(){
+int TransitionMatrix::numberOfRows(){
     return probs.size();
 }

@@ -27,7 +27,7 @@
 #define CBMMODEL_H
 
 #include "ModelType.h"
-#include "Policy.h"
+//#include "Policy.h"
 #include <vector>
 #include <string>
 
@@ -51,7 +51,7 @@ public:
     double discount;
     int numberOfStates;
     int numberOfActions;
-    vector<int> policy;
+    //vector<int> policy;
     //transition and reward parameters
     double cp; //preventive replacement cost
     double cc; //corrective replacement cost
@@ -71,17 +71,16 @@ public:
     // METHODS
         
     //GENERIC METHODS    
-    double reward(int, int) override;
-    double transProb(int, int, int) override;
-    void updateNextState(int, int, int) override;
-    int postDecisionIdx(int, int) override;
-    double getDiscount() override;
-    int getNumberOfStates() override;
-    int getNumberOfActions() override;
-    int getNextState() override;
-    double getPsj()override ;
-//    int getPolicy(int) override;
-//    void assignPolicy(int,int) override;
+    double * reward(int &sidx, int &aidx) override;
+    double * transProb(int &sidx, int &aidx, int &jidx) override;
+    void updateNextState(int &sidx, int &aidx, int &jidx) override;
+    int * postDecisionIdx(int &sidx, int &aidx) override;
+    double * getDiscount() override;
+    int * getNumberOfStates() override;
+    void updateNumberOfActions(int &sidx) override;
+    int * getNumberOfActions() override;
+    int * getNextState() override;
+    double * getPsj() override;
     
     //SPECIAL METHODS
     void updateTransProbNextState(int, int, int);
@@ -89,6 +88,11 @@ public:
     void importComponentProbs(string path);
     
 private:
+
+    double r,prob;
+    bool set_up,done;
+    int fail_count,step,pdidx;
+
 };
 
 #endif /* CBMMODEL_H */

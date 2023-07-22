@@ -23,71 +23,58 @@
 */
 
 
-#ifndef TBMMODEL_H
-#define TBMMODEL_H
+#ifndef GENERALMDPMODEL_H
+#define GENERALMDPMODEL_H
 
 #include "ModelType.h"
 #include "Policy.h"
+#include "TransitionMatrix.h"
+#include "Rewards.h"
 #include <vector>
 
 using namespace std;
 
-class TBMmodel : public ModelType{
+class GeneralMDPmodel : public ModelType{
 public:
     
-    //constructor and destructor
-    TBMmodel() {}; //dummy-constructor
-    TBMmodel(int N,int L,double discount);
-    TBMmodel(const TBMmodel& orig);
-    virtual ~TBMmodel();
+    //CONSTRUCTOR AND DESCTRUCTOR
+    GeneralMDPmodel() {}; //dummy-constructor
+    GeneralMDPmodel(Rewards * rw, TransitionMatrix * tm, double discount);
+    GeneralMDPmodel(const GeneralMDPmodel& orig);
+    virtual ~GeneralMDPmodel();
 
-    //general MDP parameters
-    int N; //number of components
-    int L; //maximum lifetime of components
+
+    //VARIABLES
+
     double discount;
-	int numberOfStates;
-    int numberOfActions;
-    //vector<int> policy;
-
-    //transition and reward parameters
-    double rj; //replacement cost
-    double Rs; //setup cost
-    double Rf; //component (unexpected) failure extra cost.
-    double penalty; // penalty if expired component is not fixed (should be very large to avoid this)
-    double f; // failure probability parameters
-    double fmin; // -||-
-    double fhat; // -||-
-
+	int numberOfStates, numberOfActions;
+    
     //auxiliary variables
-    int nextState; //int sNext; //next state to process
-    double psj; //double pNext; //transition probability from state s to j
-	vector<double> failOddsVec; // probability of failing divided by probability of not failing
-	vector<vector<int>> sidxMat; // (sidx,i)'th element contains s_i for state index sidx
-	vector<vector<int>> aidxMat; // (aidx,i)'th element contains a_i for action index aidx
-	vector<int> sidxSumMat; // sidx'th element contains the sum of component states
-
+    int nextState; //a new state that the current state can jump to
+    double psj; //transition probability from the current state to nextState
+	
     //METHODS
+    void initialize();
         
     //GENERIC METHODS    
     double * reward(int &sidx, int &aidx) override;
     double * transProb(int &sidx, int &aidx, int &jidx) override;
-    void updateNextState(int &sidx, int &aidx, int &jidx) override; //void updateNext(int, int, int);
-    int * postDecisionIdx(int &sidx, int &aidx) override; //int sFirst(int, int);
+    void updateNextState(int &sidx, int &aidx, int &jidx) override;
+    int * postDecisionIdx(int &sidx, int &aidx) override;
     double * getDiscount() override;
     int * getNumberOfStates() override;
     void updateNumberOfActions(int &sidx) override;
     int * getNumberOfActions() override;
     int * getNextState() override;
     double * getPsj() override;
-    
-    //SPECIAL METHODS
-    int intPow(int, int);
+
 private:
 
-    double r,prob,failProb,noFailProb;
-    int s_i,j_i,a_i,sf;
-    bool setUp,payPenalty;
-
+    //VARIABLES
+    Rewards * rewards;
+    TransitionMatrix * tranMat;
+    int cidx;
+    
 
 };
 

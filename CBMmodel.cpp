@@ -143,11 +143,11 @@ CBMmodel::~CBMmodel() {
 }
 
 //class functions
-double CBMmodel::reward(int sidx,int aidx) {
+double * CBMmodel::reward(int &sidx, int &aidx) {
     //reward function
-    double r = 0;
-    bool set_up = false;
-    int fail_count = 0;
+    r = 0;
+    set_up = false;
+    fail_count = 0;
     for(int i = 0; i < N; ++i) {
 		s_i = sidxMat[sidx][i];//i'th component state
 		a_i = aidxMat[aidx][i];
@@ -164,14 +164,14 @@ double CBMmodel::reward(int sidx,int aidx) {
         }
     }
     r += set_up*cs + ((N-fail_count) < kN)*p;
-    return r;
+    return &r;
 }
 
-double CBMmodel::transProb(int sidx, int aidx, int jidx) {
+double * CBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 	//transition probability function
 
-	int step;
-	double prob = 1;
+	//int step;
+	prob = 1;
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i]; //i'th component state
 		s_i = sidxMat[sidx][i];
@@ -190,7 +190,7 @@ double CBMmodel::transProb(int sidx, int aidx, int jidx) {
 		}
 	}
 	psj = prob; //set stored transition probability
-	return prob;
+	return &prob;
 }
 
 void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
@@ -240,11 +240,11 @@ void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int CBMmodel::postDecisionIdx(int sidx, int aidx) {
+int * CBMmodel::postDecisionIdx(int &sidx, int &aidx) {
 	//int CBMmodel::postDecisionIdxOptimized(int sidx, int aidx) {
 	//state index right after replacement, which is
 	//assumed instantaneous so components are set to age 0
-	int pdidx = sidx;
+	pdidx = sidx;
 
 	for (int i = 0; i<N; ++i) {
 		s_i = sidxMat[sidx][i];
@@ -254,18 +254,18 @@ int CBMmodel::postDecisionIdx(int sidx, int aidx) {
 		}
 	}
 	nextState = pdidx; //store as the "first" next state
-	return pdidx;
+	return &pdidx;
 }
 
 
-void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
+void CBMmodel::updateNextState(int &sidx, int &aidx, int &jidx) {
 	//increment one component's deterioration level.
 	if (jidx != -1) {
 		nextState = jidx;
 	} else {
 		jidx = nextState; // default jidx value is current nextState
 	}
-	bool done = false;
+	done = false;
 	for (int i = 0; i<N; ++i) {
 		j_i = sidxMat[jidx][i]; //i'th component state
 		s_i = sidxMat[sidx][i];
@@ -281,7 +281,6 @@ void CBMmodel::updateNextState(int sidx, int aidx, int jidx) {
 				nextState -= (j_i)*intPow(L + 1, i); //reset back to 0
 			}
 		}
-
 	}
 }
 
@@ -323,24 +322,27 @@ void CBMmodel::importComponentProbs(string path) {
     inputFile.close();
 }
 
-double CBMmodel::getDiscount(){
-    return discount;
+double * CBMmodel::getDiscount(){
+    return &discount;
 }
 
-int CBMmodel::getNumberOfStates(){
-    return numberOfStates;
+int * CBMmodel::getNumberOfStates(){
+    return &numberOfStates;
 }
 
-int CBMmodel::getNumberOfActions(){
-    return numberOfActions;
+void CBMmodel::updateNumberOfActions(int &sidx){	
+}
+
+int * CBMmodel::getNumberOfActions(){
+    return &numberOfActions;
 }      
 
-int CBMmodel::getNextState(){
-    return nextState;
+int * CBMmodel::getNextState(){
+    return &nextState;
 }
 
-double CBMmodel::getPsj(){
-    return psj;
+double * CBMmodel::getPsj(){
+    return &psj;
 }
 
 //int CBMmodel::getPolicy(int sidx){
