@@ -5,13 +5,44 @@ mdl = mdpsolver.Model()
 rewards = [[0.5,-0.1],
            [1.0,-0.2],
            [0.0,50.0]]
+
+#alternative representation
+#rewardsElementwise = [[0,0,0.5],
+#                      [0,1,-0.1],
+#                      [1,0,1.0],
+#                      [1,1,-0.2],
+#                      [2,0,0.0],
+#                      [2,1,50.0]]
+
 tranMatWithZeros = [[[0.9,0.1,0.0],[0.1,0.9,0.0]],
                     [[0.4,0.5,0.1],[0.3,0.5,0.2]],
                     [[0.9,0.1,0.0],[0.2,0.6,0.2]]]
 
+#alternative representation
+#tranMatElementwise = [[0,0,0,0.9],
+#                      [0,0,1,0.1],
+#                      [0,1,0,0.1],
+#                      [0,1,1,0.9],
+#                      [1,0,0,0.4],
+#                      [1,0,1,0.5],
+#                      [1,0,2,0.1],
+#                      [1,1,0,0.3],
+#                      [1,1,1,0.5],
+#                      [1,1,2,0.2],
+#                      [2,0,0,0.9],
+#                      [2,0,1,0.1],
+#                      [2,1,0,0.2],
+#                      [2,1,1,0.6],
+#                      [2,1,2,0.2]]
+
 mdl.mdp(discount=0.8,
         rewards=rewards,
         tranMatWithZeros=tranMatWithZeros)
+
+#alternative representation
+#mdl.mdp(discount=0.8,
+#        rewardsElementwise=rewardsElementwise,
+#        tranMatElementwise=tranMatElementwise)
 
 mdl.solve(algorithm="pi",update="gs")
 mdl.printPolicy()

@@ -50,7 +50,7 @@ void ModuleInterface::mdp(double discount,
     if (rewards.size()!=0){
         problem.rewards.assignRewardsFromList(rewards);
     }else if(rewardsElementwise.size()!=0){
-
+        loadRewardsElementwise(rewardsElementwise);
     }else{
         //from file
     }
@@ -59,9 +59,10 @@ void ModuleInterface::mdp(double discount,
     if (tranMatWithZeros.size()!=0){
         loadTranMatWithZeros(tranMatWithZeros);
     }else if(tranMatElementwise.size()!=0){
-
+        loadTranMatElementwise(tranMatElementwise);
     }else if(tranMatProbs.size()!=0&&tranMatColumns.size()!=0){
-
+        problem.tranMat.assignProbsFromList(tranMatProbs);
+        problem.tranMat.assignColumnsFromList(tranMatColumns);
     }else{
         //from file
     }
@@ -125,7 +126,7 @@ void ModuleInterface::printPolicy(){
 }
 
 void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
-        vector<vector<vector<double>>> tempMat = tranMatWithZeros.cast< vector<vector<vector<double>>>  >();
+        vector<vector<vector<double>>> tempMat = tranMatWithZeros.cast<vector<vector<vector<double>>>>();
         int cidx;
         problem.tranMat.setNumberOfRows(tempMat.size());
         for (int sidx=0; sidx<tempMat.size(); sidx++){
@@ -148,4 +149,104 @@ void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
                 }
             } 
         }
+}
+
+void ModuleInterface::loadRewardsElementwise(py::list rewardsElementwise){
+
+    py::list innerRew;
+    vector<int> nAct;
+    int k0,k1;
+    double r;
+    int numberOfStates=0;
+    //determine number of States
+    for (int i=0; i<rewardsElementwise.size(); i++){
+        innerRew = rewardsElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>();
+        if (k0>numberOfStates){
+            numberOfStates=k0;
+        }
+    }       
+    numberOfStates++;
+    nAct.resize(numberOfStates,0);
+    //determine number of actions in each state
+    for (int i=0; i<rewardsElementwise.size(); i++){
+        innerRew = rewardsElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
+        if (k1>nAct[k0]){
+            nAct[k0]=k1;
+        }
+    }
+    //allocate memory
+    problem.rewards.setNumberOfRows(numberOfStates);
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        problem.rewards.setNumberOfActions((nAct[sidx]+1),sidx);
+    }    
+    //assign values
+    for (int i=0; i<rewardsElementwise.size(); i++){
+        innerRew = rewardsElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
+        r = innerRew[2].cast<double>();
+        problem.rewards.assignReward(r,k0,k1);
+    }
+}
+
+void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
+
+    py::list innerRew;
+    vector<int> nAct;
+    vector<vector<int>> nCol;
+    int k0,k1,k2,cidx;
+    double prob;
+    int numberOfStates=0;
+    //determine number of States
+    for (int i=0; i<tranMatElementwise.size(); i++){
+        innerRew = tranMatElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>();
+        if (k0>numberOfStates){
+            numberOfStates=k0;
+        }
+    }       
+    numberOfStates++;
+    nAct.resize(numberOfStates,0);
+    nCol.resize(numberOfStates);
+    //determine number of actions and columns (next states) in each state
+    for (int i=0; i<tranMatElementwise.size(); i++){
+        innerRew = tranMatElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
+        if (k1>nAct[k0]){
+            nAct[k0]=k1;
+        }
+    }
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        nCol[sidx].resize((nAct[sidx]+1),0);
+    }
+    for (int i=0; i<tranMatElementwise.size(); i++){
+        innerRew = tranMatElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
+        k2 = innerRew[2].cast<int>();
+        if (k2>nCol[k0][k1]){
+            nCol[k0][k1]=k2;
+        }
+    }
+    //allocate memory
+    problem.tranMat.setNumberOfRows(numberOfStates);
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
+        for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
+            problem.tranMat.setNumberOfColumns((nCol[sidx][aidx]+1),sidx,aidx);           
+        }
+    }    
+    //assign values
+    for (int i=0; i<tranMatElementwise.size(); i++){
+        innerRew = tranMatElementwise[i].cast<py::list>();
+        k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
+        k2 = innerRew[2].cast<int>(); prob = innerRew[3].cast<double>();
+        //find cidx
+        cidx=0;
+        while (*problem.tranMat.getColumn(k0,k1,cidx)!=-1){
+            cidx++;
+        }
+        problem.tranMat.assignColumn(k2,k0,k1,cidx);
+        problem.tranMat.assignProb(prob,k0,k1,cidx);
+    }
 }

@@ -125,6 +125,8 @@ private:
 
     //METHODS
     void loadTranMatWithZeros(py::list tranMatWithZeros);
+    void loadRewardsElementwise(py::list rewardsElementwise);
+    void loadTranMatElementwise(py::list tranMatElementwise);
 
 };
 
