@@ -22,6 +22,9 @@
 * SOFTWARE.
 */
 
+#include <fstream>
+#include <sstream>
+
 #include "ModuleInterface.h"
 
 ModuleInterface::ModuleInterface() {
@@ -52,19 +55,19 @@ void ModuleInterface::mdp(double discount,
     }else if(rewardsElementwise.size()!=0){
         loadRewardsElementwise(rewardsElementwise);
     }else{
-        //from file
+        loadRewardsFromFile(rewardsFromFile,',',true);
     }
 
     //load the transition probabilities
     if (tranMatWithZeros.size()!=0){
-        loadTranMatWithZeros(tranMatWithZeros);
+        loadTranMatWithZeros(tranMatWithZeros);    
     }else if(tranMatElementwise.size()!=0){
         loadTranMatElementwise(tranMatElementwise);
     }else if(tranMatProbs.size()!=0&&tranMatColumns.size()!=0){
         problem.tranMat.assignProbsFromList(tranMatProbs);
         problem.tranMat.assignColumnsFromList(tranMatColumns);
     }else{
-        //from file
+        loadTranMatFromFile(tranMatFromFile,',',true);
     }
 
 }
@@ -190,6 +193,87 @@ void ModuleInterface::loadRewardsElementwise(py::list rewardsElementwise){
     }
 }
 
+void ModuleInterface::loadRewardsFromFile(string rewardsFromFile, char sep, bool header){
+
+    string line,cell;
+    vector<int> nAct;
+    int i,k0,k1;
+    double r;
+    int numberOfStates=0;
+
+    //determine number of States
+    ifstream file(rewardsFromFile);
+    if (!file.is_open()) {
+        cerr << "Error: Unable to open " << rewardsFromFile << endl;
+        return;
+    }
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell);
+            }
+            k0 = stoi(innerRew[0]);
+            if (k0>numberOfStates){
+                numberOfStates=k0;
+            }
+        }
+        i++;
+    }
+    numberOfStates++;    
+    nAct.resize(numberOfStates,0);
+    
+    //reset
+    file.clear();
+    file.seekg(0,ios::beg);
+
+    //determine number of actions in each state
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell); 
+                
+            }
+            k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
+            if (k1>nAct[k0]){
+                nAct[k0]=k1;
+            }    
+        }
+        i++;
+    }
+    
+    //reset
+    file.clear();
+    file.seekg(0,ios::beg);
+
+    //allocate memory
+    problem.rewards.setNumberOfRows(numberOfStates);
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        problem.rewards.setNumberOfActions((nAct[sidx]+1),sidx);
+    }
+
+    //assign values
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell);
+            }
+            k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
+            r = stod(innerRew[2]);
+            problem.rewards.assignReward(r,k0,k1);    
+        }
+        i++;
+    }
+    file.close();
+}
+
 void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
 
     py::list innerRew;
@@ -249,4 +333,123 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
         problem.tranMat.assignColumn(k2,k0,k1,cidx);
         problem.tranMat.assignProb(prob,k0,k1,cidx);
     }
+}
+
+
+void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool header){
+    
+    string line,cell;
+    vector<int> nAct;
+    vector<vector<int>> nCol;
+    int i,k0,k1,k2,cidx;
+    double prob;
+    int numberOfStates=0;
+
+   //determine number of States
+   ifstream file(tranMatFromFile);
+    if (!file.is_open()) {
+        cerr << "Error: Unable to open " << tranMatFromFile << endl;
+        return;
+    }
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell);
+            }
+            k0 = stoi(innerRew[0]);
+            if (k0>numberOfStates){
+                numberOfStates=k0;
+            }
+        }
+        i++;
+    }
+    numberOfStates++;
+    nAct.resize(numberOfStates,0);
+    nCol.resize(numberOfStates);
+
+    //reset
+    file.clear();
+    file.seekg(0,ios::beg);
+
+    //determine number of actions and columns (next states) in each state
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell); 
+                
+            }
+            k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
+            if (k1>nAct[k0]){
+                nAct[k0]=k1;
+            }    
+        }
+        i++;
+    }
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        nCol[sidx].resize((nAct[sidx]+1),0);
+    }
+
+    //reset
+    file.clear();
+    file.seekg(0,ios::beg);
+
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell); 
+                
+            }
+            k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
+            k2 = stoi(innerRew[2]);
+            if (k2>nCol[k0][k1]){
+                nCol[k0][k1]=k2;
+            }    
+        }
+        i++;
+    }
+
+    //reset
+    file.clear();
+    file.seekg(0,ios::beg);
+
+    //allocate memory
+    problem.tranMat.setNumberOfRows(numberOfStates);
+    for (int sidx=0; sidx<numberOfStates; sidx++){
+        problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
+        for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
+            problem.tranMat.setNumberOfColumns((nCol[sidx][aidx]+1),sidx,aidx);           
+        }
+    }
+
+    //assign values
+    i=0;
+    while (getline(file,line)){
+        if (!header||i>0){
+            stringstream lineStream(line);
+            vector<string> innerRew;
+            while (getline(lineStream,cell,sep)) {
+                innerRew.push_back(cell);
+            }
+            k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
+            k2 = stoi(innerRew[2]); prob = stod(innerRew[3]);
+            //find cidx
+            cidx=0;
+            while (*problem.tranMat.getColumn(k0,k1,cidx)!=-1){
+                cidx++;
+            }
+            problem.tranMat.assignColumn(k2,k0,k1,cidx);
+            problem.tranMat.assignProb(prob,k0,k1,cidx);
+        }
+        i++;
+    }
+    file.close();
 }

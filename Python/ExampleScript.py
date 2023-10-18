@@ -6,7 +6,7 @@ rewards = [[0.5,-0.1],
            [1.0,-0.2],
            [0.0,50.0]]
 
-#alternative representation
+#alternative representation [stateFrom,action]
 #rewardsElementwise = [[0,0,0.5],
 #                      [0,1,-0.1],
 #                      [1,0,1.0],
@@ -18,7 +18,7 @@ tranMatWithZeros = [[[0.9,0.1,0.0],[0.1,0.9,0.0]],
                     [[0.4,0.5,0.1],[0.3,0.5,0.2]],
                     [[0.9,0.1,0.0],[0.2,0.6,0.2]]]
 
-#alternative representation
+#alternative representation [stateFrom,action,stateTo]
 #tranMatElementwise = [[0,0,0,0.9],
 #                      [0,0,1,0.1],
 #                      [0,1,0,0.1],

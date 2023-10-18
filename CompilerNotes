@@ -1,2 +1,2 @@
 #Compile Python Module on Linux (Ubuntu) using pybind11 (remember to install pybind11 with 'pip install pybind11')
-g++ -O3 -Wall -shared -std=c++11 -fPIC `python3 -m pybind11 --includes` *.cpp -o relsys`python3-config --extension-suffix`
+g++ -O3 -Wall -shared -std=c++11 -fPIC `python3 -m pybind11 --includes` *.cpp -o mdpsolver`python3-config --extension-suffix`

@@ -127,6 +127,8 @@ private:
     void loadTranMatWithZeros(py::list tranMatWithZeros);
     void loadRewardsElementwise(py::list rewardsElementwise);
     void loadTranMatElementwise(py::list tranMatElementwise);
+    void loadRewardsFromFile(string rewardsFromFile, char sep, bool header);
+    void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
 
 };
 
