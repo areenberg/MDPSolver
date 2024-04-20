@@ -34,7 +34,7 @@ using namespace std;
 
 
 ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorithm,
-	string update, int parIterLim, double SORrelaxation):
+	string update, int parIterLim, double SORrelaxation, bool verbose):
 	epsilon(epsilon),
 	useMPI(algorithm.compare("mpi") == 0),
 	usePI(algorithm.compare("pi") == 0),
@@ -47,7 +47,7 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	//others
 	iterLim((int)1e5), //iteration limit
 	PIparIterLim(1000000), //iteration limit for policy evaluation in PI
-	printStuff(true), //set "true" to print algorithm progress at runtime
+	printStuff(verbose), //set "true" to print algorithm progress at runtime
 	duration(0),
 	converged(false),
 	parIter(0)
@@ -167,7 +167,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 	//if using span stopping criterion alter final v using 6.6.12 in Puterman
 	if (useStd) {
-		if (printStuff) { cout << "corrected v according to eq. (6.6.12) in Puterman" << endl; }
+		if (printStuff) { cout << "Corrected values according to Eq. (6.6.12) in M. L. Puterman, 'Markov Decision Processes: Discrete Stochastic Dynamic Programming', Wiley." << endl; }
 		for (double& val : valueVector->valueVector) {
 			val += *model->getDiscount() / (1 - *model->getDiscount()) * diffMin;
 		}
@@ -176,13 +176,23 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
     auto t2 = chrono::high_resolution_clock::now(); //stop time
 	duration = (double) chrono::duration_cast<chrono::milliseconds>( t2 - t1 ).count();
 
-	if (printStuff) { cout << "v = " << valueVector->valueVector[0] << " " << valueVector->valueVector[1] << " " << valueVector->valueVector[2] << endl; }
+	if (printStuff) {
+		if (valueVector->valueVector.size()>3){
+			cout << "v = " << valueVector->valueVector[0] << " " << valueVector->valueVector[1] << " " << valueVector->valueVector[2] << " ... " << valueVector->valueVector[valueVector->valueVector.size()-1] << endl;		
+		}else{
+			cout << "v = ";
+			for (int sidx=0; sidx<valueVector->valueVector.size(); sidx++){
+				cout << valueVector->valueVector[sidx] << " ";
+			}
+			cout << endl;
+		}			 
+	}
 
 	if (iter == iterLim) {
-		if (printStuff) { cout << "Modified policy iteration terminated at iteration limit" << endl; }
+		if (printStuff) { cout << "Algorithm terminated at iteration limit." << endl; }
 	} else {
 		converged = true;
-		if (printStuff) { cout << "Modified policy iteration finished in " << iter << " iterations and " << duration << " milliseconds" << endl; }
+		if (printStuff) { cout << "Solution found in " << iter << " iterations and " << duration << " milliseconds." << endl; }
 	}
 
 	checkFinalValue();

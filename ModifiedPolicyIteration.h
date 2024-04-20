@@ -40,7 +40,7 @@ public:
     
     ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
-            int parIterLim = 100, double SORrelaxation = 1.0);
+            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();

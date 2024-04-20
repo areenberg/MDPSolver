@@ -85,6 +85,7 @@ public:
         string update;
         int parIterLim;
         double SORrelaxation;
+        bool verbose;
     } settings;
 
 
@@ -111,16 +112,26 @@ public:
     py::list tranMatColumns, //option3b: transition mat column indices 
     string tranMatFromFile); //option4: transition mat is loaded from a file
 
-    //pre-defined MDP problems  
+    // ------ pre-defined MDP problems ------  
     void tbm(double discount,int components,int stages); //select TBM problem
     void cbm(double discount,int components,int stages,py::list pCompMat); //select CBM problem
 
     //-------------------------------
 
-    void solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation); //solves the problem
-    void printPolicy(); //prints the policy
+    void solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, bool verbose); //solves the problem
+    
+    //-------------------------------
 
-     
+    //------ output methods ------
+    
+    void printPolicy(); //prints the policy
+    void printValueVector(); //prints the value vector
+    int getAction(int sidx); //returns the action index (from the optimized policy) associated with the current state
+    double getValue(int sidx); //returns the value (from the optimized policy) associated with the current state
+    py::list getPolicy(); //returns the entire policy
+    py::list getValueVector(); //returns the entire value vector
+    void saveToFile(string fileName, string type); //save the policy or value vector to a file 
+
 private:
 
     //METHODS
@@ -129,6 +140,8 @@ private:
     void loadTranMatElementwise(py::list tranMatElementwise);
     void loadRewardsFromFile(string rewardsFromFile, char sep, bool header);
     void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
+    void savePolicyToFile(string fileName, char sep);
+    void saveValueVectorToFile(string fileName, char sep);
 
 };
 

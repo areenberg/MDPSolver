@@ -95,7 +95,7 @@ py::list pCompMat){
 }
 
 
-void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation){
+void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, bool verbose){
 
     //store solver settings
     settings.algorithm=algorithm;
@@ -103,10 +103,11 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
     settings.update=update;
     settings.parIterLim=parIterLim;
     settings.SORrelaxation=SORrelaxation;
+    settings.verbose=verbose;
 
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
-    settings.update, settings.parIterLim, settings.SORrelaxation);
+    settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose);
 
     //create model object
     if (problem.problemType.compare("mdp")==0){
@@ -122,10 +123,74 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
         
 }
 
+py::list ModuleInterface::getPolicy(){
+    return(py::cast(problem.policy.policy));
+}
+
+py::list ModuleInterface::getValueVector(){
+    return(py::cast(problem.valueVector.valueVector));
+}
+
+int ModuleInterface::getAction(int sidx){
+    if (sidx>=0 && sidx<problem.policy.policy.size()){
+        return(problem.policy.policy[sidx]);
+    }else{
+        return(-1);
+    }
+}
+
+double ModuleInterface::getValue(int sidx){
+    if (sidx>=0 && sidx<problem.valueVector.valueVector.size()){
+        return(problem.valueVector.valueVector[sidx]);
+    }else{
+        return(0.0);
+    }
+}
+
 void ModuleInterface::printPolicy(){
     for (int sidx=0; sidx<problem.policy.policy.size(); sidx++){
         cout << sidx << ": " << problem.policy.policy[sidx] << endl; 
     }
+}
+
+void ModuleInterface::printValueVector(){
+    for (int sidx=0; sidx<problem.valueVector.valueVector.size(); sidx++){
+        cout << sidx << ": " << problem.valueVector.valueVector[sidx] << endl; 
+    }
+}
+
+void ModuleInterface::saveToFile(string fileName, string type){
+    if (type.compare("policy")==0 || type.compare("p")==0){
+        savePolicyToFile(fileName,',');    
+    }else if(type.compare("values")==0 || type.compare("v")==0){
+        saveValueVectorToFile(fileName,',');
+    }
+}
+
+void ModuleInterface::savePolicyToFile(string fileName, char sep){
+    ofstream outFile(fileName);
+    if (!outFile.is_open()) {
+        cerr << "Failed to open file: " << fileName << endl;
+        return;
+    }
+    outFile << "State_Index" << sep << "Action_Index" << endl;
+    for (int sidx = 0; sidx < problem.policy.policy.size(); sidx++) {
+        outFile << sidx << sep << problem.policy.policy[sidx] << endl;
+    }
+    outFile.close();
+}
+
+void ModuleInterface::saveValueVectorToFile(string fileName, char sep){
+    ofstream outFile(fileName);
+    if (!outFile.is_open()) {
+        cerr << "Failed to open file: " << fileName << endl;
+        return;
+    }
+    outFile << "State_Index" << sep << "Value" << endl;
+    for (int sidx = 0; sidx < problem.valueVector.valueVector.size(); sidx++) {
+        outFile << sidx << sep << problem.valueVector.valueVector[sidx] << endl;
+    }
+    outFile.close();
 }
 
 void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
