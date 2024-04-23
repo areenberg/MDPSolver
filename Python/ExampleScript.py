@@ -47,10 +47,10 @@ mdl.mdp(discount=0.8,
 #        rewardsElementwise=rewardsElementwise,
 #        tranMatElementwise=tranMatElementwise)
 
-mdl.solve(algorithm="pi",update="gs")
+mdl.solve(algorithm="pi",update="gs",verbose=True)
 
 print(mdl.getPolicy())
-
+print(mdl.getValueVector())
 
 #for i in range(3):
 #        print(mdl.getAction(i),mdl.getValue(i))

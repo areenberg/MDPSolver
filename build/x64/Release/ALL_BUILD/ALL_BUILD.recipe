@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\build\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\build\Release\mdpsolver.cp310-win_amd64.pyd</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\build\x64\Release\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
