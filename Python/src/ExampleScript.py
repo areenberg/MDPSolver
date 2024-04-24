@@ -58,7 +58,9 @@ mdl.mdp(discount=0.8,
 mdl.solve()
 
 print(mdl.getPolicy())
-print(mdl.getValueVector())
+
+
+#print(mdl.getValueVector())
 #mdl.saveToFile()
 
 #for i in range(3):
