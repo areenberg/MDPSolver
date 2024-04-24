@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\CBMmodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\GeneralMDPmodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\ModelType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\ModifiedPolicyIteration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\ModuleInterface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\Policy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\PythonModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\Rewards.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\TBMmodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\TransitionMatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\ValueVector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{220B4C00-9039-3F08-99E8-108AAB16A1EB}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

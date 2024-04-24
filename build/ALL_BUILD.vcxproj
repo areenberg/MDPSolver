@@ -173,9 +173,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\build\mdpsolver.vcxproj">
-      <Project>{EDEDD74A-8542-3631-AF94-2423FFD62C29}</Project>
-      <Name>mdpsolver</Name>
+    <ProjectReference Include="C:\Users\arean\Dropbox\Til mig selv\Forskning\Projekter\MDP\Git\cpp\MDPSolver\build\solvermodule.vcxproj">
+      <Project>{4D996F9C-CD71-3BCB-84D5-7F19D74656A8}</Project>
+      <Name>solvermodule</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>

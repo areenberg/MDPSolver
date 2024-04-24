@@ -1,6 +1,6 @@
 import mdpsolver
 
-mdl = mdpsolver.Model()
+mdl = mdpsolver.model()
 
 
 #Example with 3 states and 2 actions in each state.
@@ -47,7 +47,7 @@ mdl.mdp(discount=0.8,
 #        rewardsElementwise=rewardsElementwise,
 #        tranMatElementwise=tranMatElementwise)
 
-mdl.solve(algorithm="pi",update="gs",verbose=True)
+mdl.solve(algorithm="pi",update="gs",verbose=False)
 
 print(mdl.getPolicy())
 print(mdl.getValueVector())

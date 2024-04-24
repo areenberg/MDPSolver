@@ -10,7 +10,7 @@ using namespace std;
 namespace py = pybind11;
 
 
-PYBIND11_MODULE(mdpsolver, m) {
+PYBIND11_MODULE(solvermodule, m) {
 
  py::class_<ModuleInterface>(m, "Model")
         .def(py::init<>())

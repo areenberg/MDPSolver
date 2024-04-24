@@ -113,7 +113,7 @@ CMAKE_INSTALL_MANDIR:PATH=
 CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
 
 //Install path prefix, prepended onto install directories.
-CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/mdpsolver
+CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/solvermodule
 
 //Run-time variable data (LOCALSTATEDIR/run)
 CMAKE_INSTALL_RUNSTATEDIR:PATH=
@@ -160,7 +160,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=mdpsolver
+CMAKE_PROJECT_NAME:STATIC=solvermodule
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=2.13.0
@@ -285,15 +285,6 @@ PYBIND11_TEST:BOOL=OFF
 PYTHON_EXECUTABLE:FILEPATH=C:/Users/arean/AppData/Local/Programs/Python/Python310/python.exe
 
 //Value Computed by CMake
-mdpsolver_BINARY_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build
-
-//Value Computed by CMake
-mdpsolver_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-mdpsolver_SOURCE_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver
-
-//Value Computed by CMake
 pybind11_BINARY_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/pybind11
 
 //Value Computed by CMake
@@ -301,6 +292,15 @@ pybind11_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
 pybind11_SOURCE_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/pybind11
+
+//Value Computed by CMake
+solvermodule_BINARY_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build
+
+//Value Computed by CMake
+solvermodule_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+solvermodule_SOURCE_DIR:STATIC=C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver
 
 
 ########################
@@ -485,7 +485,7 @@ PYTHON_VERSION_MAJOR:INTERNAL=3
 PYTHON_VERSION_MINOR:INTERNAL=10
 Python_ADDITIONAL_VERSIONS:INTERNAL=3.12;3.11;3.10;3.9;3.8;3.7;3.6
 //CMAKE_INSTALL_PREFIX during last run
-_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/mdpsolver
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/solvermodule
 _Python:INTERNAL=PYTHON
 //True if pybind11 and all required components found on the system
 pybind11_FOUND:INTERNAL=TRUE

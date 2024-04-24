@@ -24,7 +24,7 @@ events:
       The output was:
       0
       MSBuild version 17.9.8+b34f75857 for .NET Framework
-      Build started 23-04-2024 16:17:58.
+      Build started 24-04-2024 12:55:41.
       
       Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\3.29.2\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -53,7 +53,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:01.45
+      Time Elapsed 00:00:02.04
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -79,7 +79,7 @@ events:
       The output was:
       0
       MSBuild version 17.9.8+b34f75857 for .NET Framework
-      Build started 23-04-2024 16:18:00.
+      Build started 24-04-2024 12:55:44.
       
       Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\3.29.2\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -108,7 +108,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:01.56
+      Time Elapsed 00:00:02.15
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -127,8 +127,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-8k6h8g"
-      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-8k6h8g"
+      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-memtlg"
+      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-memtlg"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
@@ -136,40 +136,40 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-8k6h8g'
+        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-memtlg'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_32b80.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_91047.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.9.8+b34f75857 for .NET Framework
-        Build started 23-04-2024 16:18:03.
+        Build started 24-04-2024 12:55:48.
         
-        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8k6h8g\\cmTC_32b80.vcxproj" on node 1 (default targets).
+        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-memtlg\\cmTC_91047.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_32b80.dir\\Debug\\".
+          Creating directory "cmTC_91047.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8k6h8g\\Debug\\".
-          Creating directory "cmTC_32b80.dir\\Debug\\cmTC_32b80.tlog\\".
+          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-memtlg\\Debug\\".
+          Creating directory "cmTC_91047.dir\\Debug\\cmTC_91047.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_32b80.dir\\Debug\\cmTC_32b80.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_32b80.dir\\Debug\\cmTC_32b80.tlog\\unsuccessfulbuild".
+          Creating "cmTC_91047.dir\\Debug\\cmTC_91047.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_91047.dir\\Debug\\cmTC_91047.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_32b80.dir\\Debug\\\\" /Fd"cmTC_32b80.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_91047.dir\\Debug\\\\" /Fd"cmTC_91047.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCCompilerABI.c"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.39.33523 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_32b80.dir\\Debug\\\\" /Fd"cmTC_32b80.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCCompilerABI.c"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_91047.dir\\Debug\\\\" /Fd"cmTC_91047.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCCompilerABI.c"
           CMakeCCompilerABI.c
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8k6h8g\\Debug\\cmTC_32b80.exe" /INCREMENTAL /ILK:"cmTC_32b80.dir\\Debug\\cmTC_32b80.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-8k6h8g/Debug/cmTC_32b80.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-8k6h8g/Debug/cmTC_32b80.lib" /MACHINE:X64  /machine:x64 cmTC_32b80.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_32b80.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8k6h8g\\Debug\\cmTC_32b80.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-memtlg\\Debug\\cmTC_91047.exe" /INCREMENTAL /ILK:"cmTC_91047.dir\\Debug\\cmTC_91047.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-memtlg/Debug/cmTC_91047.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-memtlg/Debug/cmTC_91047.lib" /MACHINE:X64  /machine:x64 cmTC_91047.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_91047.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-memtlg\\Debug\\cmTC_91047.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_32b80.dir\\Debug\\cmTC_32b80.tlog\\unsuccessfulbuild".
-          Touching "cmTC_32b80.dir\\Debug\\cmTC_32b80.tlog\\cmTC_32b80.lastbuildstate".
-        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8k6h8g\\cmTC_32b80.vcxproj" (default targets).
+          Deleting file "cmTC_91047.dir\\Debug\\cmTC_91047.tlog\\unsuccessfulbuild".
+          Touching "cmTC_91047.dir\\Debug\\cmTC_91047.tlog\\cmTC_91047.lastbuildstate".
+        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-memtlg\\cmTC_91047.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:01.45
+        Time Elapsed 00:00:02.83
         
       exitCode: 0
   -
@@ -209,8 +209,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-bkg3gv"
-      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-bkg3gv"
+      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-vc94g0"
+      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-vc94g0"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
@@ -218,40 +218,40 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-bkg3gv'
+        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-vc94g0'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4c967.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_5eb58.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.9.8+b34f75857 for .NET Framework
-        Build started 23-04-2024 16:18:05.
+        Build started 24-04-2024 12:55:51.
         
-        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-bkg3gv\\cmTC_4c967.vcxproj" on node 1 (default targets).
+        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vc94g0\\cmTC_5eb58.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_4c967.dir\\Debug\\".
+          Creating directory "cmTC_5eb58.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-bkg3gv\\Debug\\".
-          Creating directory "cmTC_4c967.dir\\Debug\\cmTC_4c967.tlog\\".
+          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vc94g0\\Debug\\".
+          Creating directory "cmTC_5eb58.dir\\Debug\\cmTC_5eb58.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_4c967.dir\\Debug\\cmTC_4c967.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_4c967.dir\\Debug\\cmTC_4c967.tlog\\unsuccessfulbuild".
+          Creating "cmTC_5eb58.dir\\Debug\\cmTC_5eb58.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_5eb58.dir\\Debug\\cmTC_5eb58.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4c967.dir\\Debug\\\\" /Fd"cmTC_4c967.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5eb58.dir\\Debug\\\\" /Fd"cmTC_5eb58.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.39.33523 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4c967.dir\\Debug\\\\" /Fd"cmTC_4c967.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_5eb58.dir\\Debug\\\\" /Fd"cmTC_5eb58.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.29\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-bkg3gv\\Debug\\cmTC_4c967.exe" /INCREMENTAL /ILK:"cmTC_4c967.dir\\Debug\\cmTC_4c967.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-bkg3gv/Debug/cmTC_4c967.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-bkg3gv/Debug/cmTC_4c967.lib" /MACHINE:X64  /machine:x64 cmTC_4c967.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_4c967.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-bkg3gv\\Debug\\cmTC_4c967.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vc94g0\\Debug\\cmTC_5eb58.exe" /INCREMENTAL /ILK:"cmTC_5eb58.dir\\Debug\\cmTC_5eb58.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-vc94g0/Debug/cmTC_5eb58.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-vc94g0/Debug/cmTC_5eb58.lib" /MACHINE:X64  /machine:x64 cmTC_5eb58.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_5eb58.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vc94g0\\Debug\\cmTC_5eb58.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_4c967.dir\\Debug\\cmTC_4c967.tlog\\unsuccessfulbuild".
-          Touching "cmTC_4c967.dir\\Debug\\cmTC_4c967.tlog\\cmTC_4c967.lastbuildstate".
-        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-bkg3gv\\cmTC_4c967.vcxproj" (default targets).
+          Deleting file "cmTC_5eb58.dir\\Debug\\cmTC_5eb58.tlog\\unsuccessfulbuild".
+          Touching "cmTC_5eb58.dir\\Debug\\cmTC_5eb58.tlog\\cmTC_5eb58.lastbuildstate".
+        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vc94g0\\cmTC_5eb58.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:01.56
+        Time Elapsed 00:00:02.41
         
       exitCode: 0
   -
@@ -295,8 +295,8 @@ events:
     checks:
       - "Performing Test HAS_MSVC_GL_LTCG"
     directories:
-      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-ovcr0s"
-      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-ovcr0s"
+      source: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-lavugt"
+      binary: "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-lavugt"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -306,48 +306,48 @@ events:
       variable: "HAS_MSVC_GL_LTCG"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-ovcr0s'
+        Change Dir: 'C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-lavugt'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_eb46d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_eb76b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.9.8+b34f75857 for .NET Framework
-        Build started 23-04-2024 16:18:10.
+        Build started 24-04-2024 12:55:55.
         
-        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\cmTC_eb46d.vcxproj" on node 1 (default targets).
+        Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\cmTC_eb76b.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_eb46d.dir\\Debug\\".
+          Creating directory "cmTC_eb76b.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\Debug\\".
-          Creating directory "cmTC_eb46d.dir\\Debug\\cmTC_eb46d.tlog\\".
+          Creating directory "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\Debug\\".
+          Creating directory "cmTC_eb76b.dir\\Debug\\cmTC_eb76b.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_eb46d.dir\\Debug\\cmTC_eb46d.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_eb46d.dir\\Debug\\cmTC_eb46d.tlog\\unsuccessfulbuild".
+          Creating "cmTC_eb76b.dir\\Debug\\cmTC_eb76b.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_eb76b.dir\\Debug\\cmTC_eb76b.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb46d.dir\\Debug\\\\" /Fd"cmTC_eb46d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\src.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb76b.dir\\Debug\\\\" /Fd"cmTC_eb76b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\src.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.39.33523 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb46d.dir\\Debug\\\\" /Fd"cmTC_eb46d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\src.cxx"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_eb76b.dir\\Debug\\\\" /Fd"cmTC_eb76b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\src.cxx"
           src.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\Debug\\cmTC_eb46d.exe" /INCREMENTAL /ILK:"cmTC_eb46d.dir\\Debug\\cmTC_eb46d.ilk" /NOLOGO "-LTCG" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-ovcr0s/Debug/cmTC_eb46d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-ovcr0s/Debug/cmTC_eb46d.lib" /MACHINE:X64  /machine:x64 cmTC_eb46d.dir\\Debug\\src.obj
-        LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\cmTC_eb46d.vcxproj]
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\Debug\\cmTC_eb76b.exe" /INCREMENTAL /ILK:"cmTC_eb76b.dir\\Debug\\cmTC_eb76b.ilk" /NOLOGO "-LTCG" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-lavugt/Debug/cmTC_eb76b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/build/CMakeFiles/CMakeScratch/TryCompile-lavugt/Debug/cmTC_eb76b.lib" /MACHINE:X64  /machine:x64 cmTC_eb76b.dir\\Debug\\src.obj
+        LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\cmTC_eb76b.vcxproj]
           Generating code
           Finished generating code
-          cmTC_eb46d.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\Debug\\cmTC_eb46d.exe
+          cmTC_eb76b.vcxproj -> C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\Debug\\cmTC_eb76b.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_eb46d.dir\\Debug\\cmTC_eb46d.tlog\\unsuccessfulbuild".
-          Touching "cmTC_eb46d.dir\\Debug\\cmTC_eb46d.tlog\\cmTC_eb46d.lastbuildstate".
-        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\cmTC_eb46d.vcxproj" (default targets).
+          Deleting file "cmTC_eb76b.dir\\Debug\\cmTC_eb76b.tlog\\unsuccessfulbuild".
+          Touching "cmTC_eb76b.dir\\Debug\\cmTC_eb76b.tlog\\cmTC_eb76b.lastbuildstate".
+        Done Building Project "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\cmTC_eb76b.vcxproj" (default targets).
         
         Build succeeded.
         
-        "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\cmTC_eb46d.vcxproj" (default target) (1) ->
+        "C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\cmTC_eb76b.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ovcr0s\\cmTC_eb46d.vcxproj]
+          LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [C:\\Users\\arean\\Dropbox\\Til mig selv\\Forskning\\Projekter\\MDP\\Git\\cpp\\MDPSolver\\build\\CMakeFiles\\CMakeScratch\\TryCompile-lavugt\\cmTC_eb76b.vcxproj]
         
             1 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:01.55
+        Time Elapsed 00:00:01.94
         
       exitCode: 0
 ...
