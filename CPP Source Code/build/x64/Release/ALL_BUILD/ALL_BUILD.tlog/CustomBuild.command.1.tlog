@@ -1,0 +1,10 @@
+^C:\USERS\AREAN\DROPBOX\TIL MIG SELV\FORSKNING\PROJEKTER\MDP\GIT\CPP\MDPSOLVER\CPP SOURCE CODE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/CPP Source Code" "-BC:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/CPP Source Code/build" --check-stamp-file "C:/Users/arean/Dropbox/Til mig selv/Forskning/Projekter/MDP/Git/cpp/MDPSolver/CPP Source Code/build/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
