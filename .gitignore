@@ -1,4 +1,8 @@
 /.vs
 /VisualStudioProject
 .vscode/
+
+__pycache__/
+*.pyc
+
 *.exe
