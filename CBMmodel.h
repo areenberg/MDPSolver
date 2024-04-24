@@ -38,9 +38,9 @@ public:
     
     //constructor and destructor
     CBMmodel() {}; //dummy-constructor
-    CBMmodel(int Ninput,int Linput,double discountInput,
+    CBMmodel(int components,int stages,double discountInput,
             string importProbPath);
-    CBMmodel(int Ninput,int Linput,double discountInput,
+    CBMmodel(int components,int stages,double discountInput,
         vector<vector<double>> pcm);
     CBMmodel(const CBMmodel& orig);
     virtual ~CBMmodel();

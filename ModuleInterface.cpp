@@ -78,8 +78,8 @@ void ModuleInterface::tbm(double discount,int components,int stages){
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
-    cout << "Selected time-based maintenance problem with " << problem.components <<
-     " components and " << problem.stages << " stages." << endl;
+    //cout << "Selected time-based maintenance problem with " << problem.components <<
+    // " components and " << problem.stages << " stages." << endl;
 }
 
 void ModuleInterface::cbm(double discount,int components,int stages,
@@ -90,8 +90,8 @@ py::list pCompMat){
     problem.components=components;
     problem.stages=stages;
     problem.pCompMat=pCompMat.cast<vector<vector<double>>>();
-    cout << "Selected condition-based maintenance problem with " << problem.components <<
-     " components and " << problem.stages << " stages." << endl;
+    //cout << "Selected condition-based maintenance problem with " << problem.components <<
+    // " components and " << problem.stages << " stages." << endl;
 }
 
 

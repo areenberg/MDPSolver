@@ -1,4 +1,6 @@
 from mdpsolver import solvermodule
+from mdpsolver.tbmaid import tbmaid
+from mdpsolver.cbmaid import cbmaid
 
 class model:
     
@@ -77,7 +79,9 @@ class model:
     def tbm(self,discount=0.99,components=2,stages=10):
         #the time-based maintenance problem
         self.mdl.tbm(discount=discount,components=components,stages=stages)
+        self.aid = tbmaid(components=components,stages=stages)
     
     def cbm(self,discount=0.99,components=2,stages=10,pCompMat=list()):
         #the condition-based maintenance problem
-        self.mdl.cmb(discount=discount,components=components,stages=stages,pCompMat=pCompMat)
+        self.mdl.cbm(discount=discount,components=components,stages=stages,pCompMat=pCompMat)
+        self.aid = cbmaid(components=components,stages=stages)

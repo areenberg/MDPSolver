@@ -29,23 +29,23 @@
 
 using namespace std;
 
-TBMmodel::TBMmodel(int N, int L, double discount):
-	N(N),
-	L(L),
+TBMmodel::TBMmodel(int components, int stages, double discount):
+	N(components),
+	L(stages-1),
 	discount(discount),
-	numberOfStates(intPow(L + 1, N)),
-	numberOfActions(intPow(2, N)),
+	numberOfStates(intPow(stages, components)),
+	numberOfActions(intPow(2, components)),
 	rj(-10),
 	Rs(-10),
-	Rf(-(double)5 * N),
+	Rf(-(double)5 * components),
 	penalty(-1e6),
 	f(0.1),
 	fmin(0.01),
 	fhat(0.1),
 	//policy(numberOfStates, 0),
-	failOddsVec(N,0),
-	sidxMat(numberOfStates, vector<int>(N)),
-	aidxMat(numberOfActions, vector<int>(N)),
+	failOddsVec(components,0),
+	sidxMat(numberOfStates, vector<int>(components)),
+	aidxMat(numberOfActions, vector<int>(components)),
 	sidxSumMat(numberOfStates, 0)
 {
 	//initialize sidxMat

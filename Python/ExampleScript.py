@@ -7,7 +7,7 @@ mdl = mdpsolver.model()
 
 rewards = [[0.5,-0.1],
            [1.0,-0.2],
-           [0.0,50.0]]
+           [50.0,0.0]]
 
 #alternative representation [stateFrom,action,reward]
 #rewardsElementwise = [[0,0,0.5],
@@ -47,7 +47,7 @@ mdl.mdp(discount=0.8,
 #        rewardsElementwise=rewardsElementwise,
 #        tranMatElementwise=tranMatElementwise)
 
-mdl.solve(algorithm="pi",update="gs",verbose=False)
+mdl.solve(algorithm="mpi",update="gs",verbose=False)
 
 print(mdl.getPolicy())
 print(mdl.getValueVector())
@@ -59,18 +59,23 @@ print(mdl.getValueVector())
 #mdl.saveToFile("optimal_values.csv","values")
 
 
-#mdl1 = mdpsolver.Model()
+
+
+#SPECIFIC PROBLEMS
+
+#mdl1 = mdpsolver.model()
 #mdl1.tbm(discount=0.99,components=2,stages=10)
-#mdl1.solve(verbose=True)
+#mdl1.solve()
 
 #print(mdl1.getPolicy())
-#print(mdl1.getValueVector())
+#print(mdl1.aid.actionToReplace(mdl1.getAction(mdl1.aid.compToState([9,9]))))
 
-#mdl2 = mdpsolver.Model()
-#mat = [[0.05,0.40,0.30,0.20,0.05,0.00,0.00,0.00,0.00,0.00,0.00],
-#       [0.05,0.40,0.30,0.20,0.05,0.00,0.00,0.00,0.00,0.00,0.00]]
+#mdl2 = mdpsolver.model()
+#mat = [[0.0,0.1,0.2,0.4,0.2,0.1,0.00,0.00,0.00,0.0],
+#       [0.0,0.1,0.2,0.4,0.2,0.1,0.00,0.00,0.00,0.0]]
 
 #mdl2.cbm(discount=0.99,components=2,stages=10,pCompMat=mat)
 #mdl2.solve()
 
 #print(mdl2.getPolicy())
+#print(mdl2.aid.actionToReplace(mdl2.getAction(mdl2.aid.compToState([9,9]))))

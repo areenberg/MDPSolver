@@ -36,23 +36,22 @@
 
 using namespace std;
 
-CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //default constructor
-    N(N),
-    L(L),
+CBMmodel::CBMmodel(int components, int stages, double discount, string importProbPath): //default constructor
+    N(components),
+    L(stages-1),
     discount(discount),
-    numberOfStates(intPow(L+1,N)), //unsigned INT_MAX is 2147483647
-    numberOfActions(intPow(2,N)),
+    numberOfStates(intPow(stages,components)), //unsigned INT_MAX is 2147483647
+    numberOfActions(intPow(2,components)),
     cp(-5),
     cc(-11),
     cs(-4),
     p(-300),
-	kN(max(1,N-1)),
+	kN(max(1,components-1)),
     importProbs(!importProbPath.empty()),
-    pCompMat(N,vector<double>(L+1)),
-	pFailCompMat(N, vector<double>(L + 1)),
-    //policy(numberOfStates,0),
-	sidxMat(numberOfStates, vector<int>(N)),
-	aidxMat(numberOfActions, vector<int>(N))
+    pCompMat(components,vector<double>(stages)),
+	pFailCompMat(components, vector<double>(stages)),
+	sidxMat(numberOfStates, vector<int>(components)),
+	aidxMat(numberOfActions, vector<int>(components))
 {
     
     //import component probabilities
@@ -88,22 +87,21 @@ CBMmodel::CBMmodel(int N, int L, double discount, string importProbPath): //defa
 	}
 }
 
-CBMmodel::CBMmodel(int N, int L, double discount, vector<vector<double>> pcm): //default constructor
-    N(N),
-    L(L),
+CBMmodel::CBMmodel(int components, int stages, double discount, vector<vector<double>> pcm): //default constructor
+    N(components),
+    L(stages-1),
     discount(discount),
-    numberOfStates(intPow(L+1,N)), //unsigned INT_MAX is 2147483647
-    numberOfActions(intPow(2,N)),
+    numberOfStates(intPow(stages,components)), //unsigned INT_MAX is 2147483647
+    numberOfActions(intPow(2,components)),
     cp(-5),
     cc(-11),
     cs(-4),
     p(-300),
-	kN(max(1,N-1)),
+	kN(max(1,components-1)),
     pCompMat(pcm),
-	pFailCompMat(N, vector<double>(L + 1)),
-    //policy(numberOfStates,0),
-	sidxMat(numberOfStates, vector<int>(N)),
-	aidxMat(numberOfActions, vector<int>(N))
+	pFailCompMat(components, vector<double>(stages)),
+	sidxMat(numberOfStates, vector<int>(components)),
+	aidxMat(numberOfActions, vector<int>(components))
 {
     
 	// calculate tail probabilities
