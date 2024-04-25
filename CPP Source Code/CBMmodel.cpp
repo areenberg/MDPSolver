@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+* Copyright (c) 2024 Anders Reenberg Andersen and Jesper Fink Andersen
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,24 +36,36 @@
 
 using namespace std;
 
-CBMmodel::CBMmodel(int components, int stages, double discount, string importProbPath): //default constructor
+CBMmodel::CBMmodel(double discount,
+					int components,
+            		int stages,
+            		string importProbPath,
+            		double preventiveCost,
+            		double correctiveCost,
+            		double setupCost,
+            		double failurePenalty,
+            		int kOfN): //default constructor
     N(components),
     L(stages-1),
     discount(discount),
     numberOfStates(intPow(stages,components)), //unsigned INT_MAX is 2147483647
     numberOfActions(intPow(2,components)),
-    cp(-5),
-    cc(-11),
-    cs(-4),
-    p(-300),
-	kN(max(1,components-1)),
+    cp(preventiveCost),
+    cc(correctiveCost),
+    cs(setupCost),
+    p(failurePenalty),
+	kN(kOfN),
     importProbs(!importProbPath.empty()),
     pCompMat(components,vector<double>(stages)),
 	pFailCompMat(components, vector<double>(stages)),
 	sidxMat(numberOfStates, vector<int>(components)),
 	aidxMat(numberOfActions, vector<int>(components))
 {
-    
+    //set K-out-of-N
+	if (kN<=0||kN>N){
+		kN=N;	
+	}
+
     //import component probabilities
     if (importProbs) {
         importComponentProbs(importProbPath);
@@ -87,23 +99,35 @@ CBMmodel::CBMmodel(int components, int stages, double discount, string importPro
 	}
 }
 
-CBMmodel::CBMmodel(int components, int stages, double discount, vector<vector<double>> pcm): //default constructor
+CBMmodel::CBMmodel(double discount,
+            		int components,
+            		int stages,
+            		vector<vector<double>> pcm,
+            		double preventiveCost,
+            		double correctiveCost,
+            		double setupCost,
+            		double failurePenalty,
+            		int kOfN): //default constructor
     N(components),
     L(stages-1),
     discount(discount),
     numberOfStates(intPow(stages,components)), //unsigned INT_MAX is 2147483647
     numberOfActions(intPow(2,components)),
-    cp(-5),
-    cc(-11),
-    cs(-4),
-    p(-300),
-	kN(max(1,components-1)),
+    cp(preventiveCost),
+    cc(correctiveCost),
+    cs(setupCost),
+    p(failurePenalty),
+	kN(kOfN),
     pCompMat(pcm),
 	pFailCompMat(components, vector<double>(stages)),
 	sidxMat(numberOfStates, vector<int>(components)),
 	aidxMat(numberOfActions, vector<int>(components))
 {
-    
+    //set K-out-of-N
+	if (kN<=0||kN>N){
+		kN=N;	
+	}
+
 	// calculate tail probabilities
 	for (int i = 0; i < N; ++i) {
 		pFailCompMat[i][0] = pCompMat[i][L];

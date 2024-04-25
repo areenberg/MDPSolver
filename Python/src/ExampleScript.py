@@ -74,19 +74,19 @@ print(mdl.getPolicy())
 
 #SPECIFIC PROBLEMS
 
-mdl1 = mdpsolver.model()
-mdl1.tbm(discount=0.99,components=2,stages=10)
-mdl1.solve()
+#mdl1 = mdpsolver.model()
+#mdl1.tbm(discount=0.99,components=2,stages=10)
+#mdl1.solve()
 
-print(mdl1.getPolicy())
+#print(mdl1.getPolicy())
 #print(mdl1.aux.actionToReplace(mdl1.getAction(mdl1.aux.compToState([9,9]))))
 
-#mdl2 = mdpsolver.model()
-#mat = [[0.0,0.1,0.2,0.4,0.2,0.1,0.00,0.00,0.00,0.0],
-#       [0.0,0.1,0.2,0.4,0.2,0.1,0.00,0.00,0.00,0.0]]
+mdl2 = mdpsolver.model()
+mat = [[0.05,0.1,0.2,0.35,0.15,0.05,0.00,0.00,0.00,0.1],
+       [0.05,0.1,0.2,0.35,0.15,0.05,0.00,0.00,0.00,0.1]]
 
-#mdl2.cbm(discount=0.99,components=2,stages=10,pCompMat=mat)
-#mdl2.solve()
+mdl2.cbm(discount=0.99,components=2,stages=10,pCompMat=mat)
+mdl2.solve()
 
-#print(mdl2.getPolicy())
+print(mdl2.getPolicy())
 #print(mdl2.aux.actionToReplace(mdl2.getAction(mdl2.aux.compToState([9,9]))))

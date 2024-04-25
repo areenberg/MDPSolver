@@ -101,7 +101,23 @@ class model:
                      failureProbHat=failureProbHat)
         self.aux = tbmaux(components=components,stages=stages)
     
-    def cbm(self,discount=0.99,components=2,stages=10,pCompMat=list()):
+    def cbm(self,discount=0.99,
+            components=2,
+            stages=10,
+            pCompMat=list(),
+            preventiveCost=-5,
+            correctiveCost=-11,
+            setupCost=-4,
+            failurePenalty=-300,
+            kOfN=-1):
         #the condition-based maintenance problem
-        self.mdl.cbm(discount=discount,components=components,stages=stages,pCompMat=pCompMat)
+        self.mdl.cbm(discount=discount,
+                     components=components,
+                     stages=stages,
+                     pCompMat=pCompMat,
+                     preventiveCost=preventiveCost,
+                     correctiveCost=correctiveCost,
+                     setupCost=setupCost,
+                     failurePenalty=failurePenalty,
+                     kOfN=kOfN)
         self.aux = cbmaux(components=components,stages=stages)

@@ -39,7 +39,12 @@ PYBIND11_MODULE(solvermodule, m) {
         py::arg("discount")=0.99,
         py::arg("components")=2,
         py::arg("stages")=10,
-        py::arg("pCompMat"))
+        py::arg("pCompMat")=py::list(),
+        py::arg("preventiveCost")=-5,
+        py::arg("correctiveCost")=-11,
+        py::arg("setupCost")=-4,
+        py::arg("failurePenalty")=-300,
+        py::arg("kOfN")=-1)
         .def("solve", &ModuleInterface::solve,"Solves the policy", //SOLVE
         py::arg("algorithm")="mpi",
         py::arg("tolerance")=1e-3,

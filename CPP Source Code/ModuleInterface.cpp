@@ -98,14 +98,26 @@ void ModuleInterface::tbm(double discount,
     // " components and " << problem.stages << " stages." << endl;
 }
 
-void ModuleInterface::cbm(double discount,int components,int stages,
-py::list pCompMat){
+void ModuleInterface::cbm(double discount,
+    int components,
+    int stages,
+    py::list pCompMat,
+    double preventiveCost,
+    double correctiveCost,
+    double setupCost,
+    double failurePenalty,
+    int kOfN){
     //selects the CBM problem
     problem.problemType="cbm";
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
     problem.pCompMat=pCompMat.cast<vector<vector<double>>>();
+    problem.preventiveCost=preventiveCost;
+    problem.correctiveCost=correctiveCost;
+    problem.setupCost=setupCost;
+    problem.failurePenalty=failurePenalty;
+    problem.kOfN=kOfN;
     //cout << "Selected condition-based maintenance problem with " << problem.components <<
     // " components and " << problem.stages << " stages." << endl;
 }
@@ -130,7 +142,7 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
         GeneralMDPmodel mdl(&problem.rewards,&problem.tranMat,problem.discount); //General MDP model
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }else if (problem.problemType.compare("tbm")==0){
-        TBMmodel mdl(problem.discount,
+        TBMmodel mdl(problem.discount, //Time-based maintenance model
         problem.components,
         problem.stages,
         problem.replacementCost,
@@ -139,10 +151,18 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
         problem.expiredNotFixedCost,
         problem.failureProb,
         problem.failureProbMin,
-        problem.failureProbHat); //Time-based maintenance model
+        problem.failureProbHat);
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }else if(problem.problemType.compare("cbm")==0){
-        CBMmodel mdl(problem.components,problem.stages,problem.discount,problem.pCompMat); //Condition-based maintenance model
+        CBMmodel mdl(problem.discount, //Condition-based maintenance model
+        problem.components,
+        problem.stages,
+        problem.pCompMat,
+        problem.preventiveCost,
+        problem.correctiveCost,
+        problem.setupCost,
+        problem.failurePenalty,
+        problem.kOfN);
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }
         

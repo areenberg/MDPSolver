@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+* Copyright (c) 2024 Anders Reenberg Andersen and Jesper Fink Andersen
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,10 +37,24 @@ public:
     
     //constructor and destructor
     CBMmodel() {}; //dummy-constructor
-    CBMmodel(int components,int stages,double discountInput,
-            string importProbPath);
-    CBMmodel(int components,int stages,double discountInput,
-        vector<vector<double>> pcm);
+    CBMmodel(double discount=0.99,
+            int components=2,
+            int stages=10,
+            string importProbPath="pCompMat.csv",
+            double preventiveCost=-5,
+            double correctiveCost=-11,
+            double setupCost=-4,
+            double failurePenalty=-300,
+            int kOfN=-1);
+    CBMmodel(double discount=0.99,
+            int components=2,
+            int stages=10,
+            vector<vector<double>> pcm={},
+            double preventiveCost=-5,
+            double correctiveCost=-11,
+            double setupCost=-4,
+            double failurePenalty=-300,
+            int kOfN=-1);
     CBMmodel(const CBMmodel& orig);
     virtual ~CBMmodel();
 

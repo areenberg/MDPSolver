@@ -5,4 +5,7 @@
 __pycache__/
 *.pyc
 
+build/
+
+*.txt
 *.exe

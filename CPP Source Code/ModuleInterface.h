@@ -76,11 +76,15 @@ public:
         int stages;
         double replacementCost;
         double setupCost;
+        double preventiveCost;
+        double correctiveCost;
+        double failurePenalty;
         double unexpectedFailureCost;
         double expiredNotFixedCost;
         double failureProb;
         double failureProbMin;
         double failureProbHat;
+        int kOfN;
         vector<vector<double>> pCompMat;
     } problem;
 
@@ -120,17 +124,25 @@ public:
     string tranMatFromFile); //option4: transition mat is loaded from a file
 
     // ------ pre-defined MDP problems ------  
-    void tbm(double discount,
-    int components,
-    int stages,
-    double replacementCost,
-    double setupCost,
-    double unexpectedFailureCost,
-    double expiredNotFixedCost,
-    double failureProb,
-    double failureProbMin,
-    double failureProbHat); //select TBM problem
-    void cbm(double discount,int components,int stages,py::list pCompMat); //select CBM problem
+    void tbm(double discount, //select TBM problem
+        int components,
+        int stages,
+        double replacementCost,
+        double setupCost,
+        double unexpectedFailureCost,
+        double expiredNotFixedCost,
+        double failureProb,
+        double failureProbMin,
+        double failureProbHat); 
+    void cbm(double discount, //select CBM problem
+        int components,
+        int stages,
+        py::list pCompMat,
+        double preventiveCost,
+        double correctiveCost,
+        double setupCost,
+        double failurePenalty,
+        int kOfN);
 
     //-------------------------------
 
