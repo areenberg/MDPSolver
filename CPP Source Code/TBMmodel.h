@@ -37,7 +37,16 @@ public:
     
     //constructor and destructor
     TBMmodel() {}; //dummy-constructor
-    TBMmodel(int components,int stages,double discount);
+    TBMmodel(double discount=0.99,
+    int components=2,
+    int stages=10,
+    double replacementCost=-10,
+    double setupCost=-10,
+    double unexpectedFailureCost=-20,
+    double expiredNotFixedCost=-1e6,
+    double failureProb=0.1,
+    double failureProbMin=0.01,
+    double failureProbHat=0.1);
     TBMmodel(const TBMmodel& orig);
     virtual ~TBMmodel();
 

@@ -78,9 +78,27 @@ class model:
             tranMatColumns=tranMatColumns,
             tranMatFromFile=tranMatFromFile)
 
-    def tbm(self,discount=0.99,components=2,stages=10):
+    def tbm(self,discount=0.99,
+            components=2,
+            stages=10,
+            replacementCost=-10,
+            setupCost=-10,
+            unexpectedFailureCost=-20,
+            expiredNotFixedCost=-1e6,
+            failureProb=0.1,
+            failureProbMin=0.01,
+            failureProbHat=0.1):
         #the time-based maintenance problem
-        self.mdl.tbm(discount=discount,components=components,stages=stages)
+        self.mdl.tbm(discount=discount,
+                     components=components,
+                     stages=stages,
+                     replacementCost=-10,
+                     setupCost=setupCost,
+                     unexpectedFailureCost=unexpectedFailureCost,
+                     expiredNotFixedCost=expiredNotFixedCost,
+                     failureProb=failureProb,
+                     failureProbMin=failureProbMin,
+                     failureProbHat=failureProbHat)
         self.aux = tbmaux(components=components,stages=stages)
     
     def cbm(self,discount=0.99,components=2,stages=10,pCompMat=list()):

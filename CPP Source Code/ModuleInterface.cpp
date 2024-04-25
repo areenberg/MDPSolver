@@ -72,12 +72,28 @@ void ModuleInterface::mdp(double discount,
 
 }
 
-void ModuleInterface::tbm(double discount,int components,int stages){
+void ModuleInterface::tbm(double discount,
+    int components,
+    int stages,
+    double replacementCost,
+    double setupCost,
+    double unexpectedFailureCost,
+    double expiredNotFixedCost,
+    double failureProb,
+    double failureProbMin,
+    double failureProbHat){
     //selects the TBM problem
     problem.problemType="tbm";
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
+    problem.replacementCost=replacementCost;
+    problem.setupCost=setupCost;
+    problem.unexpectedFailureCost=unexpectedFailureCost;
+    problem.expiredNotFixedCost=expiredNotFixedCost;
+    problem.failureProb=failureProb;
+    problem.failureProbMin=failureProbMin;
+    problem.failureProbHat=failureProbHat;
     //cout << "Selected time-based maintenance problem with " << problem.components <<
     // " components and " << problem.stages << " stages." << endl;
 }
@@ -114,7 +130,16 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
         GeneralMDPmodel mdl(&problem.rewards,&problem.tranMat,problem.discount); //General MDP model
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }else if (problem.problemType.compare("tbm")==0){
-        TBMmodel mdl(problem.components,problem.stages,problem.discount); //Time-based maintenance model
+        TBMmodel mdl(problem.discount,
+        problem.components,
+        problem.stages,
+        problem.replacementCost,
+        problem.setupCost,
+        problem.unexpectedFailureCost,
+        problem.expiredNotFixedCost,
+        problem.failureProb,
+        problem.failureProbMin,
+        problem.failureProbHat); //Time-based maintenance model
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }else if(problem.problemType.compare("cbm")==0){
         CBMmodel mdl(problem.components,problem.stages,problem.discount,problem.pCompMat); //Condition-based maintenance model

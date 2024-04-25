@@ -74,11 +74,11 @@ print(mdl.getPolicy())
 
 #SPECIFIC PROBLEMS
 
-#mdl1 = mdpsolver.model()
-#mdl1.tbm(discount=0.99,components=2,stages=10)
-#mdl1.solve()
+mdl1 = mdpsolver.model()
+mdl1.tbm(discount=0.99,components=2,stages=10)
+mdl1.solve()
 
-#print(mdl1.getPolicy())
+print(mdl1.getPolicy())
 #print(mdl1.aux.actionToReplace(mdl1.getAction(mdl1.aux.compToState([9,9]))))
 
 #mdl2 = mdpsolver.model()

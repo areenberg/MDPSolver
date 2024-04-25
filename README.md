@@ -125,3 +125,7 @@ mdl.mdp(discount=0.8,
 # User manual
 
 Further information can be found in the wiki for `mdpsolver` on Github.
+
+# How to cite
+
+[![DOI](https://zenodo.org/badge/294063917.svg)](https://zenodo.org/badge/latestdoi/294063917)
