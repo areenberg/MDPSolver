@@ -71,7 +71,7 @@ print(mdl.getPolicy())
 
 `mdpsolver` has three alternative formats for large and highly sparse transition probability matrices.
 
-**Elementwise representation (excluding elements containing zeros):**
+**(1) Elementwise representation (excluding elements containing zeros):**
 
 ```python
 #[from_state,action,to_state,probability]
@@ -96,7 +96,7 @@ mdl.mdp(discount=0.8,
         tranMatElementwise=tranMatElementwise)
 ```
 
-**Probabilities and column (to_state) indices in separate lists:**
+**(2) Probabilities and column (to_state) indices in separate lists:**
 
 ```python
 tranMatProbs = [[[0.9,0.1],[0.1,0.9]],
@@ -114,7 +114,7 @@ mdl.mdp(discount=0.8,
 
 ```
 
-**Load the elementwise representation from a file:**
+**(3) Load the elementwise representation from a file:**
 
 ```python
 mdl.mdp(discount=0.8,
