@@ -1,6 +1,6 @@
 # `mdpsolver`: An efficient solver for Markov Decision Processes
  
-`mdpsolver` is the Python package for optimizing the policies of Markov Decision Processes (MDPs) with infinite-horizon and the expected total discounted reward optimality criterion. 
+`mdpsolver` is the Python package for deriving the policies of Markov Decision Processes (MDPs) with infinite-horizon and the expected total discounted reward optimality criterion. 
 
 ## Features
 
