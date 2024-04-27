@@ -19,6 +19,8 @@ class model:
               update="standard",
               parIterLim=100,
               SORrelaxation=1.0,
+              initPolicy=list(),
+              initValueVector=list(),
               verbose=False):
         #solves the problem employing the specified algorithm
         self.mdl.solve(algorithm=algorithm,
@@ -26,8 +28,14 @@ class model:
               update=update,
               parIterLim=parIterLim,
               SORrelaxation=SORrelaxation,
+              initPolicy=initPolicy,
+              initValueVector=initValueVector,
               verbose=verbose)
     
+    def getRuntime(self):
+        #returns the runtime in milliseconds
+        return self.mdl.getRuntime()
+        
     def printPolicy(self):
         #print the entire policy in the terminal
         self.mdl.printPolicy()

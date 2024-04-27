@@ -51,8 +51,11 @@ PYBIND11_MODULE(solvermodule, m) {
         py::arg("update")="standard",
         py::arg("parIterLim")=100,
         py::arg("SORrelaxation")=1.0,
+        py::arg("initPolicy")=py::list(),
+        py::arg("initValueVector")=py::list(),
         py::arg("verbose")=false)
-        .def("printPolicy", &ModuleInterface::printPolicy,"Prints the entire policy.") //OUTPUT
+        .def("getRuntime",&ModuleInterface::getRuntime,"Returns the runtime in milliseconds.") //OUTPUT
+        .def("printPolicy", &ModuleInterface::printPolicy,"Prints the entire policy.")
         .def("printValueVector", &ModuleInterface::printValueVector,"Prints the entire value vector.")
         .def("getAction", &ModuleInterface::getAction,"Returns an action index from the optimized policy.",py::arg("stateIndex")=0)
         .def("getValue", &ModuleInterface::getValue,"Returns a value from the optimized policy.",py::arg("stateIndex")=0)

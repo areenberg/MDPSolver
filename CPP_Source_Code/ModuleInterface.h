@@ -102,7 +102,8 @@ public:
 
     //results
     struct Results{
-        bool evaluated=false;
+        //duration (runtime) in milliseconds
+        double duration=0;
     } results;
 
     
@@ -146,7 +147,14 @@ public:
 
     //-------------------------------
 
-    void solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, bool verbose); //solves the problem
+    void solve(string algorithm="mpi", //solves the problem
+     double tolerance=1e-3,
+     string update="standard",
+     int parIterLim=100,
+     double SORrelaxation=1.0,
+     py::list initPolicy=py::list(),
+     py::list initValueVector=py::list(),
+     bool verbose=false); 
     
     //-------------------------------
 
@@ -156,6 +164,7 @@ public:
     void printValueVector(); //prints the value vector
     int getAction(int sidx); //returns the action index (from the optimized policy) associated with the current state
     double getValue(int sidx); //returns the value (from the optimized policy) associated with the current state
+    double getRuntime(); //returns the runtime in milliseconds
     py::list getPolicy(); //returns the entire policy
     py::list getValueVector(); //returns the entire value vector
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 
@@ -163,6 +172,8 @@ public:
 private:
 
     //METHODS
+    void setInitPolicy(py::list initPolicy);
+    void setInitValueVector(py::list initValueVector);
     void loadTranMatWithZeros(py::list tranMatWithZeros);
     void loadRewardsElementwise(py::list rewardsElementwise);
     void loadTranMatElementwise(py::list tranMatElementwise);

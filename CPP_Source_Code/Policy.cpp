@@ -36,7 +36,7 @@ Policy::~Policy() {
 }
 
 void Policy::initialize(){
-    
+    policy.resize(1,-1);
 }
 
 void Policy::setSize(int numberOfStates){

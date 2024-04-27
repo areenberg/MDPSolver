@@ -59,7 +59,7 @@ private:
     //parameters
     double epsilon, diffMax, diffMin, norm, tolerance, SORrelaxation;
     int iterLim, parIter, parIterLim, PIparIterLim;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, printStuff;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff;
 
     //pointer to model, policy, and value vector
     ModelType * model;

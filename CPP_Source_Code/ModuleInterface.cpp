@@ -123,7 +123,7 @@ void ModuleInterface::cbm(double discount,
 }
 
 
-void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, bool verbose){
+void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, py::list initPolicy, py::list initValueVector, bool verbose){
 
     //store solver settings
     settings.algorithm=algorithm;
@@ -132,6 +132,8 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
     settings.parIterLim=parIterLim;
     settings.SORrelaxation=SORrelaxation;
     settings.verbose=verbose;
+    setInitPolicy(initPolicy);
+    setInitValueVector(initValueVector);
 
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
@@ -165,7 +167,34 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
         problem.kOfN);
         solver.solve(&mdl,&problem.policy,&problem.valueVector);
     }
+
+    //save duration (runtime) in milliseconds
+    results.duration=solver.duration;
         
+}
+
+void ModuleInterface::setInitPolicy(py::list initPolicy){
+    if (initPolicy.size()>0){
+        //cout << "Initializing with policy:" << endl;
+        problem.policy.setSize(initPolicy.size());
+        for (int sidx=0; sidx<initPolicy.size(); sidx++){
+            int a = initPolicy[sidx].cast<int>();
+            //cout << a << endl;
+            problem.policy.assignPolicy(sidx,a);    
+        }
+    }
+}
+
+void ModuleInterface::setInitValueVector(py::list initValueVector){
+    if (initValueVector.size()>0){
+        //cout << "Initializing with values:" << endl;
+        problem.valueVector.setSize(initValueVector.size());
+        for (int sidx=0; sidx<initValueVector.size(); sidx++){
+            double v = initValueVector[sidx].cast<double>();
+            //cout << v << endl;
+            problem.valueVector.assignValue(sidx,v);    
+        }
+    }    
 }
 
 py::list ModuleInterface::getPolicy(){
@@ -236,6 +265,10 @@ void ModuleInterface::saveValueVectorToFile(string fileName, char sep){
         outFile << sidx << sep << problem.valueVector.valueVector[sidx] << endl;
     }
     outFile.close();
+}
+
+double ModuleInterface::getRuntime(){
+    return(results.duration);
 }
 
 void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){

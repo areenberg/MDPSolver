@@ -45,8 +45,10 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	parIterLim(parIterLim), //partial evaluation iteration limit in MPI
 	SORrelaxation(SORrelaxation),
 	//others
-	iterLim((int)1e5), //iteration limit
-	PIparIterLim(1000000), //iteration limit for policy evaluation in PI
+	iterLim((int)1e6), //iteration limit
+	PIparIterLim((int)1e6), //iteration limit for policy evaluation in PI
+	initPol(false),
+	initVal(false),
 	printStuff(verbose), //set "true" to print algorithm progress at runtime
 	duration(0),
 	converged(false),
@@ -69,12 +71,18 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	//The MDP is solved using the expected total discounted reward criterion.
 	//All probabilities and rewards are calculated "on demand".
 
-        //initialize value vectors and their pointers
-        model = mdl;
-        policy = ply;
-        valueVector = vv;
-        policy->setSize(*model->getNumberOfStates());
-        valueVector->setSize(*model->getNumberOfStates());
+    //initialize value vectors and their pointers
+    model = mdl;
+    policy = ply;
+	valueVector = vv;
+	if (policy->policy.size()==1&&policy->policy[0]==-1){
+		policy->setSize(*model->getNumberOfStates());
+		initPol=true;
+	}
+	if (valueVector->valueVector.size()==1&&valueVector->valueVector[0]==-1){
+		valueVector->setSize(*model->getNumberOfStates());
+		initVal=true;
+	}
 	//v.assign(model.getNumberOfStates(), 0);
 	initValue(); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
 	vp = &valueVector->valueVector;
@@ -344,7 +352,7 @@ void ModifiedPolicyIteration::partialEvaluationSOR() {
 
 
 void ModifiedPolicyIteration::initValue(){
-    //step 1 on algorithm on page 213.
+    //step 1 in algorithm on page 213.
 	//initializing the value vector, v, such that Bv>0
 
 	//initialize policy as maximum reward in each state
@@ -357,7 +365,9 @@ void ModifiedPolicyIteration::initValue(){
 		model->updateNumberOfActions(s);
 		for (int a = 0; a < *model->getNumberOfActions(); a++) {
 			if (*model->reward(s, a) > maxRew) {
-				policy->assignPolicy(s,a); //argmax_a r(s,a)
+				if (initPol){
+					policy->assignPolicy(s,a); //argmax_a r(s,a)
+				}
 				maxRew = *model->reward(s, a); //max_a r(s,a)
 			}
 		}
@@ -369,12 +379,16 @@ void ModifiedPolicyIteration::initValue(){
 			maxMaxRew = maxRew;
 		}
 
-		valueVector->valueVector[s] = maxRew;
+		if (initVal){
+			valueVector->valueVector[s] = maxRew;
+		}
 	}
 
 	//initialize v
-	for (int s = 0; s < *model->getNumberOfStates(); ++s) {
-		valueVector->valueVector[s] += *model->getDiscount() / (1 - *model->getDiscount()) * minMaxRew;
+	if (initVal){
+		for (int s = 0; s < *model->getNumberOfStates(); ++s) {
+			valueVector->valueVector[s] += *model->getDiscount() / (1 - *model->getDiscount()) * minMaxRew;
+		}
 	}
 
 	//initialize  diffMin and diffMax

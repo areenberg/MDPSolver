@@ -40,7 +40,7 @@ public:
     virtual ~Policy();
     
     //VARIABLES
-    vector<int> policy;    
+    vector<int> policy;
     
     //METHODS
     int* getPolicy(int& sidx);

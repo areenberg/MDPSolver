@@ -35,9 +35,8 @@ ValueVector::ValueVector(const ValueVector& orig) {
 ValueVector::~ValueVector() {
 }
 
-
 void ValueVector::initialize(){
-    
+    valueVector.resize(1,-1);    
 }
 
 void ValueVector::setSize(int numberOfStates){
