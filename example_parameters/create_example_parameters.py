@@ -139,19 +139,18 @@ def rewards(capacity,rewardCust1,rewardCust2,fileName):
 #-----------------------------
 
 #rewards_example2.csv
-capacity=10
+capacity=100
 rewardCust1=1
-rewardCust2=5
+rewardCust2=1000
 rewards(capacity,rewardCust1,rewardCust2,"rewards_example2.csv")
 
 #rewards_example3.csv
-capacity=10
-rewardCust1=1
-rewardCust2=2
+rewardCust1=10
+rewardCust2=980
 rewards(capacity,rewardCust1,rewardCust2,"rewards_example3.csv")
 
 #transitions.csv
-arrRate1=5
-arrRate2=1
+arrRate1=50
+arrRate2=10
 serRate=3/4
 tranMat(arrRate1,arrRate2,serRate,capacity,"transitions.csv")

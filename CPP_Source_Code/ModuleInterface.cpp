@@ -344,7 +344,7 @@ void ModuleInterface::loadRewardsFromFile(string rewardsFromFile, char sep, bool
     double r;
     int numberOfStates=0;
 
-    //determine number of States
+    //determine number of states
     ifstream file(rewardsFromFile);
     if (!file.is_open()) {
         cerr << "Error: Unable to open " << rewardsFromFile << endl;
@@ -401,6 +401,7 @@ void ModuleInterface::loadRewardsFromFile(string rewardsFromFile, char sep, bool
     }
 
     //assign values
+    i=0;
     while (getline(file,line)){
         if (!header||i>0){
             stringstream lineStream(line);
