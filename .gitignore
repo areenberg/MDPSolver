@@ -6,7 +6,10 @@ __pycache__/
 *.pyc
 
 build/
+dist/
 
 *.txt
 *.exe
-*.csv
+*.in
+*.toml
+*egg-info
