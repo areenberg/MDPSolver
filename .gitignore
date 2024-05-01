@@ -13,3 +13,4 @@ dist/
 *.in
 *.toml
 *egg-info
+*.Rhistory
