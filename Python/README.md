@@ -7,7 +7,7 @@
 * Available on PyPI.
 * Solver-engine developed in C++.
 * Available optimization algorithms: *Value iteration*, *Policy iteration*, and *Modified policy iteration*.  
-* Includes a variety of input formats available for users to choose from.
+* Includes support for sparse matrices.
 
 # Quick start guide
 
@@ -67,7 +67,7 @@ print(mdl.getPolicy())
 #[1, 1, 0]
 ```
 
-## Large transition matrix?
+## Sparse transition matrix?
 
 `mdpsolver` has three alternative formats for large and highly sparse transition probability matrices.
 

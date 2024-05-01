@@ -9,7 +9,7 @@ class model:
     def __init__(self):
         self.initialize()            
         
-    def initialize(self):
+    def initialize(self):        
         #create the solver object
         self.mdl = solvermodule.Model()
     
