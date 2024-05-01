@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 #Create transition probability matrix and rewards for the 'mdpsolver' examples.
 
@@ -42,6 +43,8 @@ def tranMat(arrRate1,arrRate2,serRate,capacity,fileName):
     pc1 = arrRate1/arrRate
     pc2 = 1-pc1
     
+    if os.path.exists(fileName):
+        os.remove(fileName)    
     with open(fileName, 'a') as file:
         file.write(f"stateFrom,action,stateTo,probability\n")
         for sidx in range(ns): #stateFrom (customer type 1)    
@@ -110,7 +113,9 @@ def tranMat(arrRate1,arrRate2,serRate,capacity,fileName):
 def rewards(capacity,rewardCust1,rewardCust2,fileName):
 
     ns = capacity+1
-    
+
+    if os.path.exists(fileName):
+        os.remove(fileName)        
     with open(fileName, 'a') as file:
         file.write(f"stateFrom,action,reward\n")
         for sidx in range(ns): #stateFrom (customer type 1)
@@ -133,24 +138,3 @@ def rewards(capacity,rewardCust1,rewardCust2,fileName):
                     out = [sidx+ns,aidx,rewardCust2]
                     str_out = ",".join(str(num) for num in out)
                     file.write(str_out + "\n")
-
-#-----------------------------
-#   CREATE FILES
-#-----------------------------
-
-#rewards_example2.csv
-capacity=100
-rewardCust1=1
-rewardCust2=1000
-rewards(capacity,rewardCust1,rewardCust2,"rewards_example2.csv")
-
-#rewards_example3.csv
-rewardCust1=10
-rewardCust2=980
-rewards(capacity,rewardCust1,rewardCust2,"rewards_example3.csv")
-
-#transitions.csv
-arrRate1=50
-arrRate2=10
-serRate=3/4
-tranMat(arrRate1,arrRate2,serRate,capacity,"transitions.csv")

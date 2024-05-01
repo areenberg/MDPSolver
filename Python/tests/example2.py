@@ -1,4 +1,5 @@
 import mdpsolver
+import example_model
 
 #EXAMPLE 2
 #In this example, we load the rewards and transition probabilities
@@ -16,14 +17,30 @@ import mdpsolver
 #accepting the second, rarer type.
 
 #---------------------------------------
+# CREATE PARAMETERS
+#---------------------------------------
+
+#rewards
+capacity=100
+rewardCust1=1
+rewardCust2=1000
+example_model.rewards(capacity,rewardCust1,rewardCust2,"rewards_example2.csv")
+
+#transitions
+arrRate1=50
+arrRate2=10
+serRate=3/4
+example_model.tranMat(arrRate1,arrRate2,serRate,capacity,"transitions_example2.csv")
+
+#---------------------------------------
 # VALUE ITERATION
 #---------------------------------------
 
 mdl1 = mdpsolver.model()
 
 mdl1.mdp(discount=0.99,
-        rewardsFromFile="example_parameters/rewards_example2.csv",
-        tranMatFromFile="example_parameters/transitions.csv")
+        rewardsFromFile="rewards_example2.csv",
+        tranMatFromFile="transitions_example2.csv")
 
 mdl1.solve(algorithm="vi")
 
@@ -36,8 +53,8 @@ print("Value iteration:",mdl1.getRuntime(),"milliseconds.")
 mdl2 = mdpsolver.model()
 
 mdl2.mdp(discount=0.99,
-        rewardsFromFile="example_parameters/rewards_example2.csv",
-        tranMatFromFile="example_parameters/transitions.csv")
+        rewardsFromFile="rewards_example2.csv",
+        tranMatFromFile="transitions_example2.csv")
 
 mdl2.solve(algorithm="pi",update="gs")
 
@@ -50,8 +67,8 @@ print("Policy iteration (w. Gauss-Seidel updates):",mdl2.getRuntime(),"milliseco
 mdl3 = mdpsolver.model()
 
 mdl3.mdp(discount=0.99,
-        rewardsFromFile="example_parameters/rewards_example2.csv",
-        tranMatFromFile="example_parameters/transitions.csv")
+        rewardsFromFile="rewards_example2.csv",
+        tranMatFromFile="transitions_example2.csv")
 
 mdl3.solve(algorithm="mpi")
 

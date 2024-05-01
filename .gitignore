@@ -14,3 +14,4 @@ dist/
 *.toml
 *egg-info
 *.Rhistory
+*.csv
