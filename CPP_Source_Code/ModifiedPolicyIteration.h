@@ -40,7 +40,7 @@ public:
     
     ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
-            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true);
+            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true, bool makeFinalCheck=true);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
@@ -59,7 +59,7 @@ private:
     //parameters
     double epsilon, diffMax, diffMin, norm, tolerance, SORrelaxation;
     int iterLim, parIter, parIterLim, PIparIterLim;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck;
 
     //pointer to model, policy, and value vector
     ModelType * model;

@@ -97,6 +97,8 @@ public:
         int parIterLim;
         double SORrelaxation;
         bool verbose;
+        bool postProcessing;
+        bool makeFinalCheck;
     } settings;
 
 
@@ -154,7 +156,9 @@ public:
      double SORrelaxation=1.0,
      py::list initPolicy=py::list(),
      py::list initValueVector=py::list(),
-     bool verbose=false); 
+     bool verbose=false,
+     bool postProcessing=true,
+     bool makeFinalCheck=true); 
     
     //-------------------------------
 

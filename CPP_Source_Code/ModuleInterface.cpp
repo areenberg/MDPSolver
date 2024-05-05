@@ -123,7 +123,16 @@ void ModuleInterface::cbm(double discount,
 }
 
 
-void ModuleInterface::solve(string algorithm, double tolerance, string update, int parIterLim, double SORrelaxation, py::list initPolicy, py::list initValueVector, bool verbose){
+void ModuleInterface::solve(string algorithm,
+                            double tolerance,
+                            string update,
+                            int parIterLim,
+                            double SORrelaxation,
+                            py::list initPolicy,
+                            py::list initValueVector,
+                            bool verbose,
+                            bool postProcessing,
+                            bool makeFinalCheck){
 
     //store solver settings
     settings.algorithm=algorithm;
@@ -132,12 +141,15 @@ void ModuleInterface::solve(string algorithm, double tolerance, string update, i
     settings.parIterLim=parIterLim;
     settings.SORrelaxation=SORrelaxation;
     settings.verbose=verbose;
+    settings.postProcessing=postProcessing;
+    settings.makeFinalCheck=makeFinalCheck;
     setInitPolicy(initPolicy);
     setInitValueVector(initValueVector);
 
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
-    settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose);
+    settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose,
+    settings.postProcessing, settings.makeFinalCheck);
 
     //create model object
     if (problem.problemType.compare("mdp")==0){

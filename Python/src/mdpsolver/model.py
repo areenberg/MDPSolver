@@ -21,7 +21,9 @@ class model:
               SORrelaxation=1.0,
               initPolicy=list(),
               initValueVector=list(),
-              verbose=False):
+              verbose=False,
+              postProcessing=True,
+              makeFinalCheck=True):
         #solves the problem employing the specified algorithm
         self.mdl.solve(algorithm=algorithm,
               tolerance=tolerance,
@@ -30,7 +32,9 @@ class model:
               SORrelaxation=SORrelaxation,
               initPolicy=initPolicy,
               initValueVector=initValueVector,
-              verbose=verbose)
+              verbose=verbose,
+              postProcessing=postProcessing,
+              makeFinalCheck=makeFinalCheck)
     
     def getRuntime(self):
         #returns the runtime in milliseconds

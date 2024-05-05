@@ -34,7 +34,7 @@ using namespace std;
 
 
 ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorithm,
-	string update, int parIterLim, double SORrelaxation, bool verbose):
+	string update, int parIterLim, double SORrelaxation, bool verbose, bool postProcessing, bool makeFinalCheck):
 	epsilon(epsilon),
 	useMPI(algorithm.compare("mpi") == 0),
 	usePI(algorithm.compare("pi") == 0),
@@ -50,7 +50,9 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	initPol(false),
 	initVal(false),
 	printStuff(verbose), //set "true" to print algorithm progress at runtime
-	duration(0),
+	postProcessing(postProcessing),
+	makeFinalCheck(makeFinalCheck),
+	duration(0.0),
 	converged(false),
 	parIter(0)
 {
@@ -168,21 +170,23 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 	}
 
+    auto t2 = chrono::high_resolution_clock::now(); //stop time
+	duration = (double) chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count() / 1e6;
+
+	//POST PROCESSING
+
 	//make sure v is the last updated vector if we use standard updates
-	if (useStd && vpOld != &valueVector->valueVector) { //vpOld points to last updated value vector at this point
+	if (postProcessing && useStd && vpOld != &valueVector->valueVector) { //vpOld points to last updated value vector at this point
 		valueVector->valueVector = v2; //copy content of v2 into v
 	}
 
 	//if using span stopping criterion alter final v using 6.6.12 in Puterman
-	if (useStd) {
+	if (postProcessing && useStd) {
 		if (printStuff) { cout << "Corrected values according to Eq. (6.6.12) in M. L. Puterman, 'Markov Decision Processes: Discrete Stochastic Dynamic Programming', Wiley." << endl; }
 		for (double& val : valueVector->valueVector) {
 			val += *model->getDiscount() / (1 - *model->getDiscount()) * diffMin;
 		}
 	}
-
-    auto t2 = chrono::high_resolution_clock::now(); //stop time
-	duration = (double) chrono::duration_cast<chrono::milliseconds>( t2 - t1 ).count();
 
 	if (printStuff) {
 		if (valueVector->valueVector.size()>3){
@@ -196,14 +200,16 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		}			 
 	}
 
-	if (iter == iterLim) {
-		if (printStuff) { cout << "Algorithm terminated at iteration limit." << endl; }
-	} else {
+	if(iter == iterLim && printStuff){
+		cout << "Algorithm terminated at iteration limit." << endl;
+	}else if (printStuff){
 		converged = true;
-		if (printStuff) { cout << "Solution found in " << iter << " iterations and " << duration << " milliseconds." << endl; }
+		cout << "Solution found in " << iter << " iterations and " << duration << " milliseconds." << endl;
 	}
 
-	checkFinalValue();
+	if (makeFinalCheck){
+		checkFinalValue();
+	}
 
 }
 
@@ -399,7 +405,7 @@ void ModifiedPolicyIteration::initValue(){
 
 void ModifiedPolicyIteration::checkFinalValue() {
 	//See if final value vector is within reason
-	//NB!! this function is specific to the TBMmodel replacement problem..
+	//NB!! this function is specific to the TBMmodel replacement problem.
 
 	//derive minimum reward
 	double minRew = 0;

@@ -53,7 +53,9 @@ PYBIND11_MODULE(solvermodule, m) {
         py::arg("SORrelaxation")=1.0,
         py::arg("initPolicy")=py::list(),
         py::arg("initValueVector")=py::list(),
-        py::arg("verbose")=false)
+        py::arg("verbose")=false,
+        py::arg("postProcessing")=true,
+        py::arg("makeFinalCheck")=true)
         .def("getRuntime",&ModuleInterface::getRuntime,"Returns the runtime in milliseconds.") //OUTPUT
         .def("printPolicy", &ModuleInterface::printPolicy,"Prints the entire policy.")
         .def("printValueVector", &ModuleInterface::printValueVector,"Prints the entire value vector.")
