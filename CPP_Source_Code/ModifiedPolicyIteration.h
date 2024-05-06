@@ -40,7 +40,7 @@ public:
     
     ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
-            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true, bool makeFinalCheck=true);
+            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true, bool makeFinalCheck=true, bool genMDP=true);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
@@ -57,9 +57,9 @@ public:
 private:
 
     //parameters
-    double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum;
-    int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, aBest;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck;
+    double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame;
+    int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP;
 
     //pointer to model, policy, and value vector
     ModelType * model;
@@ -76,13 +76,21 @@ private:
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
     void improvePolicy();
+    void improvePolicyGenMDP();
     void partialEvaluation();
+    void partialEvaluationGenMDP();
     void improvePolicySOR();
+    void improvePolicySORGenMDP();
     void partialEvaluationSOR();
+    void partialEvaluationSORGenMDP();
     void valueIterationEvaluation();
+    void valueIterationEvaluationGenMDP();
     void valueIterationEvaluationSOR();
+    void valueIterationEvaluationSORGenMDP();
     void valueIterationPolicy();
+    void valueIterationPolicyGenMDP();
     void valueIterationPolicySOR();
+    void valueIterationPolicySORGenMDP();
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
     

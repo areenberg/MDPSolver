@@ -48,6 +48,7 @@ void ModuleInterface::mdp(double discount,
     //select the general MDP problem
     problem.problemType="mdp";
     problem.discount=discount;
+    settings.genMDP=true;
 
     //load the rewards
     if (rewards.size()!=0){
@@ -84,6 +85,7 @@ void ModuleInterface::tbm(double discount,
     double failureProbHat){
     //selects the TBM problem
     problem.problemType="tbm";
+    settings.genMDP=false;
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
@@ -109,6 +111,7 @@ void ModuleInterface::cbm(double discount,
     int kOfN){
     //selects the CBM problem
     problem.problemType="cbm";
+    settings.genMDP=false;
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
@@ -149,7 +152,7 @@ void ModuleInterface::solve(string algorithm,
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
     settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose,
-    settings.postProcessing, settings.makeFinalCheck);
+    settings.postProcessing, settings.makeFinalCheck, settings.genMDP);
 
     //create model object
     if (problem.problemType.compare("mdp")==0){

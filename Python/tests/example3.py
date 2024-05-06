@@ -40,7 +40,7 @@ mdl1.mdp(discount=0.99,
         rewardsFromFile="rewards_example2.csv",
         tranMatFromFile="transitions_example2.csv")
 
-mdl1.solve(verbose=True)
+mdl1.solve(verbose=True,postProcessing=False)
 
 #---------------------------------------
 # SIMILAR PROBLEM - NEW REWARDS

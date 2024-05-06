@@ -88,6 +88,8 @@ public:
     int * getNumberOfActions() override;
     int * getNextState() override;
     double * getPsj() override;
+    int getNumberOfJumps(int &sidx, int &aidx) override; //not used
+    int * getColumnIdx(int &sidx, int &aidx, int &cidx) override; //not used
     
     //SPECIAL METHODS
     int intPow(int, int);

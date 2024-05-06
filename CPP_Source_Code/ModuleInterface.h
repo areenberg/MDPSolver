@@ -99,6 +99,7 @@ public:
         bool verbose;
         bool postProcessing;
         bool makeFinalCheck;
+        bool genMDP;
     } settings;
 
 

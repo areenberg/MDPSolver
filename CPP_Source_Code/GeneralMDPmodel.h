@@ -61,6 +61,8 @@ public:
     double * transProb(int &sidx, int &aidx, int &jidx) override;
     void updateNextState(int &sidx, int &aidx, int &jidx) override;
     int * postDecisionIdx(int &sidx, int &aidx) override;
+    int getNumberOfJumps(int &sidx, int &aidx) override;
+    int * getColumnIdx(int &sidx, int &aidx, int &cidx) override;
     double * getDiscount() override;
     int * getNumberOfStates() override;
     void updateNumberOfActions(int &sidx) override;

@@ -228,6 +228,14 @@ double * TBMmodel::getPsj(){
     return &psj;
 }
 
+int * TBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
+	return 0;
+}
+
+int TBMmodel::getNumberOfJumps(int &sidx, int &aidx){
+	return 0;
+}
+
 //int TBMmodel::getPolicy(int sidx){
 //    return policy[sidx];
 //}

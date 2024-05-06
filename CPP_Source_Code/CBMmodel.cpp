@@ -367,6 +367,14 @@ double * CBMmodel::getPsj(){
     return &psj;
 }
 
+int * CBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
+	return 0;
+}
+
+int CBMmodel::getNumberOfJumps(int &sidx, int &aidx){
+	return 0;
+}
+
 //int CBMmodel::getPolicy(int sidx){
 //    return policy[sidx];
 //}
