@@ -57,8 +57,8 @@ public:
 private:
 
     //parameters
-    double epsilon, diffMax, diffMin, norm, tolerance, SORrelaxation;
-    int iterLim, parIter, parIterLim, PIparIterLim;
+    double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum;
+    int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, aBest;
     bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck;
 
     //pointer to model, policy, and value vector
@@ -73,16 +73,22 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
+    void mainLoopModifiedPolicyIteration();
+    void mainLoopValueIteration();
     void improvePolicy();
     void partialEvaluation();
     void improvePolicySOR();
     void partialEvaluationSOR();
+    void valueIterationEvaluation();
+    void valueIterationEvaluationSOR();
+    void valueIterationPolicy();
+    void valueIterationPolicySOR();
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.
-    void updateNorm(int &s, double &valBest); //updates diffMax, diffMin, and span/supNorm
+    void updateNorm(int &sidx, double &valBest); //updates diffMax, diffMin, and span/supNorm
     
 };
 
