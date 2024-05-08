@@ -1,10 +1,12 @@
-# `mdpsolver`: A fast solver for Markov Decision Processes
- 
-`mdpsolver` is the Python package for Markov Decision Processes (MDPs) with discounted rewards and infinite-horizon. 
+<h1 align="center">
+<img src="https://github.com/areenberg/mdpsolver/blob/main/Images/MDPSolver_logo1_no_background.png" width="1280">
+</h1><br>
+
+MDPSolver is a Python package for Markov Decision Processes (MDPs) with discounted rewards and infinite-horizon. 
 
 ## Features
 
-* Fast solver-engine: Up-to **30x faster** than other Python-based solvers (see details in the documentation).
+* Fast solver-engine: Our *Modified policy iteration* algorithm is up to **100x faster** than other Python-based solvers (see details in the documentation).
 * Available on PyPI.
 * Three optimization algorithms: *Value iteration*, *Policy iteration*, and *Modified policy iteration*.
 * Three value-update methods: *Standard*, *Gauss–Seidel*, *Successive over-relaxation*.  
