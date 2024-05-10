@@ -42,7 +42,7 @@ public:
     //METHODS
     
     //read and write values
-    double * getReward(int& sidx, int& aidx);
+    double getReward(int& sidx, int& aidx);
     void assignReward(double reward, int& sidx, int& aidx); //assign single probability
     void assignRewardsFromList(py::list pyRewards); //cast probabilities directly from Python list
     

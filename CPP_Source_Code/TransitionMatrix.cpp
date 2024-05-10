@@ -33,12 +33,12 @@ TransitionMatrix::TransitionMatrix(const TransitionMatrix& orig) {
 TransitionMatrix::~TransitionMatrix() {
 }
 
-double* TransitionMatrix::getProb(int& sidx, int& aidx, int& cidx){
-    return &probs[sidx][aidx][cidx];
+double TransitionMatrix::getProb(int& sidx, int& aidx, int& cidx){
+    return probs[sidx][aidx][cidx];
 }
  
-int* TransitionMatrix::getColumn(int& sidx, int& aidx, int& cidx){
-    return &cols[sidx][aidx][cidx];
+int TransitionMatrix::getColumn(int& sidx, int& aidx, int& cidx){
+    return cols[sidx][aidx][cidx];
 }
 
 void TransitionMatrix::assignProb(double prob, int& sidx, int& aidx, int& cidx){

@@ -25,6 +25,7 @@
 
 #include "ModifiedPolicyIteration.h"
 #include <iostream>
+#include <omp.h>
 #include <chrono>
 #include <string>
 #include <math.h>
@@ -79,11 +80,11 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
     policy = ply;
 	valueVector = vv;
 	if (policy->policy.size()==1&&policy->policy[0]==-1){
-		policy->setSize(*model->getNumberOfStates());
+		policy->setSize(model->getNumberOfStates());
 		initPol=true;
 	}
 	if (valueVector->valueVector.size()==1&&valueVector->valueVector[0]==-1){
-		valueVector->setSize(*model->getNumberOfStates());
+		valueVector->setSize(model->getNumberOfStates());
 		initVal=true;
 	}
 	//v.assign(model.getNumberOfStates(), 0);
@@ -98,9 +99,9 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 	//initialize tolerance depending on stopping criteria
 	if (useStd) {
-		tolerance = epsilon * (1 - *model->getDiscount()) / *model->getDiscount(); //tolerance for span
+		tolerance = epsilon * (1 - model->getDiscount()) / model->getDiscount(); //tolerance for span
 	} else {
-		tolerance = epsilon * (1 - *model->getDiscount()) / (2 * (*model->getDiscount())); //tolerance for sup norm
+		tolerance = epsilon * (1 - model->getDiscount()) / (2 * (model->getDiscount())); //tolerance for sup norm
 	}
 
 	//change partial iteration limit if using VI or PI
@@ -140,6 +141,10 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	
 	auto t1 = chrono::high_resolution_clock::now(); //start timer
 
+	discount = model->getDiscount();
+	nStates = model->getNumberOfStates();
+	iter=0;
+
 	if (!useVI){
 		mainLoopModifiedPolicyIteration();
 	}else{
@@ -160,7 +165,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	if (postProcessing && useStd) {
 		if (printStuff) { cout << "Corrected values according to Eq. (6.6.12) in M. L. Puterman, 'Markov Decision Processes: Discrete Stochastic Dynamic Programming', Wiley." << endl; }
 		for (double& val : valueVector->valueVector) {
-			val += *model->getDiscount() / (1 - *model->getDiscount()) * diffMin;
+			val += model->getDiscount() / (1 - model->getDiscount()) * diffMin;
 		}
 	}
 
@@ -189,86 +194,89 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 }
 
-
-void ModifiedPolicyIteration::mainLoopModifiedPolicyIteration(){
-	//MAIN LOOP for policy iteration and modified policy iteration
-
-	norm = numeric_limits<double>::infinity();
-	polChanges = numeric_limits<int>::infinity();
-	iter = 0;
-	do{
-		if (printStuff) {
+void ModifiedPolicyIteration::print(){
+	if (printStuff) {
 			if (useMPI) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << ", polChanges: " << polChanges << " parIter " << parIter << endl;
 			} else if (usePI) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", polChanges: " << polChanges << " parIter " << parIter << endl;
-			} else if (iter % 100 == 0) {
+			} else if (iter % 50 == 0) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << endl;
 			}
 		}
+}
 
-		//PARTIAL EVALUATION
-		if (!useSOR && genMDP) {
+void ModifiedPolicyIteration::mainLoopModifiedPolicyIteration(){
+	//MAIN LOOP for policy iteration and modified policy iteration
+
+	//norm = numeric_limits<double>::infinity();
+	//polChanges = numeric_limits<int>::infinity();
+	if (!useSOR && genMDP) {
+		do{
 			partialEvaluationGenMDP();
-		}else if(!useSOR && !genMDP){
-			partialEvaluation();
-		}else if(useSOR && genMDP){
-			partialEvaluationSORGenMDP();
-		}else if(useSOR && !genMDP){
-			partialEvaluationSOR();
-		}
-
-		//POLICY IMPROVEMENT
-		if (!useSOR && genMDP) {
 			improvePolicyGenMDP();
-		}else if(!useSOR && !genMDP){
+			iter++;
+			print();
+		}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );
+	}else if(!useSOR && !genMDP){
+		do{
+			partialEvaluation();
 			improvePolicy();
-		}else if(useSOR && genMDP){
+			iter++;
+			print();
+		}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );	
+	}else if(useSOR && genMDP){
+		do{
+			partialEvaluationSORGenMDP();
 			improvePolicySORGenMDP();
-		}else if(useSOR && !genMDP){
+			iter++;
+			print();
+		}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );	
+	}else if(useSOR && !genMDP){
+		do{
+			partialEvaluationSOR();
 			improvePolicySOR();
-		}
-
-		iter++;
-
-	}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );
+			iter++;
+			print();
+		}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );
+	}
 
 }
 
 void ModifiedPolicyIteration::mainLoopValueIteration(){
 	//main loop for value iteration
 
-	norm = numeric_limits<double>::infinity();
-	iter = 0;
-	do{
-		if (printStuff) {
-			cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << endl;
-		}
-
-		//EVALUATION
-		if (!useSOR && genMDP) {
-			valueIterationEvaluationGenMDP();
-		}else if(!useSOR && !genMDP){
-			valueIterationEvaluation();
-		}else if(useSOR && genMDP){
-			valueIterationEvaluationSORGenMDP();
-		}else if(useSOR && !genMDP){
-			valueIterationEvaluationSOR();
-		}
-
-		iter++;
-		
-	}while(norm >= tolerance && iter < iterLim);
-
-	//GET POLICY
+	//norm = numeric_limits<double>::infinity();
+	
 	if (!useSOR && genMDP) {
-		valueIterationPolicyGenMDP();
+		parValueIterationGenMDP();
+		//do{
+		//	valueIterationEvaluationGenMDP();
+		//	iter++;
+		//	print();
+		//}while(norm >= tolerance && iter < iterLim);
+		//valueIterationPolicyGenMDP();
 	}else if(!useSOR && !genMDP){
+		do{
+			valueIterationEvaluation();
+			iter++;
+			print();
+		}while(norm >= tolerance && iter < iterLim);
 		valueIterationPolicy();
 	}else if(useSOR && genMDP){
+		do{
+			valueIterationEvaluationSORGenMDP();
+			iter++;
+			print();
+		}while(norm >= tolerance && iter < iterLim);
 		valueIterationPolicySORGenMDP();
 	}else if(useSOR && !genMDP){
-		valueIterationPolicySOR();
+		do{
+			valueIterationEvaluationSOR();
+			iter++;
+			print();
+		}while(norm >= tolerance && iter < iterLim);
+		valueIterationPolicySOR();	
 	}
 
 }
@@ -281,12 +289,12 @@ void ModifiedPolicyIteration::improvePolicy() {
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -294,7 +302,7 @@ void ModifiedPolicyIteration::improvePolicy() {
 				valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
@@ -305,7 +313,7 @@ void ModifiedPolicyIteration::improvePolicy() {
 			polChanges++;
 			policy->assignPolicy(sidx,aBest);
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
@@ -318,18 +326,18 @@ void ModifiedPolicyIteration::improvePolicyGenMDP() {
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 			}
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
@@ -340,7 +348,7 @@ void ModifiedPolicyIteration::improvePolicyGenMDP() {
 			polChanges++;
 			policy->assignPolicy(sidx,aBest);
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
@@ -355,7 +363,7 @@ void ModifiedPolicyIteration::partialEvaluation(){
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
-			for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+			for (sidx = 0; sidx < nStates; sidx++) {
 				valSum = 0;
 				sf = *model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
 				model->transProb(sidx, *policy->getPolicy(sidx), sf);
@@ -363,8 +371,8 @@ void ModifiedPolicyIteration::partialEvaluation(){
 					valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
 					model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
 				} while (*model->getNextState() != sf);
-				val = *model->reward(sidx, *policy->getPolicy(sidx)) + *model->getDiscount() * valSum;
-				updateNorm(sidx, val);
+				val = model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum;
+				updateNorm(val);
 				(*vp)[sidx] = val;
 			}
 			swapPointers(); //for standard update
@@ -381,14 +389,14 @@ void ModifiedPolicyIteration::partialEvaluationGenMDP(){
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
-			for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+			for (sidx = 0; sidx < nStates; sidx++) {
 				valSum = 0;
 				nJumps = model->getNumberOfJumps(sidx,*policy->getPolicy(sidx));
 				for (cidx=0; cidx<nJumps; cidx++){
-					valSum += *model->transProb(sidx, *policy->getPolicy(sidx), cidx) * (*vpOld)[*model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx)];
+					valSum += model->transProb(sidx, *policy->getPolicy(sidx), cidx) * (*vpOld)[model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx)];
 				}
-				val = *model->reward(sidx, *policy->getPolicy(sidx)) + *model->getDiscount() * valSum;
-				updateNorm(sidx, val);
+				val = model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum;
+				updateNorm(val);
 				(*vp)[sidx] = val;
 			}
 			swapPointers(); //for standard update
@@ -405,12 +413,12 @@ void ModifiedPolicyIteration::improvePolicySOR() {
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -421,8 +429,8 @@ void ModifiedPolicyIteration::improvePolicySOR() {
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * *model->transProb(sidx, aidx, sidx)) *
-				(*model->reward(sidx, aidx) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * model->transProb(sidx, aidx, sidx)) *
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
@@ -433,7 +441,7 @@ void ModifiedPolicyIteration::improvePolicySOR() {
 			polChanges++;
 			policy->assignPolicy(sidx,aBest);
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 }
@@ -445,24 +453,24 @@ void ModifiedPolicyIteration::improvePolicySORGenMDP(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				if (*model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
-					valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				if (model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
+					valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 				}else{
-					probSame = *model->transProb(sidx, aidx, cidx);
+					probSame = model->transProb(sidx, aidx, cidx);
 				}
 			}
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * probSame) *
-				(*model->reward(sidx, aidx) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * probSame) *
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
@@ -473,7 +481,7 @@ void ModifiedPolicyIteration::improvePolicySORGenMDP(){
 			polChanges++;
 			policy->assignPolicy(sidx,aBest);
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 }
@@ -486,7 +494,7 @@ void ModifiedPolicyIteration::partialEvaluationSOR() {
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
 
-			for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+			for (sidx = 0; sidx < nStates; sidx++) {
 				valSum = 0;
 				sf = *model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
 				model->transProb(sidx, *policy->getPolicy(sidx), sf);
@@ -497,9 +505,9 @@ void ModifiedPolicyIteration::partialEvaluationSOR() {
 					model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
 				} while (*model->getNextState() != sf);
 				val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-					SORrelaxation / (1 - *model->getDiscount() * *model->transProb(sidx, *policy->getPolicy(sidx), sidx)) *
-					(*model->reward(sidx, *policy->getPolicy(sidx)) + *model->getDiscount() * valSum); //SOR equation in paper
-				updateNorm(sidx, val);
+					SORrelaxation / (1 - discount * model->transProb(sidx, *policy->getPolicy(sidx), sidx)) *
+					(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR equation in paper
+				updateNorm(val);
 				(*vp)[sidx] = val;
 			}
 		} else {
@@ -515,20 +523,20 @@ void ModifiedPolicyIteration::partialEvaluationSORGenMDP() {
 			norm = 0;
 			diffMax = -numeric_limits<double>::infinity();
 			diffMin = numeric_limits<double>::infinity();
-			for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+			for (sidx = 0; sidx < nStates; sidx++) {
 				valSum = 0;
 				nJumps = model->getNumberOfJumps(sidx,*policy->getPolicy(sidx));
 				for (cidx=0; cidx<nJumps; cidx++){
-					if (*model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx) != sidx) { //skip diagonal element
-						valSum += *model->transProb(sidx, *policy->getPolicy(sidx), cidx) * (*vpOld)[*model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx)];
+					if (model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx) != sidx) { //skip diagonal element
+						valSum += model->transProb(sidx, *policy->getPolicy(sidx), cidx) * (*vpOld)[model->getColumnIdx(sidx, *policy->getPolicy(sidx), cidx)];
 					}else{
-						probSame = *model->transProb(sidx, *policy->getPolicy(sidx), cidx);
+						probSame = model->transProb(sidx, *policy->getPolicy(sidx), cidx);
 					}
 				}
 				val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-					SORrelaxation / (1 - *model->getDiscount() * probSame) *
-					(*model->reward(sidx, *policy->getPolicy(sidx)) + *model->getDiscount() * valSum); //SOR update equation
-				updateNorm(sidx, val);
+					SORrelaxation / (1 - discount * probSame) *
+					(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR update equation
+				updateNorm(val);
 				(*vp)[sidx] = val;
 			}
 		}else{
@@ -543,11 +551,11 @@ void ModifiedPolicyIteration::valueIterationEvaluation(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -555,17 +563,122 @@ void ModifiedPolicyIteration::valueIterationEvaluation(){
 				valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 			}
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
 
 }
+
+void ModifiedPolicyIteration::parValueIterationGenMDP(){
+
+	//get the value
+	do{
+    	#pragma omp parallel for
+    	for (int sidx = 0; sidx < nStates; sidx++) {
+        	double valBest = -numeric_limits<double>::infinity();
+        	for (int aidx = 0; aidx < model->getNumberOfActions(sidx); aidx++) {
+            	double valSum = 0;
+            	for (int cidx = 0; cidx < model->getNumberOfJumps(sidx,aidx); cidx++) {
+                	valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
+            	}
+            	double val = model->reward(sidx, aidx) + discount * valSum;
+            	if (val > valBest) {
+                	valBest = val;
+            	}
+        	}
+        	(*vp)[sidx] = valBest;
+    	}
+		computeNorm();
+		swapPointers();
+		iter++;
+		print();
+	}while(norm >= tolerance && iter < iterLim);
+
+	#pragma omp parallel for
+	for (int sidx = 0; sidx < nStates; sidx++) {
+		//find the best action
+		double valBest = -numeric_limits<double>::infinity();
+		int aBest=0;
+		for (int aidx = 0; aidx < model->getNumberOfActions(sidx); aidx++) {
+			double valSum = 0;
+			for (int cidx=0; cidx<model->getNumberOfJumps(sidx,aidx); cidx++){
+				valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
+			}
+			double val = model->reward(sidx, aidx) + discount * valSum;
+			if (val > valBest) {
+				valBest = val;
+				aBest = aidx;
+			}
+		}
+		policy->assignPolicy(sidx,aBest);
+		(*vp)[sidx] = valBest;
+	}
+	computeNorm();
+	swapPointers();
+}
+
+void ModifiedPolicyIteration::valueIterationGenMDP(){
+
+	//get the value
+	do{
+		norm = 0;
+		diffMax = -numeric_limits<double>::infinity();
+		diffMin = numeric_limits<double>::infinity();
+		for (sidx = 0; sidx < nStates; sidx++) {
+			valBest = -numeric_limits<double>::infinity();
+			model->updateNumberOfActions(sidx);
+			for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
+				valSum = 0;
+				nJumps = model->getNumberOfJumps(sidx,aidx);
+				for (cidx=0; cidx<nJumps; cidx++){
+					valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
+				}
+				val = model->reward(sidx, aidx) + discount * valSum;
+				if (val > valBest) {
+					valBest = val;
+				}
+			}
+			updateNorm(valBest);
+			(*vp)[sidx] = valBest;
+		}
+		swapPointers();
+		iter++;
+		print();
+	}while(norm >= tolerance && iter < iterLim);
+		
+	//get actions
+	norm = 0;
+	diffMax = -numeric_limits<double>::infinity();
+	diffMin = numeric_limits<double>::infinity();
+	for (sidx = 0; sidx < nStates; sidx++) {
+		//find the best action
+		valBest = -numeric_limits<double>::infinity();
+		model->updateNumberOfActions(sidx);
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
+			valSum = 0;
+			nJumps = model->getNumberOfJumps(sidx,aidx);
+			for (cidx=0; cidx<nJumps; cidx++){
+				valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
+			}
+			val = model->reward(sidx, aidx) + discount * valSum;
+			if (val > valBest) {
+				valBest = val;
+				aBest = aidx;
+			}
+		}
+		policy->assignPolicy(sidx,aBest);
+		updateNorm(valBest);
+		(*vp)[sidx] = valBest;
+	}
+	swapPointers();
+}
+
 
 void ModifiedPolicyIteration::valueIterationEvaluationGenMDP(){
 	//update the value vector in the value iteration algorithm
@@ -573,21 +686,21 @@ void ModifiedPolicyIteration::valueIterationEvaluationGenMDP(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 			}
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 			}
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
@@ -600,12 +713,12 @@ void ModifiedPolicyIteration::valueIterationPolicy(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -613,14 +726,14 @@ void ModifiedPolicyIteration::valueIterationPolicy(){
 				valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
 			}
 		}
 		policy->assignPolicy(sidx,aBest);
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
@@ -634,24 +747,24 @@ void ModifiedPolicyIteration::valueIterationPolicyGenMDP(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 			}
-			val = *model->reward(sidx, aidx) + *model->getDiscount() * valSum;
+			val = model->reward(sidx, aidx) + discount * valSum;
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
 			}
 		}
 		policy->assignPolicy(sidx,aBest);
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 	swapPointers(); //for standard updates
@@ -665,11 +778,11 @@ void ModifiedPolicyIteration::valueIterationEvaluationSOR(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -680,13 +793,13 @@ void ModifiedPolicyIteration::valueIterationEvaluationSOR(){
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * *model->transProb(sidx, aidx, sidx)) *
-				(*model->reward(sidx, aidx) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * model->transProb(sidx, aidx, sidx)) *
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 			}
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 }
@@ -697,28 +810,28 @@ void ModifiedPolicyIteration::valueIterationEvaluationSORGenMDP(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				if (*model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
-					valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				if (model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
+					valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 				}else{
-					probSame = *model->transProb(sidx, aidx, cidx);
+					probSame = model->transProb(sidx, aidx, cidx);
 				}
 			}
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * probSame) *
-				(*model->reward(sidx, aidx) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * probSame) *
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 			}
 		}
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 }
@@ -731,12 +844,12 @@ void ModifiedPolicyIteration::valueIterationPolicySOR(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			sf = *model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
@@ -747,15 +860,15 @@ void ModifiedPolicyIteration::valueIterationPolicySOR(){
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * *model->transProb(sidx, aidx, sidx)) *
-				(*model->reward(sidx, aidx) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * model->transProb(sidx, aidx, sidx)) *
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
 			}
 		}
 		policy->assignPolicy(sidx,aBest);
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 }
@@ -767,30 +880,30 @@ void ModifiedPolicyIteration::valueIterationPolicySORGenMDP(){
 	norm = 0;
 	diffMax = -numeric_limits<double>::infinity();
 	diffMin = numeric_limits<double>::infinity();
-	for (sidx = 0; sidx < *model->getNumberOfStates(); sidx++) {
+	for (sidx = 0; sidx < nStates; sidx++) {
 		//find the best action
 		valBest = -numeric_limits<double>::infinity();
 		model->updateNumberOfActions(sidx);
-		for (aidx = 0; aidx < *model->getNumberOfActions(); aidx++) {
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			nJumps = model->getNumberOfJumps(sidx,aidx);
 			for (cidx=0; cidx<nJumps; cidx++){
-				if (*model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
-					valSum += *model->transProb(sidx, aidx, cidx) * (*vpOld)[*model->getColumnIdx(sidx, aidx, cidx)];
+				if (model->getColumnIdx(sidx, aidx, cidx) != sidx) { //skip diagonal element
+					valSum += model->transProb(sidx, aidx, cidx) * (*vpOld)[model->getColumnIdx(sidx, aidx, cidx)];
 				}else{
-					probSame = *model->transProb(sidx, aidx, cidx);
+					probSame = model->transProb(sidx, aidx, cidx);
 				}
 			}
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-				SORrelaxation / (1 - *model->getDiscount() * probSame) *
-				(*model->reward(sidx, *policy->getPolicy(sidx)) + *model->getDiscount() * valSum); //SOR update equation
+				SORrelaxation / (1 - discount * probSame) *
+				(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
 			}
 		}
 		policy->assignPolicy(sidx,aBest);
-		updateNorm(sidx, valBest);
+		updateNorm(valBest);
 		(*vp)[sidx] = valBest;
 	}
 
@@ -805,16 +918,16 @@ void ModifiedPolicyIteration::initValue(){
 	double maxMaxRew = -numeric_limits<double>::infinity();
 	double minMaxRew = numeric_limits<double>::infinity();
 	double maxRew;
-	for (int s = 0; s < *model->getNumberOfStates(); ++s) {
+	for (sidx = 0; sidx < model->getNumberOfStates(); ++sidx) {
 
 		maxRew = -numeric_limits<double>::infinity();
-		model->updateNumberOfActions(s);
-		for (int a = 0; a < *model->getNumberOfActions(); a++) {
-			if (*model->reward(s, a) > maxRew) {
+		model->updateNumberOfActions(sidx);
+		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
+			if (model->reward(sidx, aidx) > maxRew) {
 				if (initPol){
-					policy->assignPolicy(s,a); //argmax_a r(s,a)
+					policy->assignPolicy(sidx,aidx); //argmax_a r(s,a)
 				}
-				maxRew = *model->reward(s, a); //max_a r(s,a)
+				maxRew = model->reward(sidx,aidx); //max_a r(s,a)
 			}
 		}
 
@@ -826,14 +939,14 @@ void ModifiedPolicyIteration::initValue(){
 		}
 
 		if (initVal){
-			valueVector->valueVector[s] = maxRew;
+			valueVector->valueVector[sidx] = maxRew;
 		}
 	}
 
 	//initialize v
 	if (initVal){
-		for (int s = 0; s < *model->getNumberOfStates(); ++s) {
-			valueVector->valueVector[s] += *model->getDiscount() / (1 - *model->getDiscount()) * minMaxRew;
+		for (sidx = 0; sidx < model->getNumberOfStates(); ++sidx) {
+			valueVector->valueVector[sidx] += model->getDiscount() / (1 - model->getDiscount()) * minMaxRew;
 		}
 	}
 
@@ -852,10 +965,10 @@ void ModifiedPolicyIteration::checkFinalValue() {
 	double r;
 	int s,a;
 
-	for (s = 0; s < *model->getNumberOfStates(); s++) {
+	for (s = 0; s < model->getNumberOfStates(); s++) {
 		model->updateNumberOfActions(s);
-		for (a = 0; a < *model->getNumberOfActions(); a++) {
-			r = *model->reward(s, a);
+		for (a = 0; a < model->getNumberOfActions(); a++) {
+			r = model->reward(s, a);
 			if (r < minRew) {
 				minRew = r;
 			}
@@ -865,9 +978,9 @@ void ModifiedPolicyIteration::checkFinalValue() {
 		minRew = -1e4; // some large negative value
 	}
 	//smallest possible value in value vector
-	minRew *= 1 / (1 - *model->getDiscount());
+	minRew *= 1 / (1 - model->getDiscount());
 
-	for (s = 0; s < *model->getNumberOfStates(); ++s) {
+	for (s = 0; s < model->getNumberOfStates(); ++s) {
 		if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew){
 			cout << "NOT CONVERGED! Final value vector is crazy at v[" << s << "] = " << valueVector->valueVector[s] << endl;
 			converged = false;
@@ -886,7 +999,7 @@ void ModifiedPolicyIteration::swapPointers() {
 	vpOld = vpTemp;
 }
 
-void ModifiedPolicyIteration::updateNorm(int &sidx, double &val) {
+void ModifiedPolicyIteration::updateNorm(double &val) {
 	//calculate difference from last iteration and update diffMax, diffMin, and supNorm
 	diff = val - (*vpOld)[sidx];
 	if (diff>diffMax) {
@@ -903,3 +1016,26 @@ void ModifiedPolicyIteration::updateNorm(int &sidx, double &val) {
 		}
 	}
 }
+
+void ModifiedPolicyIteration::computeNorm() {
+	diffMax = -numeric_limits<double>::infinity();
+	diffMin = numeric_limits<double>::infinity();
+	#pragma omp parallel for reduction(max:diffMax) reduction(min:diffMin)
+	for (int sidx=0; sidx<nStates; sidx++){
+		double diff = (*vp)[sidx] - (*vpOld)[sidx];
+		if (diff>diffMax) {
+			diffMax = diff;
+		}
+		if (diff<diffMin) {
+			diffMin = diff;
+		}
+	}
+
+	if (useStd) { //span norm
+		norm = diffMax - diffMin;
+	} else { //supremum norm
+		if (fabs(diff) > norm) {
+			norm = fabs(diff);
+		}
+	}
+}	

@@ -486,7 +486,7 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
         k2 = innerRew[2].cast<int>(); prob = innerRew[3].cast<double>();
         //find cidx
         cidx=0;
-        while (*problem.tranMat.getColumn(k0,k1,cidx)!=-1){
+        while (problem.tranMat.getColumn(k0,k1,cidx)!=-1){
             cidx++;
         }
         problem.tranMat.assignColumn(k2,k0,k1,cidx);
@@ -602,7 +602,7 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
             k2 = stoi(innerRew[2]); prob = stod(innerRew[3]);
             //find cidx
             cidx=0;
-            while (*problem.tranMat.getColumn(k0,k1,cidx)!=-1){
+            while (problem.tranMat.getColumn(k0,k1,cidx)!=-1){
                 cidx++;
             }
             problem.tranMat.assignColumn(k2,k0,k1,cidx);

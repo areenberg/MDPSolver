@@ -165,7 +165,7 @@ CBMmodel::~CBMmodel() {
 }
 
 //class functions
-double * CBMmodel::reward(int &sidx, int &aidx) {
+double CBMmodel::reward(int &sidx, int &aidx) {
     //reward function
     r = 0;
     set_up = false;
@@ -186,10 +186,10 @@ double * CBMmodel::reward(int &sidx, int &aidx) {
         }
     }
     r += set_up*cs + ((N-fail_count) < kN)*p;
-    return &r;
+    return r;
 }
 
-double * CBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
+double CBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 	//transition probability function
 
 	//int step;
@@ -212,7 +212,7 @@ double * CBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 		}
 	}
 	psj = prob; //set stored transition probability
-	return &prob;
+	return prob;
 }
 
 void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
@@ -344,19 +344,19 @@ void CBMmodel::importComponentProbs(string path) {
     inputFile.close();
 }
 
-double * CBMmodel::getDiscount(){
-    return &discount;
+double CBMmodel::getDiscount(){
+    return discount;
 }
 
-int * CBMmodel::getNumberOfStates(){
-    return &numberOfStates;
+int CBMmodel::getNumberOfStates(){
+    return numberOfStates;
 }
 
 void CBMmodel::updateNumberOfActions(int &sidx){	
 }
 
-int * CBMmodel::getNumberOfActions(){
-    return &numberOfActions;
+int CBMmodel::getNumberOfActions(){
+    return numberOfActions;
 }      
 
 int * CBMmodel::getNextState(){
@@ -367,11 +367,15 @@ double * CBMmodel::getPsj(){
     return &psj;
 }
 
-int * CBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
+int CBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
 	return 0;
 }
 
 int CBMmodel::getNumberOfJumps(int &sidx, int &aidx){
+	return 0;
+}
+
+int CBMmodel::getNumberOfActions(int &sidx){
 	return 0;
 }
 

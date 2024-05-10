@@ -88,7 +88,7 @@ TBMmodel::~TBMmodel() {
 }
 
 //class functions
-double * TBMmodel::reward(int &sidx,int &aidx) {
+double TBMmodel::reward(int &sidx,int &aidx) {
 	//reward function
 	//int s_i, a_i;
 	r = 0;
@@ -117,10 +117,10 @@ double * TBMmodel::reward(int &sidx,int &aidx) {
         }
     }
     r += setUp*Rs + (1-noFailProb)*Rf + payPenalty*penalty;
-    return &r;
+    return r;
 }
 
-double * TBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
+double TBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 	//probability of transitioning to state j given we are in state s and take action a
 	//int s_i, j_i, a_i;
 	prob = 1;
@@ -154,7 +154,7 @@ double * TBMmodel::transProb(int &sidx, int &aidx, int &jidx) {
 		}
 	}
 	psj = prob; //store transition probability
-	return &prob;
+	return prob;
 }
 
 void TBMmodel::updateNextState(int &sidx, int &aidx, int &jidx) {
@@ -205,19 +205,19 @@ int TBMmodel::intPow(int a, int b) {
     return i;
 }
 
-double * TBMmodel::getDiscount(){
-    return &discount;
+double TBMmodel::getDiscount(){
+    return discount;
 }
 
-int * TBMmodel::getNumberOfStates(){
-    return &numberOfStates;
+int TBMmodel::getNumberOfStates(){
+    return numberOfStates;
 }
 
 void TBMmodel::updateNumberOfActions(int &sidx){	
 }
 
-int * TBMmodel::getNumberOfActions(){
-    return &numberOfActions;
+int TBMmodel::getNumberOfActions(){
+    return numberOfActions;
 }
 
 int * TBMmodel::getNextState(){
@@ -228,11 +228,15 @@ double * TBMmodel::getPsj(){
     return &psj;
 }
 
-int * TBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
+int TBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
 	return 0;
 }
 
 int TBMmodel::getNumberOfJumps(int &sidx, int &aidx){
+	return 0;
+}
+
+int TBMmodel::getNumberOfActions(int &sidx){
 	return 0;
 }
 

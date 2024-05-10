@@ -57,8 +57,8 @@ public:
 private:
 
     //parameters
-    double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame;
-    int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps;
+    double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame, discount;
+    int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps, nStates, nActions;
     bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP;
 
     //pointer to model, policy, and value vector
@@ -85,6 +85,9 @@ private:
     void partialEvaluationSORGenMDP();
     void valueIterationEvaluation();
     void valueIterationEvaluationGenMDP();
+    void valueIterationGenMDP();
+    void parValueIterationGenMDP();
+
     void valueIterationEvaluationSOR();
     void valueIterationEvaluationSORGenMDP();
     void valueIterationPolicy();
@@ -93,10 +96,12 @@ private:
     void valueIterationPolicySORGenMDP();
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
+    void print();
     
     //other methods
     void swapPointers(); //swaps vp and vpOld.
-    void updateNorm(int &sidx, double &valBest); //updates diffMax, diffMin, and span/supNorm
+    void updateNorm(double &valBest); //updates diffMax, diffMin, and span/supNorm
+    void computeNorm();
     
 };
 

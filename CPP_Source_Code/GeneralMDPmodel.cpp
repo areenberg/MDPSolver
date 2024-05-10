@@ -44,11 +44,11 @@ void GeneralMDPmodel::initialize(){
     cidx=0;
 }
         
-double * GeneralMDPmodel::reward(int &sidx, int &aidx){
+double GeneralMDPmodel::reward(int &sidx, int &aidx){
     return rewards->getReward(sidx,aidx);
 }
 
-double * GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
+double GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
     //calculates the probability of jumping to state jidx from
     //the current state sidx when taking action aidx.
     //returns *and* stores the calculated probability in the variable psj.
@@ -71,7 +71,7 @@ int GeneralMDPmodel::getNumberOfJumps(int &sidx, int &aidx){
 void GeneralMDPmodel::updateNextState(int &sidx, int &aidx, int &jidx){
     //updates the next possible state, nextState, and the associated
     //transition probability, psj.    
-    while (*tranMat->getColumn(sidx,aidx,cidx)!=jidx){ //this will in many cases immediately evaluate to False
+    while (tranMat->getColumn(sidx,aidx,cidx)!=jidx){ //this will in many cases immediately evaluate to False
         cidx++;
         if (cidx==tranMat->numberOfColumns(sidx,aidx)){ //to make sure cidx is always feasible
             cidx=0;
@@ -81,11 +81,11 @@ void GeneralMDPmodel::updateNextState(int &sidx, int &aidx, int &jidx){
     if (cidx==tranMat->numberOfColumns(sidx,aidx)){
         cidx=0;
     }
-    nextState = *tranMat->getColumn(sidx,aidx,cidx);
-    psj = *tranMat->getProb(sidx,aidx,cidx);
+    nextState = tranMat->getColumn(sidx,aidx,cidx);
+    psj = tranMat->getProb(sidx,aidx,cidx);
 }    
 
-int * GeneralMDPmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
+int GeneralMDPmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
     return tranMat->getColumn(sidx,aidx,cidx);
 }
 
@@ -95,24 +95,28 @@ int * GeneralMDPmodel::postDecisionIdx(int &sidx, int &aidx){
     //both returns the value of the first new state, and
     //stores it in the variable nextState.
     cidx=0;
-    nextState = *tranMat->getColumn(sidx,aidx,cidx);
+    nextState = tranMat->getColumn(sidx,aidx,cidx);
     return &nextState;
 }
 
-double * GeneralMDPmodel::getDiscount(){
-    return &discount;
+double GeneralMDPmodel::getDiscount(){
+    return discount;
 }
 
-int * GeneralMDPmodel::getNumberOfStates(){
-    return &numberOfStates;
+int GeneralMDPmodel::getNumberOfStates(){
+    return numberOfStates;
 }
 
 void GeneralMDPmodel::updateNumberOfActions(int &sidx){
     numberOfActions=tranMat->numberOfActions(sidx);
 }
 
-int * GeneralMDPmodel::getNumberOfActions(){
-    return &numberOfActions;
+int GeneralMDPmodel::getNumberOfActions(){
+    return numberOfActions;
+}
+
+int GeneralMDPmodel::getNumberOfActions(int &sidx){
+    return tranMat->numberOfActions(sidx);
 }
 
 int * GeneralMDPmodel::getNextState(){

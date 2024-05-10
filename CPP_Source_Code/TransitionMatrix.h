@@ -42,8 +42,8 @@ public:
     //METHODS
     
     //read and write values
-    double* getProb(int& sidx, int& aidx, int& cidx);
-    int* getColumn(int& sidx, int& aidx, int& cidx);
+    double getProb(int& sidx, int& aidx, int& cidx);
+    int getColumn(int& sidx, int& aidx, int& cidx);
     void assignProb(double prob, int& sidx, int& aidx, int& cidx); //assign single probability
     void assignColumn(int column, int& sidx, int& aidx, int& cidx); //assign single column
     void assignProbsFromList(py::list pyProbs); //cast probabilities directly from Python list

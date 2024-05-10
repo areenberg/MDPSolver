@@ -33,8 +33,8 @@ Rewards::Rewards(const Rewards& orig) {
 Rewards::~Rewards() {
 }
 
-double * Rewards::getReward(int& sidx, int& aidx){
-    return &rewards[sidx][aidx];
+double Rewards::getReward(int& sidx, int& aidx){
+    return rewards[sidx][aidx];
 }
 
 void Rewards::assignReward(double reward, int& sidx, int& aidx){
