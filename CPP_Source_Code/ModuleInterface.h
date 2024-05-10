@@ -99,6 +99,7 @@ public:
         bool verbose;
         bool postProcessing;
         bool makeFinalCheck;
+        bool parallel;
         bool genMDP;
     } settings;
 
@@ -159,7 +160,8 @@ public:
      py::list initValueVector=py::list(),
      bool verbose=false,
      bool postProcessing=true,
-     bool makeFinalCheck=true); 
+     bool makeFinalCheck=true,
+     bool parallel=true); 
     
     //-------------------------------
 

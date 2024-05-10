@@ -40,7 +40,8 @@ public:
     
     ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
-            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true, bool makeFinalCheck=true, bool genMDP=true);
+            int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true,
+             bool makeFinalCheck=true, bool parallel=true, bool genMDP=true);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
@@ -59,7 +60,7 @@ private:
     //parameters
     double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame, discount;
     int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps, nStates, nActions;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP, parallel;
 
     //pointer to model, policy, and value vector
     ModelType * model;
@@ -76,22 +77,26 @@ private:
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
     void improvePolicy();
-    void improvePolicyGenMDP();
+    //void improvePolicyGenMDP();
     void partialEvaluation();
-    void partialEvaluationGenMDP();
+    //void partialEvaluationGenMDP();
+
+    void modifiedPolicyIterationGenMDP();
+    void parModifiedPolicyIterationGenMDP();
+
     void improvePolicySOR();
     void improvePolicySORGenMDP();
     void partialEvaluationSOR();
     void partialEvaluationSORGenMDP();
     void valueIterationEvaluation();
-    void valueIterationEvaluationGenMDP();
+    //void valueIterationEvaluationGenMDP();
     void valueIterationGenMDP();
     void parValueIterationGenMDP();
 
     void valueIterationEvaluationSOR();
     void valueIterationEvaluationSORGenMDP();
     void valueIterationPolicy();
-    void valueIterationPolicyGenMDP();
+    //void valueIterationPolicyGenMDP();
     void valueIterationPolicySOR();
     void valueIterationPolicySORGenMDP();
     void initValue(); //initializes policy, v, and span

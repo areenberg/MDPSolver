@@ -135,7 +135,8 @@ void ModuleInterface::solve(string algorithm,
                             py::list initValueVector,
                             bool verbose,
                             bool postProcessing,
-                            bool makeFinalCheck){
+                            bool makeFinalCheck,
+                            bool parallel){
 
     //store solver settings
     settings.algorithm=algorithm;
@@ -146,13 +147,14 @@ void ModuleInterface::solve(string algorithm,
     settings.verbose=verbose;
     settings.postProcessing=postProcessing;
     settings.makeFinalCheck=makeFinalCheck;
+    settings.parallel=parallel;
     setInitPolicy(initPolicy);
     setInitValueVector(initValueVector);
 
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
     settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose,
-    settings.postProcessing, settings.makeFinalCheck, settings.genMDP);
+    settings.postProcessing, settings.makeFinalCheck, settings.parallel, settings.genMDP);
 
     //create model object
     if (problem.problemType.compare("mdp")==0){

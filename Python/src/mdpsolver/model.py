@@ -23,7 +23,8 @@ class model:
               initValueVector=list(),
               verbose=False,
               postProcessing=True,
-              makeFinalCheck=True):
+              makeFinalCheck=True,
+              parallel=True):
         #solves the problem employing the specified algorithm
         self.mdl.solve(algorithm=algorithm,
               tolerance=tolerance,
@@ -34,7 +35,8 @@ class model:
               initValueVector=initValueVector,
               verbose=verbose,
               postProcessing=postProcessing,
-              makeFinalCheck=makeFinalCheck)
+              makeFinalCheck=makeFinalCheck,
+              parallel=parallel)
     
     def getRuntime(self):
         #returns the runtime in milliseconds
