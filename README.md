@@ -1,6 +1,6 @@
 # MDPSolver
 
-<img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="120">
+<img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="150">
 
 
 MDPSolver is a Python package for Markov Decision Processes (MDPs) with discounted rewards and infinite-horizon. 
