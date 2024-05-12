@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2020 Anders Reenberg Andersen and Jesper Fink Andersen
+* Copyright (c) 2024 Anders Reenberg Andersen and Jesper Fink Andersen
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -79,20 +79,15 @@ private:
     
     void modifiedPolicyIterationGenMDP();
     void parModifiedPolicyIterationGenMDP();
-    void valueIterationGenMDP();
-    void parValueIterationGenMDP();
+    void modifiedPolicyIterationSORGenMDP();    
     void modifiedPolicyIteration();
     void modifiedPolicyIterationSOR();    
-    void modifiedPolicyIterationSORGenMDP();    
 
-    void valueIterationEvaluation();
-    void valueIterationPolicy();
-    
-    void valueIterationEvaluationSOR();
-    void valueIterationPolicySOR();
-
-    void valueIterationEvaluationSORGenMDP();
-    void valueIterationPolicySORGenMDP();
+    void valueIterationGenMDP();
+    void parValueIterationGenMDP();
+    void valueIterationSORGenMDP();
+    void valueIteration();     
+    void valueIterationSOR();
     
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
