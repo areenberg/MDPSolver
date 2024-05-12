@@ -77,17 +77,17 @@ private:
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
     
-    void modifiedPolicyIterationGenMDP();
-    void parModifiedPolicyIterationGenMDP();
-    void modifiedPolicyIterationSORGenMDP();    
-    void modifiedPolicyIteration();
-    void modifiedPolicyIterationSOR();    
+    void modifiedPolicyIterationGenMDP(); //MPI/PI for general MDP models (serial computation)
+    void parModifiedPolicyIterationGenMDP(); //MPI/PI for general MDP models (parallel computation)
+    void modifiedPolicyIterationSORGenMDP(); //MPI/PI with GS/SOR updates for general MDP models (serial computation)   
+    void modifiedPolicyIteration(); //MPI/PI for built-in MDP models (serial computation)
+    void modifiedPolicyIterationSOR(); //MPI/PI with GS/SOR updates for built-in MDP models (serial computation)   
 
-    void valueIterationGenMDP();
-    void parValueIterationGenMDP();
-    void valueIterationSORGenMDP();
-    void valueIteration();     
-    void valueIterationSOR();
+    void valueIterationGenMDP(); //VI for general MDP models (serial computation)
+    void parValueIterationGenMDP(); //VI for general MDP models (parallel computation)
+    void valueIterationSORGenMDP(); //VI with GS/SOR updates for general MDP models (serial computation)
+    void valueIteration(); //VI for built-in MDP models (serial computation)    
+    void valueIterationSOR(); //VI with GS/SOR updates for built-in MDP models (serial computation)
     
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
