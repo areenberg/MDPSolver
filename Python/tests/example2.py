@@ -5,7 +5,7 @@ import example_model
 #In this example, we load the rewards and transition probabilities
 #from two CSV-files (rewards_example.csv and transitions.csv).
 #In addition, we test three optimization algorithms and compare
-#the runtimes.  
+#the runtimes.
 
 #PROBLEM DESCRIPTION: We derive the policy for a decision problem
 #involving a queueing system with finite capacity and two customer
@@ -56,9 +56,9 @@ mdl2.mdp(discount=0.99,
         rewardsFromFile="rewards_example2.csv",
         tranMatFromFile="transitions_example2.csv")
 
-mdl2.solve(algorithm="pi",update="gs")
+mdl2.solve(algorithm="pi")
 
-print("Policy iteration (w. Gauss-Seidel updates):",mdl2.getRuntime(),"milliseconds.")
+print("Policy iteration:",mdl2.getRuntime(),"milliseconds.")
 
 #---------------------------------------
 # MODIFIED POLICY ITERATION

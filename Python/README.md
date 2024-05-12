@@ -6,11 +6,11 @@ MDPSolver is a Python package for Markov Decision Processes (MDPs) with discount
 
 ## Features
 
-* Fast solver-engine: Our *Modified policy iteration* algorithm is up to **100x faster** than other Python-based solvers (see details in the documentation).
-* Available on PyPI.
+* Fast solver: Our C++-based solver is substantially faster than other MDP packages available for Python. See details in the documentation.
 * Three optimization algorithms: *Value iteration*, *Policy iteration*, and *Modified policy iteration*.
-* Three value-update methods: *Standard*, *Gauss–Seidel*, *Successive over-relaxation*.  
-* Includes support for sparse matrices.
+* Three value-update methods: *Standard*, *Gauss–Seidel*, *Successive over-relaxation*.
+* Supports sparse matrices.
+* Employs parallel computing.
 
 # Quick start guide
 
@@ -127,7 +127,7 @@ mdl.mdp(discount=0.8,
 
 # Documentation
 
-Documentation can be found in the wiki for `mdpsolver` on Github.
+The documentation can be found in the wiki for MDPSolver (https://github.com/areenberg/MDPSolver/wiki).
 
 # How to cite
 
