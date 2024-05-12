@@ -76,29 +76,24 @@ private:
     //methods
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
-    void improvePolicy();
-    //void improvePolicyGenMDP();
-    void partialEvaluation();
-    //void partialEvaluationGenMDP();
-
+    
     void modifiedPolicyIterationGenMDP();
     void parModifiedPolicyIterationGenMDP();
-
-    void improvePolicySOR();
-    void improvePolicySORGenMDP();
-    void partialEvaluationSOR();
-    void partialEvaluationSORGenMDP();
-    void valueIterationEvaluation();
-    //void valueIterationEvaluationGenMDP();
     void valueIterationGenMDP();
     void parValueIterationGenMDP();
+    void modifiedPolicyIteration();
+    void modifiedPolicyIterationSOR();    
+    void modifiedPolicyIterationSORGenMDP();    
 
-    void valueIterationEvaluationSOR();
-    void valueIterationEvaluationSORGenMDP();
+    void valueIterationEvaluation();
     void valueIterationPolicy();
-    //void valueIterationPolicyGenMDP();
+    
+    void valueIterationEvaluationSOR();
     void valueIterationPolicySOR();
+
+    void valueIterationEvaluationSORGenMDP();
     void valueIterationPolicySORGenMDP();
+    
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
     void print();
