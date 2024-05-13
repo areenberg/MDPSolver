@@ -262,7 +262,7 @@ void CBMmodel::updateTransProbNextState(int sidx, int aidx, int jidx) {
 	}
 }
 
-int * CBMmodel::postDecisionIdx(int &sidx, int &aidx) {
+int CBMmodel::postDecisionIdx(int &sidx, int &aidx) {
 	//int CBMmodel::postDecisionIdxOptimized(int sidx, int aidx) {
 	//state index right after replacement, which is
 	//assumed instantaneous so components are set to age 0
@@ -276,7 +276,7 @@ int * CBMmodel::postDecisionIdx(int &sidx, int &aidx) {
 		}
 	}
 	nextState = pdidx; //store as the "first" next state
-	return &pdidx;
+	return pdidx;
 }
 
 
@@ -363,8 +363,8 @@ int * CBMmodel::getNextState(){
     return &nextState;
 }
 
-double * CBMmodel::getPsj(){
-    return &psj;
+double CBMmodel::getPsj(){
+    return psj;
 }
 
 int CBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){

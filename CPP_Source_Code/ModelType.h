@@ -10,11 +10,11 @@ public:
     virtual int getNumberOfActions() = 0;
     virtual int getNumberOfActions(int &sidx) = 0;
     virtual int * getNextState() = 0;
-    virtual double * getPsj() = 0;
+    virtual double getPsj() = 0;
     virtual double reward(int &sidx, int &aidx) = 0;
     virtual double transProb(int &sidx, int &aidx, int &jidx) = 0;
     virtual void updateNextState(int &sidx, int &aidx, int &jidx) = 0;
-    virtual int * postDecisionIdx(int &sidx, int &aidx) = 0;
+    virtual int postDecisionIdx(int &sidx, int &aidx) = 0;
     virtual int getColumnIdx(int &sidx, int &aidx, int &cidx) = 0;
     virtual int getNumberOfJumps(int &sidx, int &aidx) = 0;
     

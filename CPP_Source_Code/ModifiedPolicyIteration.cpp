@@ -259,10 +259,10 @@ void ModifiedPolicyIteration::valueIteration(){
 			model->updateNumberOfActions(sidx);
 			for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 				valSum = 0;
-				sf = *model->postDecisionIdx(sidx, aidx);
+				sf = model->postDecisionIdx(sidx, aidx);
 				model->transProb(sidx, aidx, sf);
 				do{
-					valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+					valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 					model->updateNextState(sidx, aidx, *model->getNextState());
 				}while (*model->getNextState() != sf);
 				val = model->reward(sidx, aidx) + discount * valSum;
@@ -289,10 +289,10 @@ void ModifiedPolicyIteration::valueIteration(){
 		model->updateNumberOfActions(sidx);
 		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
-			sf = *model->postDecisionIdx(sidx, aidx);
+			sf = model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
 			do {
-				valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+				valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
 			val = model->reward(sidx, aidx) + discount * valSum;
@@ -322,13 +322,13 @@ void ModifiedPolicyIteration::valueIterationSOR(){
 			for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 				valSum = 0;
 				probSame = 0;
-				sf = *model->postDecisionIdx(sidx, aidx);
+				sf = model->postDecisionIdx(sidx, aidx);
 				model->transProb(sidx, aidx, sf);
 				do{
 					if (*model->getNextState() != sidx) { //skip diagonal element
-						valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+						valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 					}else{
-						probSame=*model->getPsj();
+						probSame=model->getPsj();
 					}
 					model->updateNextState(sidx, aidx, *model->getNextState());
 				}while(*model->getNextState() != sf);
@@ -356,13 +356,13 @@ void ModifiedPolicyIteration::valueIterationSOR(){
 		for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 			valSum = 0;
 			probSame=0;
-			sf = *model->postDecisionIdx(sidx, aidx);
+			sf = model->postDecisionIdx(sidx, aidx);
 			model->transProb(sidx, aidx, sf);
 			do {
 				if (*model->getNextState() != sidx) { //skip diagonal element
-					valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+					valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 				}else{
-					probSame = *model->getPsj();
+					probSame = model->getPsj();
 				}
 				model->updateNextState(sidx, aidx, *model->getNextState());
 			} while (*model->getNextState() != sf);
@@ -462,10 +462,10 @@ void ModifiedPolicyIteration::modifiedPolicyIteration(){
 				diffMin = numeric_limits<double>::infinity();
 				for (sidx = 0; sidx < nStates; sidx++) {
 					valSum = 0;
-					sf = *model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
+					sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
 					model->transProb(sidx, *policy->getPolicy(sidx), sf);
 					do {
-						valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+						valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 						model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
 					} while (*model->getNextState() != sf);
 					val = model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum;
@@ -489,10 +489,10 @@ void ModifiedPolicyIteration::modifiedPolicyIteration(){
 			model->updateNumberOfActions(sidx);
 			for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 				valSum = 0;
-				sf = *model->postDecisionIdx(sidx, aidx);
+				sf = model->postDecisionIdx(sidx, aidx);
 				model->transProb(sidx, aidx, sf);
 				do{
-					valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+					valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 					model->updateNextState(sidx, aidx, *model->getNextState());
 				}while(*model->getNextState() != sf);
 				val = model->reward(sidx, aidx) + discount * valSum;
@@ -531,13 +531,13 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 				for (sidx = 0; sidx < nStates; sidx++) {
 					valSum = 0;
 					probSame = 0;
-					sf = *model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
+					sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
 					model->transProb(sidx, *policy->getPolicy(sidx), sf);
 					do {
 						if (*model->getNextState() != sidx) { //skip diagonal element
-							valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+							valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 						}else{
-							probSame = *model->getPsj();
+							probSame = model->getPsj();
 						}
 						model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
 					} while (*model->getNextState() != sf);
@@ -564,13 +564,13 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 			for (aidx = 0; aidx < model->getNumberOfActions(); aidx++) {
 				valSum = 0;
 				probSame = 0;
-				sf = *model->postDecisionIdx(sidx, aidx);
+				sf = model->postDecisionIdx(sidx, aidx);
 				model->transProb(sidx, aidx, sf);
 				do {
 					if (*model->getNextState() != sidx) { //skip diagonal element
-						valSum += *model->getPsj() * (*vpOld)[*model->getNextState()];
+						valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
 					}else{
-						probSame = *model->getPsj();
+						probSame = model->getPsj();
 					}
 					model->updateNextState(sidx, aidx, *model->getNextState());
 				} while (*model->getNextState() != sf);

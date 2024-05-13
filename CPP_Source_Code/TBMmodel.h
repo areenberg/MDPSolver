@@ -81,14 +81,14 @@ public:
     double reward(int &sidx, int &aidx) override;
     double transProb(int &sidx, int &aidx, int &jidx) override;
     void updateNextState(int &sidx, int &aidx, int &jidx) override; //void updateNext(int, int, int);
-    int * postDecisionIdx(int &sidx, int &aidx) override; //int sFirst(int, int);
+    int postDecisionIdx(int &sidx, int &aidx) override; //int sFirst(int, int);
     double getDiscount() override;
     int getNumberOfStates() override;
     void updateNumberOfActions(int &sidx) override;
     int getNumberOfActions() override;
     int getNumberOfActions(int &sidx) override;
     int * getNextState() override;
-    double * getPsj() override;
+    double getPsj() override;
     int getNumberOfJumps(int &sidx, int &aidx) override; //not used
     int getColumnIdx(int &sidx, int &aidx, int &cidx) override; //not used
     

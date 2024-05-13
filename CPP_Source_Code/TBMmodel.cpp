@@ -179,7 +179,7 @@ void TBMmodel::updateNextState(int &sidx, int &aidx, int &jidx) {
 	}
 }
 
-int * TBMmodel::postDecisionIdx(int &s, int &a) {
+int TBMmodel::postDecisionIdx(int &s, int &a) {
 	//returns state index after replacements
     //replaced components reset to L
     //other components age by 1
@@ -196,7 +196,7 @@ int * TBMmodel::postDecisionIdx(int &s, int &a) {
         }
     }
 	nextState = sf; //store as the "first" next state
-    return &sf;
+    return sf;
 }
 
 int TBMmodel::intPow(int a, int b) {
@@ -224,8 +224,8 @@ int * TBMmodel::getNextState(){
     return &nextState;
 }
 
-double * TBMmodel::getPsj(){
-    return &psj;
+double TBMmodel::getPsj(){
+    return psj;
 }
 
 int TBMmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){

@@ -54,14 +54,6 @@ double GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
     //returns *and* stores the calculated probability in the variable psj.
 
     return tranMat->getProb(sidx,aidx,jidx);
-
-    //code for the 'model free' setup
-    //cidx=0;
-    //while (*tranMat->getColumn(sidx,aidx,cidx)!=jidx){
-    //    cidx++;
-    //}
-    //psj = *tranMat->getProb(sidx,aidx,cidx);
-    //return &psj;
 }
 
 int GeneralMDPmodel::getNumberOfJumps(int &sidx, int &aidx){
@@ -89,14 +81,14 @@ int GeneralMDPmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
     return tranMat->getColumn(sidx,aidx,cidx);
 }
 
-int * GeneralMDPmodel::postDecisionIdx(int &sidx, int &aidx){
+int GeneralMDPmodel::postDecisionIdx(int &sidx, int &aidx){
     //derives the first new/next state that is possible
     //to reach from the current state sidx.
     //both returns the value of the first new state, and
     //stores it in the variable nextState.
     cidx=0;
     nextState = tranMat->getColumn(sidx,aidx,cidx);
-    return &nextState;
+    return nextState;
 }
 
 double GeneralMDPmodel::getDiscount(){
@@ -123,6 +115,6 @@ int * GeneralMDPmodel::getNextState(){
     return &nextState;
 }
 
-double * GeneralMDPmodel::getPsj(){
-    return &psj;
+double GeneralMDPmodel::getPsj(){
+    return psj;
 }
