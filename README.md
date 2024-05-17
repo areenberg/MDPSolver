@@ -12,17 +12,29 @@ MDPSolver is a Python package for Markov Decision Processes (MDPs) with discount
 * Supports sparse matrices.
 * Employs parallel computing.
 
-# Quick start guide
+# Installation
 
-The following shows how to get quickly started with `mdpsolver`.
+## Linux
 
-## Installation
-
-Download and install `mdpsolver` directly from PyPI. 
+Works *out of the box* with Python 3.10.
 
 ```
 pip install mdpsolver
 ```
+
+## Windows
+
+Requires [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) (17.9) with MSVC C++ compiler and libraries installed.
+
+After installing Visual Studio (incl. MSVC compiler and libraries), run
+
+```
+pip install mdpsolver
+```
+
+# Quick start guide
+
+The following shows how to get quickly started with `mdpsolver`.
 
 ## Usage
 
