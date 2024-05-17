@@ -16,17 +16,19 @@ MDPSolver is a Python package for Markov Decision Processes (MDPs) with discount
 
 ## Linux
 
-Works *out of the box* with Python 3.10.
+Install directly from PyPI with:
 
 ```
 pip install mdpsolver
 ```
 
+After the installation, MDPSolver works *out of the box*.
+
 ## Windows
 
 Requires [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) (17.9) with MSVC C++ compiler and libraries installed.
 
-After installing Visual Studio (incl. MSVC compiler and libraries), run
+After installing Visual Studio (incl. MSVC C++ compiler and libraries), install directly from PyPI with:
 
 ```
 pip install mdpsolver
