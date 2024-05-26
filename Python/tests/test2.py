@@ -1,8 +1,8 @@
 import mdpsolver
 import example_model
 
-#EXAMPLE 2
-#In this example, we load the rewards and transition probabilities
+#TEST 2
+#In this test, we load the rewards and transition probabilities
 #from two CSV-files (rewards_example.csv and transitions.csv).
 #In addition, we test three optimization algorithms and compare
 #the runtimes.
@@ -47,7 +47,7 @@ mdl1.solve(algorithm="vi")
 print("Value iteration:",mdl1.getRuntime(),"milliseconds.")
 
 #---------------------------------------
-# POLICY ITERATION (GAUSS-SEIDEL UPDATES)
+# POLICY ITERATION
 #---------------------------------------
 
 mdl2 = mdpsolver.model()
