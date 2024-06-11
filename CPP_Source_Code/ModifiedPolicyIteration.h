@@ -39,7 +39,7 @@ class ModifiedPolicyIteration {
 public:
     
     ModifiedPolicyIteration() {};
-    ModifiedPolicyIteration(double eps=1e-3, string algorithm = "MPI", string update = "Standard",
+    ModifiedPolicyIteration(double eps=1e-3, string algorithm = "mpi", string update = "standard", string criterion = "discounted",
             int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true,
              bool makeFinalCheck=true, bool parallel=true, bool genMDP=true);
     
@@ -60,7 +60,7 @@ private:
     //parameters
     double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame, discount;
     int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps, nStates, nActions;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP, parallel;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, useDis, useAvg, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP, parallel;
 
     //pointer to model, policy, and value vector
     ModelType * model;

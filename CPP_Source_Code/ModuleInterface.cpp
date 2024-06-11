@@ -129,6 +129,7 @@ void ModuleInterface::cbm(double discount,
 void ModuleInterface::solve(string algorithm,
                             double tolerance,
                             string update,
+                            string criterion,
                             int parIterLim,
                             double SORrelaxation,
                             py::list initPolicy,
@@ -142,6 +143,7 @@ void ModuleInterface::solve(string algorithm,
     settings.algorithm=algorithm;
     settings.tolerance=tolerance;
     settings.update=update;
+    settings.criterion=criterion;
     settings.parIterLim=parIterLim;
     settings.SORrelaxation=SORrelaxation;
     settings.verbose=verbose;
@@ -152,8 +154,8 @@ void ModuleInterface::solve(string algorithm,
     setInitValueVector(initValueVector);
 
     //create and setup solver object
-    ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm, 
-    settings.update, settings.parIterLim, settings.SORrelaxation, settings.verbose,
+    ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm,
+    settings.update, settings.criterion, settings.parIterLim, settings.SORrelaxation, settings.verbose,
     settings.postProcessing, settings.makeFinalCheck, settings.parallel, settings.genMDP);
 
     //create model object

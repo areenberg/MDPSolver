@@ -49,6 +49,7 @@ PYBIND11_MODULE(solvermodule, m) {
         py::arg("algorithm")="mpi",
         py::arg("tolerance")=1e-3,
         py::arg("update")="standard",
+        py::arg("criterion")="discounted",
         py::arg("parIterLim")=100,
         py::arg("SORrelaxation")=1.0,
         py::arg("initPolicy")=py::list(),
