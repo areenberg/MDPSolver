@@ -188,7 +188,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	}
 
 	//if using span stopping criterion alter final v using 6.6.12 in Puterman
-	if (postProcessing && useStd) {
+	if (postProcessing && useStd && useDis) {
 		if (printStuff) { cout << "Corrected values according to Eq. (6.6.12) in M. L. Puterman, 'Markov Decision Processes: Discrete Stochastic Dynamic Programming', Wiley." << endl; }
 		for (double& val : valueVector->valueVector) {
 			val += model->getDiscount() / (1 - model->getDiscount()) * diffMin;
