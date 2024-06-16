@@ -94,6 +94,7 @@ public:
         string algorithm;
         double tolerance;
         string update;
+        string criterion;
         int parIterLim;
         double SORrelaxation;
         bool verbose;
@@ -154,6 +155,7 @@ public:
     void solve(string algorithm="mpi", //solves the problem
      double tolerance=1e-3,
      string update="standard",
+     string criterion="discounted",
      int parIterLim=100,
      double SORrelaxation=1.0,
      py::list initPolicy=py::list(),

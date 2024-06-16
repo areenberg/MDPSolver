@@ -34,13 +34,15 @@
 using namespace std;
 
 
-ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorithm,
-	string update, int parIterLim, double SORrelaxation, bool verbose, bool postProcessing, bool makeFinalCheck, bool parallel, bool genMDP):
+ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorithm, string update, string criterion,
+ int parIterLim, double SORrelaxation, bool verbose, bool postProcessing, bool makeFinalCheck, bool parallel, bool genMDP):
 	epsilon(epsilon),
 	useMPI(algorithm.compare("mpi") == 0),
 	usePI(algorithm.compare("pi") == 0),
 	useVI(algorithm.compare("vi") == 0),
 	useStd(update.compare("standard") == 0),
+	useDis(criterion.compare("discounted") == 0),
+	useAvg(criterion.compare("average") == 0),
 	useGS(update.compare("gs") == 0),
 	useSOR(update.compare("sor") == 0),
 	parIterLim(parIterLim), //partial evaluation iteration limit in MPI
@@ -88,7 +90,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		valueVector->setSize(model->getNumberOfStates());
 		initVal=true;
 	}
-	//v.assign(model.getNumberOfStates(), 0);
+	
 	initValue(); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
 	vp = &valueVector->valueVector;
 	if (useStd) {
@@ -98,11 +100,17 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		vpOld = vp; //point to v to use gauss-seidel
 	}
 
-	//initialize tolerance depending on stopping criteria
-	if (useStd) {
-		tolerance = epsilon * (1 - model->getDiscount()) / model->getDiscount(); //tolerance for span
-	} else {
-		tolerance = epsilon * (1 - model->getDiscount()) / (2 * (model->getDiscount())); //tolerance for sup norm
+	//initialize tolerance depending on stopping criteria and update method
+	if (useAvg){
+		//average reward criterion
+		tolerance = epsilon;
+	}else if(useDis){
+		//discounted reward criterion
+		if (useStd){
+			tolerance = epsilon * (1 - model->getDiscount()) / model->getDiscount(); //tolerance for span
+		}else{
+			tolerance = epsilon * (1 - model->getDiscount()) / (2 * (model->getDiscount())); //tolerance for sup norm
+		}
 	}
 
 	//change partial iteration limit if using VI or PI
@@ -112,6 +120,13 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		parIterLim = PIparIterLim;
 	}
 
+	//force discount=1 if average reward criterion
+	if (useAvg){
+		discount=1.0;	
+	}else if (useDis){
+		discount = model->getDiscount();
+	}
+	
 	//force SOR relaxation = 1 if selected GS
 	if (useGS){
 		SORrelaxation=1.0;
@@ -119,6 +134,12 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 	if (printStuff) {
 		cout << "Solving with ";
+		if (useAvg){
+			cout << "average";	
+		}else if (useDis){
+			cout << "discounted";
+		}
+		cout << " reward optimality criterion, ";
 		if (useVI) {
 			cout << "VI";
 		} else if (usePI) {
@@ -147,7 +168,6 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	
 	auto t1 = chrono::high_resolution_clock::now(); //start timer
 
-	discount = model->getDiscount();
 	nStates = model->getNumberOfStates();
 	iter=0;
 
@@ -168,7 +188,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	}
 
 	//if using span stopping criterion alter final v using 6.6.12 in Puterman
-	if (postProcessing && useStd) {
+	if (postProcessing && useStd && useDis) {
 		if (printStuff) { cout << "Corrected values according to Eq. (6.6.12) in M. L. Puterman, 'Markov Decision Processes: Discrete Stochastic Dynamic Programming', Wiley." << endl; }
 		for (double& val : valueVector->valueVector) {
 			val += model->getDiscount() / (1 - model->getDiscount()) * diffMin;
@@ -924,7 +944,7 @@ void ModifiedPolicyIteration::initValue(){
 	}
 
 	//initialize v
-	if (initVal){
+	if (initVal && useDis){
 		for (sidx = 0; sidx < model->getNumberOfStates(); ++sidx) {
 			valueVector->valueVector[sidx] += model->getDiscount() / (1 - model->getDiscount()) * minMaxRew;
 		}
