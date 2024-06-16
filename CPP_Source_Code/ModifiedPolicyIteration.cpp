@@ -90,7 +90,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		valueVector->setSize(model->getNumberOfStates());
 		initVal=true;
 	}
-	//v.assign(model.getNumberOfStates(), 0);
+	
 	initValue(); //step 1 in Puterman page 213. Initializes v,diffMax,diffMin, and policy
 	vp = &valueVector->valueVector;
 	if (useStd) {
@@ -944,7 +944,7 @@ void ModifiedPolicyIteration::initValue(){
 	}
 
 	//initialize v
-	if (initVal){
+	if (initVal && useDis){
 		for (sidx = 0; sidx < model->getNumberOfStates(); ++sidx) {
 			valueVector->valueVector[sidx] += model->getDiscount() / (1 - model->getDiscount()) * minMaxRew;
 		}
