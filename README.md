@@ -146,7 +146,7 @@ mdl.mdp(discount=0.8,
 
 # Documentation
 
-The documentation can be found in the wiki for MDPSolver (https://github.com/areenberg/MDPSolver/wiki).
+The documentation can be found in the [wiki for MDPSolver](https://github.com/areenberg/MDPSolver/wiki).
 
 # How to cite
 
