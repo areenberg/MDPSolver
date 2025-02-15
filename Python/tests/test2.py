@@ -1,5 +1,7 @@
 import mdpsolver
 import example_model
+import sys
+import numpy as np
 
 #TEST 2
 #In this test, we load the rewards and transition probabilities
@@ -43,8 +45,8 @@ mdl1.mdp(discount=0.99,
         tranMatFromFile="transitions_example2.csv")
 
 mdl1.solve(algorithm="vi")
-
-print("Value iteration:",mdl1.getRuntime(),"milliseconds.")
+if not np.round(np.mean(mdl1.getValueVector()),6)==np.round(17074.81609832942,6):
+        sys.exit("Model 1 failed!")
 
 #---------------------------------------
 # POLICY ITERATION
@@ -58,7 +60,8 @@ mdl2.mdp(discount=0.99,
 
 mdl2.solve(algorithm="pi")
 
-print("Policy iteration:",mdl2.getRuntime(),"milliseconds.")
+if not np.round(np.mean(mdl2.getValueVector()),6)==np.round(17074.815578793514,6):
+        sys.exit("Model 2 failed!")
 
 #---------------------------------------
 # MODIFIED POLICY ITERATION
@@ -72,4 +75,7 @@ mdl3.mdp(discount=0.99,
 
 mdl3.solve(algorithm="mpi")
 
-print("Modified policy iteration:",mdl3.getRuntime(),"milliseconds.")
+if not np.round(np.mean(mdl3.getValueVector()),6)==np.round(17074.815563750446,6):
+        sys.exit("Model 3 failed!")
+        
+print("Test 2 succesfully reproduced output!")
