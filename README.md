@@ -27,7 +27,7 @@ MDPSolver works *out of the box* on Ubuntu 22 and newer.
 
 ### GLIBC not found
 
-Some users will encounter the `version 'GLIBC_2.32' not found` error when attempting to import MDPSolver in Python. In this case, it might help to manually compile and replace the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki).
+Some users will encounter the `version 'GLIBC_2.32' not found` error when attempting to import MDPSolver in Python. In this case, it might help to manually compile and replace the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
 
 ## Windows
 
