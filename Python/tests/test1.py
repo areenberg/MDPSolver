@@ -1,5 +1,7 @@
 import mdpsolver
 import random
+import sys
+import numpy as np
 from random import randint
 
 #TEST 1
@@ -8,8 +10,6 @@ from random import randint
 #---------------------------------------
 # CONFIGURATION 1
 #---------------------------------------
-
-print("## CONFIG. 1 ##\n")
 
 #rewards
 #1st index: from (current) states
@@ -31,7 +31,6 @@ random.seed(10)
 initPolicy = [randint(0, 1) for p in range(0, 3)]
 
 #Model 1a (discounted reward, parallel)
-print("# Model 1a (discounted reward, parallel) #")
 mdl1a = mdpsolver.model()
 mdl1a.mdp(discount=0.95,
         rewards=rewards,
@@ -40,11 +39,12 @@ mdl1a.solve(algorithm="mpi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl1a.getPolicy())
-print(mdl1a.getValueVector())
+if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1a failed!")        
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),6)):
+        sys.exit("Model 1a failed!")
 
 #Model 2a (discounted reward, parallel)
-print("# Model 2a (discounted reward, parallel) #")
 mdl2a = mdpsolver.model()
 mdl2a.mdp(discount=0.95,
         rewards=rewards,
@@ -53,11 +53,12 @@ mdl2a.solve(algorithm="pi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl2a.getPolicy())
-print(mdl2a.getValueVector())
+if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2a failed!")        
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),6)):
+        sys.exit("Model 2a failed!")
 
 #Model 3a (discounted reward, parallel)
-print("# Model 3a (discounted reward, parallel) #")
 mdl3a = mdpsolver.model()
 mdl3a.mdp(discount=0.95,
         rewards=rewards,
@@ -65,11 +66,12 @@ mdl3a.mdp(discount=0.95,
 mdl3a.solve(algorithm="vi",
           update="standard",
           parallel=True)
-print(mdl3a.getPolicy())
-print(mdl3a.getValueVector())
+if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3a failed!")        
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3a failed!")
 
 #Model 1b (discounted reward, unparallel)
-print("# Model 1b (discounted reward, unparallel) #")
 mdl1b = mdpsolver.model()
 mdl1b.mdp(discount=0.95,
         rewards=rewards,
@@ -78,11 +80,12 @@ mdl1b.solve(algorithm="mpi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1b.getPolicy())
-print(mdl1b.getValueVector())
+if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1b failed!")        
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 1b failed!")
 
 #Model 2b (discounted reward, unparallel)
-print("# Model 2b (discounted reward, unparallel) #")
 mdl2b = mdpsolver.model()
 mdl2b.mdp(discount=0.95,
         rewards=rewards,
@@ -91,11 +94,12 @@ mdl2b.solve(algorithm="pi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2b.getPolicy())
-print(mdl2b.getValueVector())
+if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2b failed!")        
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 2b failed!")
 
 #Model 3b (discounted reward, unparallel)
-print("# Model 3b (discounted reward, unparallel) #")
 mdl3b = mdpsolver.model()
 mdl3b.mdp(discount=0.95,
         rewards=rewards,
@@ -103,11 +107,12 @@ mdl3b.mdp(discount=0.95,
 mdl3b.solve(algorithm="vi",
           update="standard",
           parallel=False)
-print(mdl3b.getPolicy())
-print(mdl3b.getValueVector())
+if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3b failed!")        
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3b failed!")
 
 #Model 1a (average reward, parallel)
-print("# Model 1a (average reward, parallel) #")
 mdl1a = mdpsolver.model()
 mdl1a.mdp(rewards=rewards,
         tranMatWithZeros=tranMatWithZeros)
@@ -116,11 +121,12 @@ mdl1a.solve(algorithm="mpi",
           criterion="average",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl1a.getPolicy())
-print(mdl1a.getValueVector())
+if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1a failed!")        
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+        sys.exit("Model 1a failed!")
 
 #Model 2a (average reward, parallel)
-print("# Model 2a (average reward, parallel) #")
 mdl2a = mdpsolver.model()
 mdl2a.mdp(rewards=rewards,
         tranMatWithZeros=tranMatWithZeros)
@@ -129,11 +135,12 @@ mdl2a.solve(algorithm="pi",
           criterion="average",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl2a.getPolicy())
-print(mdl2a.getValueVector())
+if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2a failed!")        
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+        sys.exit("Model 2a failed!")
 
 #Model 3a (average reward, parallel)
-print("# Model 3a (average reward, parallel) #")
 mdl3a = mdpsolver.model()
 mdl3a.mdp(rewards=rewards,
           tranMatWithZeros=tranMatWithZeros)
@@ -141,11 +148,12 @@ mdl3a.solve(algorithm="vi",
           update="standard",
           criterion="average",
           parallel=True)
-print(mdl3a.getPolicy())
-print(mdl3a.getValueVector())
+if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3a failed!")        
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),6)):
+        sys.exit("Model 3a failed!")
 
 #Model 1b (average reward, unparallel)
-print("# Model 1b (average reward, unparallel) #")
 mdl1b = mdpsolver.model()
 mdl1b.mdp(rewards=rewards,
           tranMatWithZeros=tranMatWithZeros)
@@ -154,11 +162,12 @@ mdl1b.solve(algorithm="mpi",
           criterion="average",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1b.getPolicy())
-print(mdl1b.getValueVector())
+if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1b failed!")        
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+        sys.exit("Model 1b failed!")
 
 #Model 2b (average reward, unparallel)
-print("# Model 2b (average reward, unparallel) #")
 mdl2b = mdpsolver.model()
 mdl2b.mdp(rewards=rewards,
           tranMatWithZeros=tranMatWithZeros)
@@ -167,11 +176,12 @@ mdl2b.solve(algorithm="pi",
           criterion="average",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2b.getPolicy())
-print(mdl2b.getValueVector())
+if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2b failed!")        
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+        sys.exit("Model 2b failed!")
 
 #Model 3b (average reward, unparallel)
-print("# Model 3b (average reward, unparallel) #")
 mdl3b = mdpsolver.model()
 mdl3b.mdp(rewards=rewards,
           tranMatWithZeros=tranMatWithZeros)
@@ -179,11 +189,12 @@ mdl3b.solve(algorithm="vi",
           update="standard",
           criterion="average",
           parallel=False)
-print(mdl3b.getPolicy())
-print(mdl3b.getValueVector())
+if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3b failed!")        
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),6)):
+        sys.exit("Model 3b failed!")
 
 #Model 1c (discounted, Gauss-Seidel)
-print("# Model 1c (discounted reward, Gauss-Seidel) #")
 mdl1c = mdpsolver.model()
 mdl1c.mdp(discount=0.95,
         rewards=rewards,
@@ -192,11 +203,12 @@ mdl1c.solve(algorithm="mpi",
           update="gs",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1c.getPolicy())
-print(mdl1c.getValueVector())
+if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1c failed!")        
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 1c failed!")
 
 #Model 2c (Gauss-Seidel)
-print("# Model 2c (discounted reward, Gauss-Seidel) #")
 initPolicy=[1,1,1]
 mdl2c = mdpsolver.model()
 mdl2c.mdp(discount=0.95,
@@ -206,11 +218,12 @@ mdl2c.solve(algorithm="pi",
             update="gs",
             parallel=False,
             initPolicy=initPolicy)
-print(mdl2c.getPolicy())
-print(mdl2c.getValueVector())
+if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2c failed!")        
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 2c failed!")
 
 #Model 3c (Gauss-Seidel)
-print("# Model 3c (discounted reward, Gauss-Seidel) #")
 mdl3c = mdpsolver.model()
 mdl3c.mdp(discount=0.95,
         rewards=rewards,
@@ -218,11 +231,12 @@ mdl3c.mdp(discount=0.95,
 mdl3c.solve(algorithm="vi",
           update="gs",
           parallel=False)
-print(mdl3c.getPolicy())
-print(mdl3c.getValueVector())
+if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3c failed!")        
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+        sys.exit("Model 3c failed!")
 
 #Model 1d (SOR)
-print("# Model 1d (discounted reward, SOR) #")
 mdl1d = mdpsolver.model()
 mdl1d.mdp(discount=0.95,
         rewards=rewards,
@@ -232,11 +246,12 @@ mdl1d.solve(algorithm="mpi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1d.getPolicy())
-print(mdl1d.getValueVector())
+if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1d failed!")        
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 1d failed!")
 
 #Model 2d (SOR)
-print("# Model 2d (discounted reward, SOR) #")
 mdl2d = mdpsolver.model()
 mdl2d.mdp(discount=0.95,
         rewards=rewards,
@@ -246,11 +261,12 @@ mdl2d.solve(algorithm="pi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2d.getPolicy())
-print(mdl2d.getValueVector())
+if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2d failed!")        
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 2d failed!")
 
 #Model 3d (SOR)
-print("# Model 3d (discounted reward, SOR) #")
 mdl3d = mdpsolver.model()
 mdl3d.mdp(discount=0.95,
         rewards=rewards,
@@ -259,14 +275,14 @@ mdl3d.solve(algorithm="vi",
           update="sor",
           SORrelaxation=1.01,
           parallel=False)
-print(mdl3d.getPolicy())
-print(mdl3d.getValueVector())
+if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3d failed!")        
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+        sys.exit("Model 3d failed!")
 
 #---------------------------------------
 # CONFIGURATION 2
 #---------------------------------------
-
-print("\n ## CONFIG. 2 ##\n")
 
 #rewards
 #1st index: from (current) states
@@ -298,7 +314,6 @@ random.seed(10)
 initPolicy = [randint(0, 1) for p in range(0, 3)]
 
 #Model 1a
-print("# Model 1a #")
 mdl1a = mdpsolver.model()
 mdl1a.mdp(discount=0.95,
         rewards=rewards,
@@ -307,11 +322,12 @@ mdl1a.solve(algorithm="mpi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl1a.getPolicy())
-print(mdl1a.getValueVector())
+if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1a failed!")        
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 1a failed!")
 
 #Model 2a
-print("# Model 2a #")
 mdl2a = mdpsolver.model()
 mdl2a.mdp(discount=0.95,
         rewards=rewards,
@@ -320,11 +336,12 @@ mdl2a.solve(algorithm="pi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl2a.getPolicy())
-print(mdl2a.getValueVector())
+if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2a failed!")        
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 2a failed!")
 
 #Model 3a
-print("# Model 3a #")
 mdl3a = mdpsolver.model()
 mdl3a.mdp(discount=0.95,
         rewards=rewards,
@@ -332,11 +349,12 @@ mdl3a.mdp(discount=0.95,
 mdl3a.solve(algorithm="vi",
           update="standard",
           parallel=True)
-print(mdl3a.getPolicy())
-print(mdl3a.getValueVector())
+if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3a failed!")        
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3a failed!")
 
 #Model 1b
-print("# Model 1b #")
 mdl1b = mdpsolver.model()
 mdl1b.mdp(discount=0.95,
         rewards=rewards,
@@ -345,11 +363,12 @@ mdl1b.solve(algorithm="mpi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1b.getPolicy())
-print(mdl1b.getValueVector())
+if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1b failed!")        
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 1b failed!")
 
 #Model 2b
-print("# Model 2b #")
 mdl2b = mdpsolver.model()
 mdl2b.mdp(discount=0.95,
         rewards=rewards,
@@ -358,11 +377,12 @@ mdl2b.solve(algorithm="pi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2b.getPolicy())
-print(mdl2b.getValueVector())
+if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2b failed!")        
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 2b failed!")
 
 #Model 3b
-print("# Model 3b #")
 mdl3b = mdpsolver.model()
 mdl3b.mdp(discount=0.95,
         rewards=rewards,
@@ -370,11 +390,12 @@ mdl3b.mdp(discount=0.95,
 mdl3b.solve(algorithm="vi",
           update="standard",
           parallel=False)
-print(mdl3b.getPolicy())
-print(mdl3b.getValueVector())
+if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3b failed!")        
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3b failed!")
 
 #Model 1c
-print("# Model 1c #")
 mdl1c = mdpsolver.model()
 mdl1c.mdp(discount=0.95,
         rewards=rewards,
@@ -383,11 +404,12 @@ mdl1c.solve(algorithm="mpi",
           update="gs",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1c.getPolicy())
-print(mdl1c.getValueVector())
+if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1c failed!")        
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 1c failed!")
 
 #Model 2c
-print("# Model 2c #")
 mdl2c = mdpsolver.model()
 mdl2c.mdp(discount=0.95,
         rewards=rewards,
@@ -396,11 +418,12 @@ mdl2c.solve(algorithm="pi",
           update="gs",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2c.getPolicy())
-print(mdl2c.getValueVector())
+if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2c failed!")        
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 2c failed!")
 
 #Model 3c
-print("# Model 3c #")
 mdl3c = mdpsolver.model()
 mdl3c.mdp(discount=0.95,
         rewards=rewards,
@@ -408,11 +431,12 @@ mdl3c.mdp(discount=0.95,
 mdl3c.solve(algorithm="vi",
           update="gs",
           parallel=False)
-print(mdl3c.getPolicy())
-print(mdl3c.getValueVector())
+if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3c failed!")        
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+        sys.exit("Model 3c failed!")
 
 #Model 1d
-print("# Model 1d #")
 mdl1d = mdpsolver.model()
 mdl1d.mdp(discount=0.95,
         rewards=rewards,
@@ -422,11 +446,12 @@ mdl1d.solve(algorithm="mpi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1d.getPolicy())
-print(mdl1d.getValueVector())
+if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1d failed!")        
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 1d failed!")
 
 #Model 2d
-print("# Model 2d #")
 mdl2d = mdpsolver.model()
 mdl2d.mdp(discount=0.95,
         rewards=rewards,
@@ -436,11 +461,12 @@ mdl2d.solve(algorithm="pi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2d.getPolicy())
-print(mdl2d.getValueVector())
+if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2d failed!")        
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 2d failed!")
 
 #Model 3d
-print("# Model 3d #")
 mdl3d = mdpsolver.model()
 mdl3d.mdp(discount=0.95,
         rewards=rewards,
@@ -449,14 +475,14 @@ mdl3d.solve(algorithm="vi",
           update="sor",
           SORrelaxation=1.01,
           parallel=False)
-print(mdl3d.getPolicy())
-print(mdl3d.getValueVector())
+if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3d failed!")        
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+        sys.exit("Model 3d failed!")
 
 #---------------------------------------
 # CONFIGURATION 3
 #---------------------------------------
-
-print("\n ## CONFIG. 3 ##\n")
 
 #rewards
 #1st index: from (current) states
@@ -479,7 +505,6 @@ random.seed(10)
 initPolicy = [randint(0, 1) for p in range(0, 3)]
 
 #Model 1a
-print("# Model 1a #")
 mdl1a = mdpsolver.model()
 mdl1a.mdp(discount=0.95,
         rewards=rewards,
@@ -489,11 +514,12 @@ mdl1a.solve(algorithm="mpi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl1a.getPolicy())
-print(mdl1a.getValueVector())
+if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1a failed!")        
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 1a failed!")
 
 #Model 2a
-print("# Model 2a #")
 mdl2a = mdpsolver.model()
 mdl2a.mdp(discount=0.95,
         rewards=rewards,
@@ -503,11 +529,12 @@ mdl2a.solve(algorithm="pi",
           update="standard",
           parallel=True,
           initPolicy=initPolicy)
-print(mdl2a.getPolicy())
-print(mdl2a.getValueVector())
+if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2a failed!")        
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 2a failed!")
 
 #Model 3a
-print("# Model 3a #")
 mdl3a = mdpsolver.model()
 mdl3a.mdp(discount=0.95,
         rewards=rewards,
@@ -516,11 +543,12 @@ mdl3a.mdp(discount=0.95,
 mdl3a.solve(algorithm="vi",
           update="standard",
           parallel=True)
-print(mdl3a.getPolicy())
-print(mdl3a.getValueVector())
+if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3a failed!")        
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3a failed!")
 
 #Model 1b
-print("# Model 1b #")
 mdl1b = mdpsolver.model()
 mdl1b.mdp(discount=0.95,
         rewards=rewards,
@@ -530,11 +558,12 @@ mdl1b.solve(algorithm="mpi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1b.getPolicy())
-print(mdl1b.getValueVector())
+if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1b failed!")        
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 1b failed!")
 
 #Model 2b
-print("# Model 2b #")
 mdl2b = mdpsolver.model()
 mdl2b.mdp(discount=0.95,
         rewards=rewards,
@@ -544,11 +573,12 @@ mdl2b.solve(algorithm="pi",
           update="standard",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2b.getPolicy())
-print(mdl2b.getValueVector())
+if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2b failed!")        
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+        sys.exit("Model 2b failed!")
 
 #Model 3b
-print("# Model 3b #")
 mdl3b = mdpsolver.model()
 mdl3b.mdp(discount=0.95,
         rewards=rewards,
@@ -557,11 +587,12 @@ mdl3b.mdp(discount=0.95,
 mdl3b.solve(algorithm="vi",
           update="standard",
           parallel=False)
-print(mdl3b.getPolicy())
-print(mdl3b.getValueVector())
+if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3b failed!")        
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+        sys.exit("Model 3b failed!")
 
 #Model 1c
-print("# Model 1c #")
 mdl1c = mdpsolver.model()
 mdl1c.mdp(discount=0.95,
         rewards=rewards,
@@ -571,11 +602,12 @@ mdl1c.solve(algorithm="mpi",
           update="gs",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1c.getPolicy())
-print(mdl1c.getValueVector())
+if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1c failed!")        
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 1c failed!")
 
 #Model 2c
-print("# Model 2c #")
 mdl2c = mdpsolver.model()
 mdl2c.mdp(discount=0.95,
         rewards=rewards,
@@ -585,11 +617,12 @@ mdl2c.solve(algorithm="pi",
           update="gs",
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2c.getPolicy())
-print(mdl2c.getValueVector())
+if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2c failed!")        
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+        sys.exit("Model 2c failed!")
 
 #Model 3c
-print("# Model 3c #")
 mdl3c = mdpsolver.model()
 mdl3c.mdp(discount=0.95,
         rewards=rewards,
@@ -598,11 +631,12 @@ mdl3c.mdp(discount=0.95,
 mdl3c.solve(algorithm="vi",
           update="gs",
           parallel=False)
-print(mdl3c.getPolicy())
-print(mdl3c.getValueVector())
+if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3c failed!")        
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+        sys.exit("Model 3c failed!")
 
 #Model 1d
-print("# Model 1d #")
 mdl1d = mdpsolver.model()
 mdl1d.mdp(discount=0.95,
         rewards=rewards,
@@ -613,11 +647,12 @@ mdl1d.solve(algorithm="mpi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl1d.getPolicy())
-print(mdl1d.getValueVector())
+if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 1d failed!")        
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 1d failed!")
 
 #Model 2d
-print("# Model 2d #")
 mdl2d = mdpsolver.model()
 mdl2d.mdp(discount=0.95,
         rewards=rewards,
@@ -628,11 +663,12 @@ mdl2d.solve(algorithm="pi",
           SORrelaxation=1.01,
           parallel=False,
           initPolicy=initPolicy)
-print(mdl2d.getPolicy())
-print(mdl2d.getValueVector())
+if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 2d failed!")        
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+        sys.exit("Model 2d failed!")
 
 #Model 3d
-print("# Model 3d #")
 mdl3d = mdpsolver.model()
 mdl3d.mdp(discount=0.95,
         rewards=rewards,
@@ -642,5 +678,9 @@ mdl3d.solve(algorithm="vi",
           update="sor",
           SORrelaxation=1.01,
           parallel=False)
-print(mdl3d.getPolicy())
-print(mdl3d.getValueVector())
+if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
+        sys.exit("Model 3d failed!")        
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+        sys.exit("Model 3d failed!")
+
+print("Test 1 succesfully reproduced output!")
