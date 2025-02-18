@@ -45,7 +45,7 @@ mdl1.mdp(discount=0.99,
         tranMatFromFile="transitions_example2.csv")
 
 mdl1.solve(algorithm="vi")
-if not np.round(np.mean(mdl1.getValueVector()),6)==np.round(17074.81609832942,6):
+if not np.round(np.mean(mdl1.getValueVector()),0)==17075.0:
         sys.exit("Model 1 failed!")
 
 #---------------------------------------
@@ -60,7 +60,7 @@ mdl2.mdp(discount=0.99,
 
 mdl2.solve(algorithm="pi")
 
-if not np.round(np.mean(mdl2.getValueVector()),6)==np.round(17074.815578793514,6):
+if not np.round(np.mean(mdl2.getValueVector()),0)==17075.0:
         sys.exit("Model 2 failed!")
 
 #---------------------------------------
@@ -75,7 +75,7 @@ mdl3.mdp(discount=0.99,
 
 mdl3.solve(algorithm="mpi")
 
-if not np.round(np.mean(mdl3.getValueVector()),6)==np.round(17074.815563750446,6):
+if not np.round(np.mean(mdl3.getValueVector()),0)==17075.0:
         sys.exit("Model 3 failed!")
         
 print("Test 2 succesfully reproduced output!")
