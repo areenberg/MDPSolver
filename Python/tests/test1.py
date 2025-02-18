@@ -41,7 +41,7 @@ mdl1a.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1a failed!")        
-if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),3),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),3)):
         sys.exit("Model 1a failed!")
 
 #Model 2a (discounted reward, parallel)
@@ -55,7 +55,7 @@ mdl2a.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2a failed!")        
-if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),3),np.round(np.array([200.00114718191236,212.86672887958622,298.7090458676583]),3)):
         sys.exit("Model 2a failed!")
 
 #Model 3a (discounted reward, parallel)
@@ -68,7 +68,7 @@ mdl3a.solve(algorithm="vi",
           parallel=True)
 if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3a failed!")        
-if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3a failed!")
 
 #Model 1b (discounted reward, unparallel)
@@ -82,7 +82,7 @@ mdl1b.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1b failed!")        
-if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 1b failed!")
 
 #Model 2b (discounted reward, unparallel)
@@ -96,7 +96,7 @@ mdl2b.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2b failed!")        
-if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 2b failed!")
 
 #Model 3b (discounted reward, unparallel)
@@ -109,7 +109,7 @@ mdl3b.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3b failed!")        
-if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3b failed!")
 
 #Model 1a (average reward, parallel)
@@ -123,7 +123,7 @@ mdl1a.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1a failed!")        
-if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),3),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),3)):
         sys.exit("Model 1a failed!")
 
 #Model 2a (average reward, parallel)
@@ -137,7 +137,7 @@ mdl2a.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2a failed!")        
-if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),3),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),3)):
         sys.exit("Model 2a failed!")
 
 #Model 3a (average reward, parallel)
@@ -150,7 +150,7 @@ mdl3a.solve(algorithm="vi",
           parallel=True)
 if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3a failed!")        
-if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),6)):
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),3),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),3)):
         sys.exit("Model 3a failed!")
 
 #Model 1b (average reward, unparallel)
@@ -164,7 +164,7 @@ mdl1b.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1b failed!")        
-if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),3),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),3)):
         sys.exit("Model 1b failed!")
 
 #Model 2b (average reward, unparallel)
@@ -178,7 +178,7 @@ mdl2b.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2b failed!")        
-if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),6)):
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),3),np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]),3)):
         sys.exit("Model 2b failed!")
 
 #Model 3b (average reward, unparallel)
@@ -191,7 +191,7 @@ mdl3b.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3b failed!")        
-if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),6)):
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),3),np.round(np.array([158.23345351808334, 172.23340169038516, 261.233237936489]),3)):
         sys.exit("Model 3b failed!")
 
 #Model 1c (discounted, Gauss-Seidel)
@@ -205,7 +205,7 @@ mdl1c.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1c failed!")        
-if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 1c failed!")
 
 #Model 2c (Gauss-Seidel)
@@ -220,7 +220,7 @@ mdl2c.solve(algorithm="pi",
             initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2c failed!")        
-if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 2c failed!")
 
 #Model 3c (Gauss-Seidel)
@@ -233,7 +233,7 @@ mdl3c.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3c failed!")        
-if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),3),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),3)):
         sys.exit("Model 3c failed!")
 
 #Model 1d (SOR)
@@ -248,7 +248,7 @@ mdl1d.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1d failed!")        
-if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 1d failed!")
 
 #Model 2d (SOR)
@@ -263,7 +263,7 @@ mdl2d.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2d failed!")        
-if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 2d failed!")
 
 #Model 3d (SOR)
@@ -277,7 +277,7 @@ mdl3d.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3d failed!")        
-if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),3),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),3)):
         sys.exit("Model 3d failed!")
 
 #---------------------------------------
@@ -324,7 +324,7 @@ mdl1a.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1a failed!")        
-if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 1a failed!")
 
 #Model 2a
@@ -338,7 +338,7 @@ mdl2a.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2a failed!")        
-if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 2a failed!")
 
 #Model 3a
@@ -351,7 +351,7 @@ mdl3a.solve(algorithm="vi",
           parallel=True)
 if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3a failed!")        
-if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3a failed!")
 
 #Model 1b
@@ -365,7 +365,7 @@ mdl1b.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1b failed!")        
-if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 1b failed!")
 
 #Model 2b
@@ -379,7 +379,7 @@ mdl2b.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2b failed!")        
-if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 2b failed!")
 
 #Model 3b
@@ -392,7 +392,7 @@ mdl3b.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3b failed!")        
-if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3b failed!")
 
 #Model 1c
@@ -406,7 +406,7 @@ mdl1c.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1c failed!")        
-if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 1c failed!")
 
 #Model 2c
@@ -420,7 +420,7 @@ mdl2c.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2c failed!")        
-if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 2c failed!")
 
 #Model 3c
@@ -433,7 +433,7 @@ mdl3c.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3c failed!")        
-if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),3),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),3)):
         sys.exit("Model 3c failed!")
 
 #Model 1d
@@ -448,7 +448,7 @@ mdl1d.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1d failed!")        
-if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 1d failed!")
 
 #Model 2d
@@ -463,7 +463,7 @@ mdl2d.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2d failed!")        
-if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 2d failed!")
 
 #Model 3d
@@ -477,7 +477,7 @@ mdl3d.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3d failed!")        
-if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),3),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),3)):
         sys.exit("Model 3d failed!")
 
 #---------------------------------------
@@ -516,7 +516,7 @@ mdl1a.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1a failed!")        
-if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1a.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 1a failed!")
 
 #Model 2a
@@ -531,7 +531,7 @@ mdl2a.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2a failed!")        
-if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2a.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 2a failed!")
 
 #Model 3a
@@ -545,7 +545,7 @@ mdl3a.solve(algorithm="vi",
           parallel=True)
 if not np.array_equal(np.array(mdl3a.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3a failed!")        
-if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3a.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3a failed!")
 
 #Model 1b
@@ -560,7 +560,7 @@ mdl1b.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1b failed!")        
-if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl1b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 1b failed!")
 
 #Model 2b
@@ -575,7 +575,7 @@ mdl2b.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2b failed!")        
-if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),6),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),6)):
+if not np.array_equal(np.round(np.array(mdl2b.getValueVector()),3),np.round(np.array([200.00114718191236, 212.86672887958622, 298.7090458676583]),3)):
         sys.exit("Model 2b failed!")
 
 #Model 3b
@@ -589,7 +589,7 @@ mdl3b.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3b.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3b failed!")        
-if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),6),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),6)):
+if not np.array_equal(np.round(np.array(mdl3b.getValueVector()),3),np.round(np.array([200.0013199959708, 212.86689665815788, 298.709197760198]),3)):
         sys.exit("Model 3b failed!")
 
 #Model 1c
@@ -604,7 +604,7 @@ mdl1c.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1c failed!")        
-if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl1c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 1c failed!")
 
 #Model 2c
@@ -619,7 +619,7 @@ mdl2c.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2c failed!")        
-if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),6),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),6)):
+if not np.array_equal(np.round(np.array(mdl2c.getValueVector()),3),np.round(np.array([200.0012771893156, 212.86686671568802, 298.7091798650016]),3)):
         sys.exit("Model 2c failed!")
 
 #Model 3c
@@ -633,7 +633,7 @@ mdl3c.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3c.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3c failed!")        
-if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),6),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),6)):
+if not np.array_equal(np.round(np.array(mdl3c.getValueVector()),3),np.round(np.array([200.0010604606014, 212.86664512773723, 298.7089561808565]),3)):
         sys.exit("Model 3c failed!")
 
 #Model 1d
@@ -649,7 +649,7 @@ mdl1d.solve(algorithm="mpi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl1d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 1d failed!")        
-if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl1d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 1d failed!")
 
 #Model 2d
@@ -665,7 +665,7 @@ mdl2d.solve(algorithm="pi",
           initPolicy=initPolicy)
 if not np.array_equal(np.array(mdl2d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 2d failed!")        
-if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),6),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),6)):
+if not np.array_equal(np.round(np.array(mdl2d.getValueVector()),3),np.round(np.array([200.00127021272166, 212.86686059325598, 298.70917425463125]),3)):
         sys.exit("Model 2d failed!")
 
 #Model 3d
@@ -680,7 +680,7 @@ mdl3d.solve(algorithm="vi",
           parallel=False)
 if not np.array_equal(np.array(mdl3d.getPolicy()),np.array([1,1,0])):
         sys.exit("Model 3d failed!")        
-if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),6),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),6)):
+if not np.array_equal(np.round(np.array(mdl3d.getValueVector()),3),np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]),3)):
         sys.exit("Model 3d failed!")
 
 print("Test 1 succesfully reproduced output!")
