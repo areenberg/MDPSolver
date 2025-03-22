@@ -8,10 +8,6 @@ solve it, and extract the resulting policy and value vectors.
 
 from mdpsolver import solvermodule
 
-# Auxiliary methods (under development)
-# from mdpsolver.problems.tbmaux import tbmaux
-# from mdpsolver.problems.cbmaux import cbmaux
-
 
 class model:
     """
