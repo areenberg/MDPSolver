@@ -6,7 +6,6 @@
 __pycache__/
 *.pyc
 
-Python/src/mdpsolver/problems/
 build/
 dist/
 Dockerfile
