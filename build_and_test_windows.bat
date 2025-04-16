@@ -7,30 +7,6 @@ cd /d "%~dp0CPP_Source_Code" || (
     exit /b 1
 )
 
-REM Make sure the file exists
-if not exist CMakeLists.txt (
-    REM Get Python version like 3.11
-    for /f %%i in ('python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"') do set PYTHON_VERSION=%%i
-    REM Create CMakeLists.txt
-    echo cmake_minimum_required(VERSION !PYTHON_VERSION!) > CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo project(solvermodule) >> CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo add_subdirectory(pybind11) >> CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo file(GLOB SOURCES "*.cpp") >> CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo pybind11_add_module(solvermodule ^${SOURCES^}) >> CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo set_target_properties(solvermodule PROPERTIES CXX_STANDARD 11) >> CMakeLists.txt
-    echo. >> CMakeLists.txt
-    echo find_package(OpenMP) >> CMakeLists.txt
-    echo if(OpenMP_CXX_FOUND) >> CMakeLists.txt
-    echo     target_compile_options(solvermodule PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/openmp:llvm>") >> CMakeLists.txt
-    echo     target_link_libraries(solvermodule PUBLIC OpenMP::OpenMP_CXX) >> CMakeLists.txt
-    echo endif() >> CMakeLists.txt
-)
-
 REM Run cmake
 if not exist build mkdir build
 cd build
