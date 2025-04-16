@@ -31,15 +31,17 @@ for %%f in (solvermodule*.pyd) do (
 )
 
 REM Run tests
-cd ..\..\Python\tests
+cd ..
+cd ..
+cd ..
 echo Running test1.py...
-python test1.py || (
+python Python/tests/test1.py || (
     echo test1.py failed.
     exit /b 1
 )
 
 echo Running test2.py...
-python test2.py || (
+python Python/tests/test2.py || (
     echo test2.py failed.
     exit /b 1
 )
