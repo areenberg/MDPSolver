@@ -2,6 +2,7 @@ import mdpsolver
 import example_model
 import sys
 import numpy as np
+sys.path.append("Python/src/")
 
 # TEST 2
 # In this test, we load the rewards and transition probabilities

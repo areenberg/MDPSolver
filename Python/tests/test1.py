@@ -3,6 +3,7 @@ import random
 import sys
 import numpy as np
 from random import randint
+sys.path.append("Python/src/")
 
 # TEST 1
 # Simple MDP with 3 states and 2 actions in each state.
