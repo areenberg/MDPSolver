@@ -1,10 +1,6 @@
 import example_model
 import sys
-import os
 import numpy as np
-project_root = os.path.dirname(os.path.abspath(__file__))
-src_path = os.path.join(project_root, "..", "src")
-sys.path.append(os.path.abspath(src_path))
 import mdpsolver
 
 # TEST 2
