@@ -11,7 +11,7 @@ build/
 dist/
 Dockerfile
 
-*.txt
+CompilerNotes.txt
 *.exe
 *.in
 *.toml
