@@ -2,9 +2,7 @@
 
 <img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
 
-Markdown:
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.07544/status.svg)](https://doi.org/10.21105/joss.07544)
-[![DOI](https://zenodo.org/badge/294063917.svg)](https://zenodo.org/badge/latestdoi/294063917)
 
 MDPSolver is a Python package for large Markov Decision Processes (MDPs) with infinite-horizons. 
 
@@ -158,5 +156,14 @@ The documentation can be found in the [wiki for MDPSolver](https://github.com/ar
 
 **BibTeX**
 ```
-@article{Andersen2025, doi = {10.21105/joss.07544}, url = {https://doi.org/10.21105/joss.07544}, year = {2025}, publisher = {The Open Journal}, volume = {10}, number = {109}, pages = {7544}, author = {Anders Reenberg Andersen and Jesper Fink Andersen}, title = {MDPSolver: An Efficient Solver for Markov Decision Processes}, journal = {Journal of Open Source Software} }
+@article{Andersen2025,
+        doi = {10.21105/joss.07544},
+        url = {https://doi.org/10.21105/joss.07544},
+        year = {2025}, publisher = {The Open Journal},
+        volume = {10},
+        number = {109},
+        pages = {7544},
+        author = {Anders Reenberg Andersen and Jesper Fink Andersen},
+        title = {MDPSolver: An Efficient Solver for Markov Decision Processes},
+        journal = {Journal of Open Source Software} }
 ```
