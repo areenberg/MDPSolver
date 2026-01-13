@@ -1,7 +1,5 @@
 # MDPSolver
 
-<img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
-
 MDPSolver is a Python package for large Markov Decision Processes (MDPs) with infinite-horizons. 
 
 ## Features
@@ -23,11 +21,9 @@ Install directly from PyPI with:
 pip install mdpsolver
 ```
 
-MDPSolver works *out of the box* on Ubuntu 22 and newer.
-
 ### GLIBC not found
 
-Some users will encounter the `version 'GLIBC_2.32' not found` error when attempting to import MDPSolver in Python. In this case, it might help to manually compile and replace the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
+Some users will encounter the `version 'GLIBC_2.38' not found` error when attempting to import MDPSolver in Python. The issue can be resolved by manually compiling and replacing the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
 
 ## Windows
 
