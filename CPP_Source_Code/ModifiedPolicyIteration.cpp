@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2024 Anders Reenberg Andersen and Jesper Fink Andersen
+* Copyright (c) 2026 Anders Reenberg Andersen and Jesper Fink Andersen
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -958,35 +958,48 @@ void ModifiedPolicyIteration::initValue(){
 
 void ModifiedPolicyIteration::checkFinalValue() {
 	//See if final value vector is within reason
-	//NB!! this function is specific to the TBMmodel replacement problem.
+	//Note: This method only applies to the discounted reward optimality criterion
+	
+	if (useDis){
+		//derive minimum and maximum rewards
+		double minRew = numeric_limits<double>::infinity();
+		double maxRew = -numeric_limits<double>::infinity();
+		double r;
+		int s,a;
 
-	//derive minimum reward
-	double minRew = 0;
-	double r;
-	int s,a;
+		for (s = 0; s < model->getNumberOfStates(); s++) {
+			model->updateNumberOfActions(s);
+			for (a = 0; a < model->getNumberOfActions(); a++) {
+				r = model->reward(s, a);
+				if (r < minRew) {
+					minRew = r;
+				}
+				if (r > maxRew) {
+					maxRew = r;
+				}
+			}
+		}
+		if (minRew == -numeric_limits<double>::infinity()) {
+			minRew = -1e6; // some large negative value
+		}
+		if (maxRew == numeric_limits<double>::infinity()) {
+			maxRew = 1e6; // some large positive value
+		}		
 
-	for (s = 0; s < model->getNumberOfStates(); s++) {
-		model->updateNumberOfActions(s);
-		for (a = 0; a < model->getNumberOfActions(); a++) {
-			r = model->reward(s, a);
-			if (r < minRew) {
-				minRew = r;
+		//smallest possible value in value vector
+		minRew *= 1 / (1 - model->getDiscount());
+		//largest possible value in value vector
+		maxRew *= 1 / (1 - model->getDiscount());
+
+		for (s = 0; s < model->getNumberOfStates(); ++s) {
+			if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){
+				cout << "NOT CONVERGED: Erroneous result in value vector at v[" << s << "] = " << valueVector->valueVector[s] << endl;
+				converged = false;
+				break;
 			}
 		}
 	}
-	if (minRew == -numeric_limits<double>::infinity()) {
-		minRew = -1e4; // some large negative value
-	}
-	//smallest possible value in value vector
-	minRew *= 1 / (1 - model->getDiscount());
 
-	for (s = 0; s < model->getNumberOfStates(); ++s) {
-		if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew){
-			cout << "NOT CONVERGED! Final value vector is crazy at v[" << s << "] = " << valueVector->valueVector[s] << endl;
-			converged = false;
-			break;
-		}
-	}
 }
 
 
