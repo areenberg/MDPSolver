@@ -6,8 +6,8 @@ and solve Markov Decision Processes (MDPs). It provides methods to configure the
 solve it, and extract the resulting policy and value vectors.
 """
 
+import sys
 from mdpsolver import solvermodule
-
 
 class model:
     """
@@ -27,19 +27,19 @@ class model:
 
     def solve(
         self,
-        algorithm="mpi",
-        tolerance=1e-3,
-        update="standard",
-        criterion="discounted",
-        parIterLim=100,
-        SORrelaxation=1.0,
-        initPolicy=list(),
-        initValueVector=list(),
-        verbose=False,
-        postProcessing=True,
-        makeFinalCheck=True,
-        parallel=True,
-    ):
+        algorithm: str = "mpi",
+        tolerance: float = 1e-3,
+        update: str = "standard",
+        criterion: str = "discounted",
+        parIterLim: int = 100,
+        SORrelaxation: float = 1.0,
+        initPolicy: list = list(),
+        initValueVector: list = list(),
+        verbose: bool = False,
+        postProcessing: bool = True,
+        makeFinalCheck: bool = True,
+        parallel: bool = True,
+    ) -> None:
         """
         Derive an epsilon-optimal policy for the selected MDP model.
 
@@ -60,6 +60,20 @@ class model:
         Returns:
             None
         """
+        
+        if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
+            sys.exit("Error: Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
+        if tolerance <= 0.0:
+            sys.exit("Error: The tolerance needs to be a positive number.")
+        if not (update == "standard" or update == "gs" or update == "sor"):
+            sys.exit("Error: Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
+        if not (criterion == "discounted" or criterion == "average"):
+            sys.exit("Error: Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
+        if parIterLim <= 0 and algorithm == "mpi":
+            sys.exit("Error: The partial evaluation limit needs to be a positive number.")
+        if (SORrelaxation <= 0.0 or SORrelaxation >= 2.0) and update == "sor":
+            sys.exit("Error: The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
+        
         self.mdl.solve(
             algorithm=algorithm,
             tolerance=tolerance,
@@ -75,7 +89,7 @@ class model:
             parallel=parallel,
         )
 
-    def getRuntime(self):
+    def getRuntime(self) -> float:
         """
         Get the runtime of the last solver execution.
 
@@ -84,15 +98,15 @@ class model:
         """
         return self.mdl.getRuntime()
 
-    def printPolicy(self):
+    def printPolicy(self) -> None:
         """Print the entire policy to the terminal."""
         self.mdl.printPolicy()
 
-    def printValueVector(self):
+    def printValueVector(self) -> None:
         """Print the entire value vector to the terminal."""
         self.mdl.printValueVector()
 
-    def getAction(self, stateIndex=0):
+    def getAction(self, stateIndex: int = 0) -> int:
         """
         Get the action from the optimized policy for a specific state.
 
@@ -104,7 +118,7 @@ class model:
         """
         return self.mdl.getAction(stateIndex=stateIndex)
 
-    def getValue(self, stateIndex=0):
+    def getValue(self, stateIndex: int = 0) -> float:
         """
         Get the value from the optimized value vector for a specific state.
 
@@ -116,7 +130,7 @@ class model:
         """
         return self.mdl.getValue(stateIndex=stateIndex)
 
-    def getPolicy(self):
+    def getPolicy(self) -> list:
         """
         Get the entire optimized policy.
 
@@ -134,7 +148,7 @@ class model:
         """
         return self.mdl.getValueVector()
 
-    def saveToFile(self, fileName="result.csv", type="policy"):
+    def saveToFile(self, fileName: str = "result.csv", type: str = "policy") -> None:
         """
         Save the optimized policy or value vector to a file.
 
@@ -145,20 +159,24 @@ class model:
         Returns:
             None
         """
+        
+        if not (type == "policy" or type == "value"):
+            sys.exit("Error: Type not recognized. Select either: 'policy' or 'value'.")
+
         return self.mdl.saveToFile(fileName=fileName, type=type)
 
     def mdp(
         self,
-        discount=0.99,
-        rewards=list(),
-        rewardsElementwise=list(),
-        rewardsFromFile="rewards.csv",
-        tranMatWithZeros=list(),
-        tranMatElementwise=list(),
-        tranMatProbs=list(),
-        tranMatColumns=list(),
-        tranMatFromFile="transitions.csv",
-    ):
+        discount: float = 0.99,
+        rewards: list = list(),
+        rewardsElementwise: list = list(),
+        rewardsFromFile: str = "rewards.csv",
+        tranMatWithZeros: list = list(),
+        tranMatElementwise: list = list(),
+        tranMatProbs: list = list(),
+        tranMatColumns: list = list(),
+        tranMatFromFile: str = "transitions.csv",
+    ) -> None:
         """
         Define the generic MDP model.
 
@@ -176,6 +194,10 @@ class model:
         Returns:
             None
         """
+        
+        if discount <= 0.0 or discount >= 1.0:
+            sys.exit("Error: The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
+        
         self.mdl.mdp(
             discount=discount,
             rewards=rewards,
