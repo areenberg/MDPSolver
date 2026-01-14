@@ -27,7 +27,7 @@ pip install mdpsolver
 
 ### GLIBC not found
 
-Some users will encounter the `version 'GLIBC_2.38' not found` error when attempting to import MDPSolver in Python. The issue can be resolved by manually compiling and replacing the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
+Some users will encounter the `version 'GLIBC_2.32' not found` error when attempting to import MDPSolver in Python. The issue can be resolved by manually compiling and replacing the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
 
 ## Windows
 
