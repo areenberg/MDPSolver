@@ -75,9 +75,8 @@ ModifiedPolicyIteration::~ModifiedPolicyIteration() {
 
 
 void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector * vv){
-	//The MDP is solved using the expected total discounted reward criterion.
-	//All probabilities and rewards are calculated "on demand".
-
+	//The MDP is solved using the selected optimality criterion.
+	
     //initialize value vectors and their pointers
     model = mdl;
     policy = ply;
