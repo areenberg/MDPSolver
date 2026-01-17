@@ -960,46 +960,47 @@ void ModifiedPolicyIteration::checkFinalValue() {
 	//See if final value vector is within reason
 	//Note: This method only applies to the discounted reward optimality criterion
 	
-	if (useDis){
-		//derive minimum and maximum rewards
-		double minRew = numeric_limits<double>::infinity();
-		double maxRew = -numeric_limits<double>::infinity();
-		double r;
-		int s,a;
+	
+	//derive minimum and maximum rewards
+	double minRew = numeric_limits<double>::infinity();
+	double maxRew = -numeric_limits<double>::infinity();
+	double r;
+	int s,a;
 
-		for (s = 0; s < model->getNumberOfStates(); s++) {
-			model->updateNumberOfActions(s);
-			for (a = 0; a < model->getNumberOfActions(); a++) {
-				r = model->reward(s, a);
-				if (r < minRew) {
-					minRew = r;
-				}
-				if (r > maxRew) {
-					maxRew = r;
-				}
+	for (s = 0; s < model->getNumberOfStates(); s++) {
+		model->updateNumberOfActions(s);
+		for (a = 0; a < model->getNumberOfActions(); a++) {
+			r = model->reward(s, a);
+			if (r < minRew) {
+				minRew = r;
+			}
+			if (r > maxRew) {
+				maxRew = r;
 			}
 		}
-		if (minRew == -numeric_limits<double>::infinity()) {
-			minRew = -1e6; // some large negative value
-		}
-		if (maxRew == numeric_limits<double>::infinity()) {
-			maxRew = 1e6; // some large positive value
-		}		
+	}
+	if (minRew == -numeric_limits<double>::infinity()) {
+		minRew = -1e6; // some large negative value
+	}
+	if (maxRew == numeric_limits<double>::infinity()) {
+		maxRew = 1e6; // some large positive value
+	}		
 
+	if (useDis){
 		//smallest possible value in value vector
 		minRew *= 1 / (1 - model->getDiscount());
 		//largest possible value in value vector
 		maxRew *= 1 / (1 - model->getDiscount());
-
-		for (s = 0; s < model->getNumberOfStates(); ++s) {
-			if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){
-				cout << "NOT CONVERGED: Erroneous result in value vector at v[" << s << "] = " << valueVector->valueVector[s] << endl;
-				converged = false;
-				break;
-			}
-		}
 	}
 
+	for (s = 0; s < model->getNumberOfStates(); ++s) {
+		if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){
+			cout << "NOT CONVERGED: Erroneous result in value vector at v[" << s << "] = " << valueVector->valueVector[s] << endl;
+			converged = false;
+			break;
+		}
+	}
+	
 }
 
 
