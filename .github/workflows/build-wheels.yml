@@ -22,10 +22,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 = Intel runner, macos-14 = Apple Silicon runner.
-        # Each builds/tests only its own native architecture, which keeps
-        # OpenMP (via Homebrew libomp) simple and avoids cross-compile issues.
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        # macos-14 = Apple Silicon (arm64) only. Intel macOS (macos-13) is
+        # intentionally not built - a deliberate scope decision, not a
+        # limitation we hit. Users on Intel Macs get the sdist and need a
+        # C++ toolchain + CMake to install.
+        os: [ubuntu-latest, windows-latest, macos-14]
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +46,7 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_BEFORE_ALL_MACOS: brew install libomp
           CIBW_ENVIRONMENT_MACOS: >
-            CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp:/usr/local/opt/libomp
+            CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp
             MACOSX_DEPLOYMENT_TARGET=14.0
           # DIAGNOSTIC (temporary): the macOS test step was observed hanging
           # indefinitely on test2_pip.py, which is the first test to combine
