@@ -4,7 +4,7 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 ## Features
 
-* Fast solver: Our C++-based solver is substantially faster than other MDP packages available for Python. See details in the documentation.
+* Fast solver: Our C++-based solver is substantially faster than other CPU-based MDP packages available for Python. See details in the documentation.
 * Two optimality criteria: *Discounted* and *Average* reward.
 * Three optimization algorithms: *Value iteration*, *Policy iteration*, and *Modified policy iteration*.
 * Three value-update methods: *Standard*, *Gauss–Seidel*, and *Successive over-relaxation*.
@@ -13,7 +13,7 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 # Installation
 
-Prebuilt wheels are available for Linux, Windows, and macOS (Intel and Apple Silicon) across Python 3.10–3.14 — no compiler or extra setup required. Install directly from PyPI with:
+Prebuilt wheels are available for **Linux**, **Windows**, and **macOS** across Python 3.10–3.14. Install directly from PyPI with:
 
 ```
 pip install mdpsolver
