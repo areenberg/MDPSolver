@@ -75,9 +75,8 @@ ModifiedPolicyIteration::~ModifiedPolicyIteration() {
 
 
 void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector * vv){
-	//The MDP is solved using the expected total discounted reward criterion.
-	//All probabilities and rewards are calculated "on demand".
-
+	//The MDP is solved using the selected optimality criterion.
+	
     //initialize value vectors and their pointers
     model = mdl;
     policy = ply;
@@ -957,10 +956,11 @@ void ModifiedPolicyIteration::initValue(){
 
 
 void ModifiedPolicyIteration::checkFinalValue() {
-	//See if final value vector is within reason
+	//Check if final value vector is feasible
 	//Note: This method only applies to the discounted reward optimality criterion
 	
-	if (useDis){
+	if (useDis){ //check if discounted criterion selected
+	
 		//derive minimum and maximum rewards
 		double minRew = numeric_limits<double>::infinity();
 		double maxRew = -numeric_limits<double>::infinity();
@@ -985,7 +985,7 @@ void ModifiedPolicyIteration::checkFinalValue() {
 		if (maxRew == numeric_limits<double>::infinity()) {
 			maxRew = 1e6; // some large positive value
 		}		
-
+	
 		//smallest possible value in value vector
 		minRew *= 1 / (1 - model->getDiscount());
 		//largest possible value in value vector
@@ -998,6 +998,7 @@ void ModifiedPolicyIteration::checkFinalValue() {
 				break;
 			}
 		}
+
 	}
 
 }

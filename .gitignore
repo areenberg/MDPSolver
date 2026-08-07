@@ -9,12 +9,16 @@ __pycache__/
 Python/src/mdpsolver/problems/
 build/
 dist/
+wheelhouse/
 Dockerfile
 
 CompilerNotes.txt
 *.exe
-*.in
-*.toml
 *egg-info
 *.Rhistory
-*.csv
+Benchmark/results/
+
+# Compiled extension modules are built by CI (cibuildwheel) / local build
+# scripts, not committed to the repo.
+*.pyd
+*.so

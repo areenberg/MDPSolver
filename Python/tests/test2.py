@@ -51,8 +51,9 @@ mdl1.mdp(
 )
 
 mdl1.solve(algorithm="vi")
-if not np.round(np.mean(mdl1.getValueVector()), 0) == 17075.0:
-    sys.exit("Model 1 failed!")
+mean1 = np.mean(mdl1.getValueVector())
+if not np.round(mean1, 0) == 17075.0:
+    sys.exit(f"Model 1 failed! mean={mean1!r} rounded={np.round(mean1, 0)!r}")
 
 # ---------------------------------------
 # POLICY ITERATION
@@ -68,8 +69,9 @@ mdl2.mdp(
 
 mdl2.solve(algorithm="pi")
 
-if not np.round(np.mean(mdl2.getValueVector()), 0) == 17075.0:
-    sys.exit("Model 2 failed!")
+mean2 = np.mean(mdl2.getValueVector())
+if not np.round(mean2, 0) == 17075.0:
+    sys.exit(f"Model 2 failed! mean={mean2!r} rounded={np.round(mean2, 0)!r}")
 
 # ---------------------------------------
 # MODIFIED POLICY ITERATION
@@ -85,7 +87,8 @@ mdl3.mdp(
 
 mdl3.solve(algorithm="mpi")
 
-if not np.round(np.mean(mdl3.getValueVector()), 0) == 17075.0:
-    sys.exit("Model 3 failed!")
+mean3 = np.mean(mdl3.getValueVector())
+if not np.round(mean3, 0) == 17075.0:
+    sys.exit(f"Model 3 failed! mean={mean3!r} rounded={np.round(mean3, 0)!r}")
 
 print("Test 2 succesfully reproduced output!")

@@ -45,13 +45,16 @@ void GeneralMDPmodel::initialize(){
 }
         
 double GeneralMDPmodel::reward(int &sidx, int &aidx){
+    //calculates and returns the reward of taking action
+    //aidx when in current state sidx
+
     return rewards->getReward(sidx,aidx);
 }
 
 double GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
     //calculates the probability of jumping to state jidx from
     //the current state sidx when taking action aidx.
-    //returns *and* stores the calculated probability in the variable psj.
+    //returns the calculated probability.
 
     return tranMat->getProb(sidx,aidx,jidx);
 }
