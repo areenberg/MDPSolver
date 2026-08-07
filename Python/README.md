@@ -13,15 +13,11 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 # Installation
 
-Prebuilt wheels are available for **Linux**, **Windows**, and **macOS** across Python 3.10–3.14. Install directly from PyPI with:
+Prebuilt wheels are available for **Linux**, **Windows**, and **macOS (14+)** across Python 3.10–3.14. Install directly from PyPI with:
 
 ```
 pip install mdpsolver
 ```
-
-### macOS
-
-Requires macOS 14 (Sonoma) or newer. On an older macOS, `pip` will fall back to building from source, which requires a C++ toolchain and CMake to be installed.
 
 # Quick start guide
 
