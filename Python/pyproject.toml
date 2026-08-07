@@ -1,0 +1,40 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+# The CMake project lives outside Python/, next to the rest of the C++ sources.
+cmake.source-dir = "../CPP_Source_Code"
+build-dir = "build/{wheel_tag}"
+# CMakeLists.txt installs the extension to DESTINATION mdpsolver itself,
+# so wheel.install-dir stays at the default (wheel root) here.
+sdist.include = ["src/mdpsolver/*.py"]
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "Release"
+
+[project]
+name = "mdpsolver"
+version = "0.10.0"
+authors = [
+  { name="Anders Reenberg Andersen", email="andersra@live.dk" },
+  { name="Jesper Fink Andersen", email="jesperfinkandersen@gmail.com" },
+]
+description = "A fast solver for Markov Decision Processes"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS"
+]
+
+[project.optional-dependencies]
+test = ["numpy"]
+
+[project.urls]
+Homepage = "https://github.com/areenberg/MDPSolver"
+Issues = "https://github.com/areenberg/MDPSolver/issues"

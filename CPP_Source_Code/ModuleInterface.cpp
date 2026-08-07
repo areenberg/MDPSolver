@@ -467,22 +467,29 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
     for (int sidx=0; sidx<numberOfStates; sidx++){
         nCol[sidx].resize((nAct[sidx]+1),0);
     }
+    // nCol must be the *count* of transitions for each (state,action), not
+    // the largest to-state index seen. Transition targets are not
+    // guaranteed contiguous (e.g. a state may jump to states 2 and 7 but
+    // not 0,1,3,4,5,6), so sizing columns off the max index left trailing
+    // slots that never got assigned a real value - still holding
+    // TransitionMatrix::setNumberOfColumns()'s -1 "unassigned" fill value.
+    // getNumberOfJumps() (which returns this size) was then used as a loop
+    // bound in ModifiedPolicyIteration, reading vpOld[-1] - 8 bytes before
+    // the value vector's allocation - once the loop ran past the real
+    // entries into those leftover slots.
     for (int i=0; i<tranMatElementwise.size(); i++){
         innerRew = tranMatElementwise[i].cast<py::list>();
         k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
-        k2 = innerRew[2].cast<int>();
-        if (k2>nCol[k0][k1]){
-            nCol[k0][k1]=k2;
-        }
+        nCol[k0][k1]++;
     }
     //allocate memory
     problem.tranMat.setNumberOfRows(numberOfStates);
     for (int sidx=0; sidx<numberOfStates; sidx++){
         problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
         for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
-            problem.tranMat.setNumberOfColumns((nCol[sidx][aidx]+1),sidx,aidx);           
+            problem.tranMat.setNumberOfColumns(nCol[sidx][aidx],sidx,aidx);
         }
-    }    
+    }
     //assign values
     for (int i=0; i<tranMatElementwise.size(); i++){
         innerRew = tranMatElementwise[i].cast<py::list>();
@@ -562,20 +569,27 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     file.clear();
     file.seekg(0,ios::beg);
 
+    // nCol must be the *count* of transitions for each (state,action), not
+    // the largest to-state index seen. Transition targets are not
+    // guaranteed contiguous (e.g. a state may jump to states 2 and 7 but
+    // not 0,1,3,4,5,6), so sizing columns off the max index left trailing
+    // slots that never got assigned a real value - still holding
+    // TransitionMatrix::setNumberOfColumns()'s -1 "unassigned" fill value.
+    // getNumberOfJumps() (which returns this size) was then used as a loop
+    // bound in ModifiedPolicyIteration, reading vpOld[-1] - 8 bytes before
+    // the value vector's allocation - once the loop ran past the real
+    // entries into those leftover slots.
     i=0;
     while (getline(file,line)){
         if (!header||i>0){
             stringstream lineStream(line);
             vector<string> innerRew;
             while (getline(lineStream,cell,sep)) {
-                innerRew.push_back(cell); 
-                
+                innerRew.push_back(cell);
+
             }
             k0 = stoi(innerRew[0]); k1 = stoi(innerRew[1]);
-            k2 = stoi(innerRew[2]);
-            if (k2>nCol[k0][k1]){
-                nCol[k0][k1]=k2;
-            }    
+            nCol[k0][k1]++;
         }
         i++;
     }
@@ -589,7 +603,7 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     for (int sidx=0; sidx<numberOfStates; sidx++){
         problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
         for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
-            problem.tranMat.setNumberOfColumns((nCol[sidx][aidx]+1),sidx,aidx);           
+            problem.tranMat.setNumberOfColumns(nCol[sidx][aidx],sidx,aidx);
         }
     }
 

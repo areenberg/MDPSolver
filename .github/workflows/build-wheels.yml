@@ -1,0 +1,86 @@
+name: Build and publish wheels
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "CPP_Source_Code/**"
+      - "Python/**"
+      - ".github/workflows/build-wheels.yml"
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    # Safety net: Linux and Windows build+test all 5 Python versions well
+    # under this, so a job still running past it is stuck, not just slow.
+    # Without this, a genuine hang runs until the (much longer) GitHub
+    # Actions default job timeout instead of failing fast and visibly.
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-14 = Apple Silicon (arm64) only. Intel macOS (macos-13) is
+        # intentionally not built - a deliberate scope decision, not a
+        # limitation we hit. Users on Intel Macs get the sdist and need a
+        # C++ toolchain + CMake to install.
+        os: [ubuntu-latest, windows-latest, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.2.0
+        with:
+          package-dir: Python
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-musllinux* *_i686 *-win32"
+          # manylinux2014's GCC (10.2.1) is too old to build recent NumPy
+          # from source, and NumPy no longer ships prebuilt wheels for that
+          # tag. manylinux_2_28 (AlmaLinux 8, GCC 12+) has current GCC and
+          # NumPy still publishes wheels for it. Wheels built against it
+          # need glibc >= 2.28 (RHEL8/Ubuntu 18.10/Debian 10 or newer),
+          # which covers essentially every machine still updated today.
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_BEFORE_ALL_MACOS: brew install libomp
+          CIBW_ENVIRONMENT_MACOS: >
+            CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp
+            MACOSX_DEPLOYMENT_TARGET=14.0
+          CIBW_TEST_REQUIRES: numpy
+          CIBW_TEST_COMMAND: >
+            python {project}/Python/tests/test1_pip.py &&
+            python {project}/Python/tests/test2_pip.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  build_sdist:
+    name: source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx run build --sdist Python --outdir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: publish to PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    # Only publish on tag pushes, never on pull requests or manual test runs.
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: pypi
+    permissions:
+      id-token: write # required for PyPI Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
