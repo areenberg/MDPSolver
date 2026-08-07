@@ -17,27 +17,15 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 # Installation
 
-## Linux
-
-Install directly from PyPI with:
+Prebuilt wheels are available for Linux, Windows, and macOS (Intel and Apple Silicon) across Python 3.10–3.14 — no compiler or extra setup required. Install directly from PyPI with:
 
 ```
 pip install mdpsolver
 ```
 
-### GLIBC not found
+### macOS
 
-Some users will encounter the `version 'GLIBC_2.32' not found` error when attempting to import MDPSolver in Python. The issue can be resolved by manually compiling and replacing the SO-file for the optimization module in the MDPSolver package. See the steps on how to solve the issue in the [documentation](https://github.com/areenberg/MDPSolver/wiki#how-to-install).
-
-## Windows
-
-Requires [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) (17.9) with MSVC C++ compiler and libraries installed.
-
-After installing Visual Studio (incl. MSVC C++ compiler and libraries), install directly from PyPI with:
-
-```
-pip install mdpsolver
-```
+Requires macOS 14 (Sonoma) or newer. On an older macOS, `pip` will fall back to building from source, which requires a C++ toolchain and CMake to be installed.
 
 # Quick start guide
 
