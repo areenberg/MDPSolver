@@ -31,9 +31,17 @@ jobs:
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-musllinux* *_i686 *-win32"
+          # manylinux2014's GCC (10.2.1) is too old to build recent NumPy
+          # from source, and NumPy no longer ships prebuilt wheels for that
+          # tag. manylinux_2_28 (AlmaLinux 8, GCC 12+) has current GCC and
+          # NumPy still publishes wheels for it. Wheels built against it
+          # need glibc >= 2.28 (RHEL8/Ubuntu 18.10/Debian 10 or newer),
+          # which covers essentially every machine still updated today.
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_BEFORE_ALL_MACOS: brew install libomp
           CIBW_ENVIRONMENT_MACOS: >
             CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp:/usr/local/opt/libomp
+            MACOSX_DEPLOYMENT_TARGET=14.0
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
             python {project}/Python/tests/test1_pip.py &&
