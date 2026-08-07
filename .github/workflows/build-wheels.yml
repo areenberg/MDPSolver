@@ -48,16 +48,6 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: >
             CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp
             MACOSX_DEPLOYMENT_TARGET=14.0
-          # DIAGNOSTIC (temporary): the macOS test step was observed hanging
-          # indefinitely on test2_pip.py, which is the first test to combine
-          # parallel=True (the default) with a non-trivial model. Ubuntu and
-          # Windows ran the identical test successfully 5 times each in the
-          # time macOS was stuck once, so this forces single-threaded OpenMP
-          # during the *test* phase only (build stays parallel) to check
-          # whether this is a libomp-on-Apple-Silicon threading issue. If
-          # this fixes it, investigate further; if it still hangs, remove
-          # this and look elsewhere.
-          CIBW_TEST_ENVIRONMENT_MACOS: OMP_NUM_THREADS=1
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
             python {project}/Python/tests/test1_pip.py &&
