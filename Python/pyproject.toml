@@ -15,7 +15,7 @@ CMAKE_BUILD_TYPE = "Release"
 
 [project]
 name = "mdpsolver"
-version = "0.10.0"
+version = "0.10.1"
 authors = [
   { name="Anders Reenberg Andersen", email="andersra@live.dk" },
   { name="Jesper Fink Andersen", email="jesperfinkandersen@gmail.com" },

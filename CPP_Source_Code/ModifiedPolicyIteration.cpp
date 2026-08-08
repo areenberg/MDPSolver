@@ -52,6 +52,7 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	PIparIterLim((int)1e6), //iteration limit for policy evaluation in PI
 	initPol(false),
 	initVal(false),
+	norm(numeric_limits<double>::infinity()),
 	parallel(parallel),
 	genMDP(genMDP),
 	printStuff(verbose), //set "true" to print algorithm progress at runtime

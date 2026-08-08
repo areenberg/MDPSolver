@@ -116,7 +116,7 @@ if not np.array_equal(np.array(mdl1a.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 1a failed!")
 if not np.array_equal(
     np.round(np.array(mdl1a.getValueVector()), 3),
-    np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]), 3),
+    np.round(np.array([367.6724223596708, 381.67249768303293, 470.67273547568027]), 3),
 ):
     sys.exit("Model 1a failed!")
 
@@ -134,7 +134,7 @@ if not np.array_equal(np.array(mdl2a.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 2a failed!")
 if not np.array_equal(
     np.round(np.array(mdl2a.getValueVector()), 3),
-    np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]), 3),
+    np.round(np.array([367.6724223596708, 381.67249768303293, 470.67273547568027]), 3),
 ):
     sys.exit("Model 2a failed!")
 
@@ -164,7 +164,7 @@ if not np.array_equal(np.array(mdl1b.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 1b failed!")
 if not np.array_equal(
     np.round(np.array(mdl1b.getValueVector()), 3),
-    np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]), 3),
+    np.round(np.array([367.6724223596708, 381.67249768303293, 470.67273547568027]), 3),
 ):
     sys.exit("Model 1b failed!")
 
@@ -182,7 +182,7 @@ if not np.array_equal(np.array(mdl2b.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 2b failed!")
 if not np.array_equal(
     np.round(np.array(mdl2b.getValueVector()), 3),
-    np.round(np.array([354.2101307157537, 368.21018917357264, 457.21037278800077]), 3),
+    np.round(np.array([367.6724223596708, 381.67249768303293, 470.67273547568027]), 3),
 ):
     sys.exit("Model 2b failed!")
 
