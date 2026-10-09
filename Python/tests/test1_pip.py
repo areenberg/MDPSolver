@@ -279,7 +279,7 @@ if not np.array_equal(np.array(mdl3d.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 3d failed!")
 if not np.array_equal(
     np.round(np.array(mdl3d.getValueVector()), 3),
-    np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]), 3),
+    np.round(np.array([200.00127192706978, 212.86686213417138, 298.7091756904488]), 3),
 ):
     sys.exit("Model 3d failed!")
 
@@ -468,7 +468,7 @@ if not np.array_equal(np.array(mdl3d.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 3d failed!")
 if not np.array_equal(
     np.round(np.array(mdl3d.getValueVector()), 3),
-    np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]), 3),
+    np.round(np.array([200.00127192706978, 212.86686213417138, 298.7091756904488]), 3),
 ):
     sys.exit("Model 3d failed!")
 
@@ -706,7 +706,7 @@ if not np.array_equal(np.array(mdl3d.getPolicy()), np.array([1, 1, 0])):
     sys.exit("Model 3d failed!")
 if not np.array_equal(
     np.round(np.array(mdl3d.getValueVector()), 3),
-    np.round(np.array([206.69740452375487, 222.30968454932525, 305.91165352015094]), 3),
+    np.round(np.array([200.00127192706978, 212.86686213417138, 298.7091756904488]), 3),
 ):
     sys.exit("Model 3d failed!")
 

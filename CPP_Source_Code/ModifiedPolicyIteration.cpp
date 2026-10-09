@@ -457,7 +457,7 @@ void ModifiedPolicyIteration::valueIterationSORGenMDP(){
 			}
 			val = (1 - SORrelaxation) * (*vpOld)[sidx] +
 				SORrelaxation / (1 - discount * probSame) *
-				(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR update equation
+				(model->reward(sidx, aidx) + discount * valSum); //SOR update equation
 			if (val > valBest) {
 				valBest = val;
 				aBest = aidx;
