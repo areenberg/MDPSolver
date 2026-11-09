@@ -45,13 +45,13 @@ class model:
 
         Args:
             algorithm (str): Algorithm to use.
-            tolerance (float): Convergence threshold for the algorithm.
-            update (str): The value-update method.
+            tolerance (float): Convergence threshold for the algorithm (0 < tolerance < 1).
+            update (str): The value-update method ('standard', 'gs' or 'sor'; only 'standard' with the average reward criterion).
             criterion (str): The optimality criterion.
             parIterLim (int): The partial evaluation limit employed in the modified policy iteration algorithm.
             SORrelaxation (float): Relaxation parameter for the Successive Over-Relaxation method.
-            initPolicy (list): A 1D-list defining the initial policy. This option can be used for "warm starting" the optimization procedure.
-            initValueVector (list): A 1D-list defining the initial value vector. This option can be used for "warm starting" the optimization procedure.
+            initPolicy (list): A 1D-list defining the initial policy, one action index per state. This option can be used for "warm starting" the optimization procedure.
+            initValueVector (list): A 1D-list defining the initial value vector, one value per state. This option can be used for "warm starting" the optimization procedure.
             verbose (bool): If True, prints solver progress to console.
             postProcessing (bool): If True, performs post-processing after solving.
             makeFinalCheck (bool): If True, makes a final check of the value vector. This process checks if the resulting values are reasonable.
@@ -63,17 +63,25 @@ class model:
         
         if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
             sys.exit("Error: Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
-        if tolerance <= 0.0:
-            sys.exit("Error: The tolerance needs to be a positive number.")
+        if tolerance <= 0.0 or tolerance >= 1.0:
+            sys.exit("Error: The tolerance needs to be between 0.0 and 1.0 (i.e. 0 < tolerance < 1).")
         if not (update == "standard" or update == "gs" or update == "sor"):
             sys.exit("Error: Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
         if not (criterion == "discounted" or criterion == "average"):
             sys.exit("Error: Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
+        if criterion == "average" and (update == "gs" or update == "sor"):
+            sys.exit("Error: Gauss-Seidel and SOR updates are not available with the average reward criterion. Select update='standard'.")
         if parIterLim <= 0 and algorithm == "mpi":
             sys.exit("Error: The partial evaluation limit needs to be a positive number.")
         if (SORrelaxation <= 0.0 or SORrelaxation >= 2.0) and update == "sor":
             sys.exit("Error: The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
-        
+        if len(initPolicy) > 0 or len(initValueVector) > 0:
+            numberOfStates = self.mdl.getNumberOfStates()
+            if numberOfStates >= 0 and len(initPolicy) > 0 and len(initPolicy) != numberOfStates:
+                sys.exit("Error: The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
+            if numberOfStates >= 0 and len(initValueVector) > 0 and len(initValueVector) != numberOfStates:
+                sys.exit("Error: The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
+
         self.mdl.solve(
             algorithm=algorithm,
             tolerance=tolerance,
