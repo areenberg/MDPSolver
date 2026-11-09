@@ -989,10 +989,10 @@ void ModifiedPolicyIteration::checkFinalValue() {
 			maxRew = 1e6; // some large positive value
 		}		
 	
-		//smallest possible value in value vector
-		minRew *= 1 / (1 - model->getDiscount());
-		//largest possible value in value vector
-		maxRew *= 1 / (1 - model->getDiscount());
+		//smallest and largest possible values in the value vector
+		//are widened by the tolerance
+		minRew = minRew / (1 - model->getDiscount()) - epsilon;
+		maxRew = maxRew / (1 - model->getDiscount()) + epsilon;
 
 		for (s = 0; s < model->getNumberOfStates(); ++s) {
 			if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){

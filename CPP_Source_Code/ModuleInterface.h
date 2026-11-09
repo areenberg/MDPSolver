@@ -174,6 +174,7 @@ public:
     int getAction(int sidx); //returns the action index (from the optimized policy) associated with the current state
     double getValue(int sidx); //returns the value (from the optimized policy) associated with the current state
     double getRuntime(); //returns the runtime in milliseconds
+    int getNumberOfStates(); //returns the number of states of the general MDP model (-1 for the built-in models)
     py::list getPolicy(); //returns the entire policy
     py::list getValueVector(); //returns the entire value vector
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 

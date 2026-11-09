@@ -290,6 +290,15 @@ double ModuleInterface::getRuntime(){
     return(results.duration);
 }
 
+int ModuleInterface::getNumberOfStates(){
+    //the number of states of the general MDP model
+    if (problem.problemType.compare("mdp")==0){
+        return(problem.tranMat.numberOfRows());
+    }else{
+        return(-1);
+    }
+}
+
 void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
         vector<vector<vector<double>>> tempMat = tranMatWithZeros.cast<vector<vector<vector<double>>>>();
         int cidx;
