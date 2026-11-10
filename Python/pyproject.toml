@@ -15,12 +15,12 @@ CMAKE_BUILD_TYPE = "Release"
 
 [project]
 name = "mdpsolver"
-version = "0.10.2"
+version = "0.10.3"
 authors = [
   { name="Anders Reenberg Andersen", email="andersra@live.dk" },
   { name="Jesper Fink Andersen", email="jesperfinkandersen@gmail.com" },
 ]
-description = "A fast solver for Markov Decision Processes"
+description = "A fast Python solver for Markov Decision Processes"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
