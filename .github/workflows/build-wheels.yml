@@ -22,11 +22,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 = Apple Silicon (arm64) only. Intel macOS (macos-13) is
+        # macos-15 = Apple Silicon (arm64) only. Intel macOS is
         # intentionally not built - a deliberate scope decision, not a
         # limitation we hit. Users on Intel Macs get the sdist and need a
-        # C++ toolchain + CMake to install.
-        os: [ubuntu-latest, windows-latest, macos-14]
+        # C++ toolchain + CMake to install. (macos-14 was used until GitHub
+        # retired it on 2026-11-02.)
+        os: [ubuntu-latest, windows-latest, macos-15]
     steps:
       - uses: actions/checkout@v4
 
@@ -45,9 +46,13 @@ jobs:
           # which covers essentially every machine still updated today.
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_BEFORE_ALL_MACOS: brew install libomp
+          # Homebrew's libomp is built for the macOS version of the runner,
+          # and the wheel bundles it, so the deployment target must be that
+          # version (delocate refuses a lower one). The macOS wheels
+          # therefore need macOS 15 or newer.
           CIBW_ENVIRONMENT_MACOS: >
             CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp
-            MACOSX_DEPLOYMENT_TARGET=14.0
+            MACOSX_DEPLOYMENT_TARGET=15.0
           CIBW_TEST_REQUIRES: numpy
           # cibuildwheel copies Python/tests into the temporary folder the
           # tests run in. With no Python/src next to them there, the tests
