@@ -24,6 +24,9 @@ class model:
     def initialize(self):
         """Create and initialize the solver module object."""
         self.mdl = solvermodule.Model()
+        # A model object contains only one model
+        self._modelDefined = False
+        self._solved = False
 
     def solve(
         self,
@@ -50,12 +53,16 @@ class model:
             criterion (str): The optimality criterion.
             parIterLim (int): The partial evaluation limit employed in the modified policy iteration algorithm.
             SORrelaxation (float): Relaxation parameter for the Successive Over-Relaxation method.
-            initPolicy (list): A 1D-list defining the initial policy, one action index per state. This option can be used for "warm starting" the optimization procedure.
+            initPolicy (list): A 1D-list defining the initial policy, one valid action index per state. This option can be used for "warm starting" the optimization procedure.
             initValueVector (list): A 1D-list defining the initial value vector, one value per state. This option can be used for "warm starting" the optimization procedure.
             verbose (bool): If True, prints solver progress to console.
             postProcessing (bool): If True, performs post-processing after solving.
             makeFinalCheck (bool): If True, makes a final check of the value vector. This process checks if the resulting values are reasonable.
             parallel (bool): If True, enables parallel computation for faster solving. This option is only available for the custom MDP model with standard updates.
+
+        Solving the same model object again starts from the policy and the
+        value vector of the previous run, unless initPolicy or initValueVector
+        replace them. Create a new model object to start over.
 
         Returns:
             None
@@ -81,6 +88,22 @@ class model:
                 sys.exit("Error: The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
             if numberOfStates >= 0 and len(initValueVector) > 0 and len(initValueVector) != numberOfStates:
                 sys.exit("Error: The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
+            if numberOfStates >= 0 and len(initPolicy) > 0:
+                for stateIndex, action in enumerate(initPolicy):
+                    numberOfActions = self.mdl.getNumberOfActions(stateIndex=stateIndex)
+                    if not 0 <= action < numberOfActions:
+                        sys.exit("Error: The initial policy assigns action %s to state %d, which has %d actions (indices 0 to %d)." % (action, stateIndex, numberOfActions, numberOfActions - 1))
+
+        # The solver keeps the policy and the value vector of the previous run,
+        # unless initPolicy or initValueVector replace them.
+
+        if self._solved:
+            # Value iteration never uses the policy it starts from
+            reusesPolicy = len(initPolicy) == 0 and algorithm != "vi"
+            reusesValueVector = len(initValueVector) == 0
+            if reusesPolicy or reusesValueVector:
+                print("Note: This model has been solved before. Create a new model object to run solver with initial values.", flush=True)
+        self._solved = True
 
         self.mdl.solve(
             algorithm=algorithm,
@@ -105,6 +128,17 @@ class model:
             float: Runtime in milliseconds.
         """
         return self.mdl.getRuntime()
+
+    def getIterations(self) -> int:
+        """
+        Get the number of iterations of the last solver execution.
+        An iteration is one policy improvement step, i.e. one update that
+        chooses the best action in every state.
+
+        Returns:
+            int: Number of iterations.
+        """
+        return self.mdl.getIterations()
 
     def printPolicy(self) -> None:
         """Print the entire policy to the terminal."""
@@ -199,13 +233,21 @@ class model:
             tranMatColumns (list): Sparse transition probabilities (option 2, part 2). A 3D-list containing the columns of the non-zero transition probabilities.
             tranMatFromFile (str): Load the transition probabilities from a comma-separated (,) file.
 
+        A model object holds one model, so mdp() can be called only once per
+        model object. Create a new model object to define another model.
+
         Returns:
             None
         """
         
+        if self._modelDefined:
+            sys.exit("Error: A model has already been defined for this model object, and mdp() can only be called once per model object. Create a new model object (e.g. mdl = mdpsolver.model()) to define another model.")
         if discount <= 0.0 or discount >= 1.0:
             sys.exit("Error: The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
         
+        # Set before loading, so that a load that fails halfway cannot be
+        # followed by another into the same object
+        self._modelDefined = True
         self.mdl.mdp(
             discount=discount,
             rewards=rewards,
