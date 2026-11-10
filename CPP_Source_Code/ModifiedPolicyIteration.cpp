@@ -251,8 +251,10 @@ void ModifiedPolicyIteration::mainLoopModifiedPolicyIteration(){
 
 void ModifiedPolicyIteration::mainLoopValueIteration(){
 	//main loop for value iteration
-	
-	if (parallel && !useSOR && genMDP) {
+	//(parallel computing is only available with standard updates,
+	//so Gauss-Seidel always uses the serial in-place routine)
+
+	if (parallel && !useSOR && !useGS && genMDP) {
 		parValueIterationGenMDP();
 	}else if(!useSOR && genMDP){
 		valueIterationGenMDP();	
@@ -987,10 +989,10 @@ void ModifiedPolicyIteration::checkFinalValue() {
 			maxRew = 1e6; // some large positive value
 		}		
 	
-		//smallest possible value in value vector
-		minRew *= 1 / (1 - model->getDiscount());
-		//largest possible value in value vector
-		maxRew *= 1 / (1 - model->getDiscount());
+		//smallest and largest possible values in the value vector
+		//are widened by the tolerance
+		minRew = minRew / (1 - model->getDiscount()) - epsilon;
+		maxRew = maxRew / (1 - model->getDiscount()) + epsilon;
 
 		for (s = 0; s < model->getNumberOfStates(); ++s) {
 			if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){
@@ -1049,9 +1051,7 @@ void ModifiedPolicyIteration::computeNorm() {
 	diffMin=localDiffMin;
 	if (useStd) { //span norm
 		norm = diffMax - diffMin;
-	} else { //supremum norm
-		if (fabs(diff) > norm) {
-			norm = fabs(diff);
-		}
+	} else { //supremum norm: the largest absolute difference
+		norm = (diffMax > -diffMin) ? diffMax : -diffMin;
 	}
-}	
+}

@@ -1,6 +1,9 @@
 /.vs
 /VisualStudioProject
 .vscode/
+.claude/
+.DS_Store
+Python/.DS_Store
 
 
 __pycache__/

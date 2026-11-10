@@ -189,6 +189,8 @@ void ModuleInterface::solve(string algorithm,
 
     //save duration (runtime) in milliseconds
     results.duration=solver.duration;
+    //save the number of iterations (policy improvement steps)
+    results.iterations=solver.iter;
         
 }
 
@@ -288,6 +290,28 @@ void ModuleInterface::saveValueVectorToFile(string fileName, char sep){
 
 double ModuleInterface::getRuntime(){
     return(results.duration);
+}
+
+int ModuleInterface::getIterations(){
+    return(results.iterations);
+}
+
+int ModuleInterface::getNumberOfStates(){
+    //the number of states of the general MDP model
+    if (problem.problemType.compare("mdp")==0){
+        return(problem.tranMat.numberOfRows());
+    }else{
+        return(-1);
+    }
+}
+
+int ModuleInterface::getNumberOfActions(int sidx){
+    //the number of actions of a state
+    if (problem.problemType.compare("mdp")==0 && sidx>=0 && sidx<problem.tranMat.numberOfRows()){
+        return(problem.tranMat.numberOfActions(sidx));
+    }else{
+        return(-1);
+    }
 }
 
 void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){

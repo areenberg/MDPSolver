@@ -59,6 +59,9 @@ PYBIND11_MODULE(solvermodule, m) {
         py::arg("makeFinalCheck")=true,
         py::arg("parallel")=true)
         .def("getRuntime",&ModuleInterface::getRuntime,"Returns the runtime in milliseconds.") //OUTPUT
+        .def("getIterations",&ModuleInterface::getIterations,"Returns the number of iterations (policy improvement steps) of the last solve.")
+        .def("getNumberOfStates",&ModuleInterface::getNumberOfStates,"Returns the number of states of the general MDP model (-1 for the built-in models).")
+        .def("getNumberOfActions",&ModuleInterface::getNumberOfActions,"Returns the number of actions of a state of the general MDP model (-1 for the built-in models or a state outside the model).",py::arg("stateIndex")=0)
         .def("printPolicy", &ModuleInterface::printPolicy,"Prints the entire policy.")
         .def("printValueVector", &ModuleInterface::printValueVector,"Prints the entire value vector.")
         .def("getAction", &ModuleInterface::getAction,"Returns an action index from the optimized policy.",py::arg("stateIndex")=0)

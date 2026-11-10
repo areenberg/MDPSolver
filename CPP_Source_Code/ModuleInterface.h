@@ -109,6 +109,8 @@ public:
     struct Results{
         //duration (runtime) in milliseconds
         double duration=0;
+        //number of iterations (policy improvement steps; every update is one with VI)
+        int iterations=0;
     } results;
 
     
@@ -174,6 +176,9 @@ public:
     int getAction(int sidx); //returns the action index (from the optimized policy) associated with the current state
     double getValue(int sidx); //returns the value (from the optimized policy) associated with the current state
     double getRuntime(); //returns the runtime in milliseconds
+    int getIterations(); //returns the number of iterations (policy improvement steps)
+    int getNumberOfStates(); //returns the number of states of the general MDP model (-1 for the built-in models)
+    int getNumberOfActions(int sidx); //returns the number of actions of a state of the general MDP model (-1 for the built-in models or a state outside the model)
     py::list getPolicy(); //returns the entire policy
     py::list getValueVector(); //returns the entire value vector
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 
