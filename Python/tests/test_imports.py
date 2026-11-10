@@ -50,28 +50,10 @@ Sub-tests:
     Case 4: Files with Windows line endings (CR LF), and files without a line
             break after the last row, give the results of the reference.
 
-The test runs the Python code of mdpsolver in Python/src, so that it can be run
-from a clone without installing anything. The compiled solvermodule does not
-have to be copied there; it is loaded from the first of these places that has
-one:
-    1. Python/src/mdpsolver, if it has been copied there;
-    2. CPP_Source_Code/build, or CPP_Source_Code/build/Release on Windows,
-       where the CMake build of the wiki's Contribution guidelines puts it,
-       unless it is older than one of the C++ sources (which is when CMake
-       would rebuild it);
-    3. the installed mdpsolver package (pip install mdpsolver, or
-       pip install ./Python), whose C++ may be older than the working tree's.
-Only modules this Python can load are considered, so a build for another Python
-version or platform in a shared folder is passed over. When the module is not
-the one in Python/src, the final line says where it came from. Copied away from
-the repository, as for a test of a built wheel, the test finds no Python/src
-and tests the installed package as a whole.
+mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
+solvermodule is taken from.
 '''
 
-import glob
-import importlib.machinery
-import importlib.metadata
-import importlib.util
 import inspect
 import itertools
 import os
@@ -81,68 +63,7 @@ import tempfile
 
 import numpy as np
 
-# Load mdpsolver from the src-folder so the test can be run without installing,
-# with the compiled solvermodule from the first place that has one (see above)
-TESTDIR = os.path.dirname(os.path.abspath(__file__))
-SRCDIR = os.path.normpath(os.path.join(TESTDIR, "..", "src"))
-CPPDIR = os.path.normpath(os.path.join(TESTDIR, "..", "..", "CPP_Source_Code"))
-BUILDDIRS = (os.path.join(CPPDIR, "build"), os.path.join(CPPDIR, "build", "Release"))
-
-
-def compiledmodules(directory):
-    '''The files in a directory that this Python can load as solvermodule.'''
-    paths = [os.path.join(directory, "solvermodule" + suffix)
-             for suffix in importlib.machinery.EXTENSION_SUFFIXES]
-    return [path for path in paths if os.path.isfile(path)]
-
-
-solvermodulenote = None   # said in the final line when the module is not in Python/src
-
-if not os.path.isdir(os.path.join(SRCDIR, "mdpsolver")):
-    solvermodulenote = "Python/src was not found next to the test, so the installed mdpsolver was tested as a whole."
-
-elif not compiledmodules(os.path.join(SRCDIR, "mdpsolver")):
-    sources = glob.glob(os.path.join(CPPDIR, "*.cpp")) + glob.glob(os.path.join(CPPDIR, "*.h"))
-    newestsource = max(map(os.path.getmtime, sources), default=0.0)
-    builds = [path for directory in BUILDDIRS for path in compiledmodules(directory)]
-    currentbuilds = [path for path in builds if os.path.getmtime(path) >= newestsource]
-
-    if currentbuilds:
-        spec = importlib.util.spec_from_file_location("mdpsolver.solvermodule", currentbuilds[0])
-        solvermodule = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(solvermodule)
-        solvermodulenote = "The compiled solvermodule was loaded from %s." % currentbuilds[0]
-
-    else:
-        # The installed package is imported as a whole, before Python/src is on
-        # the path, so that whatever it does to find the libraries its module
-        # links to is done. Everything but its compiled module is then forgotten.
-        try:
-            import mdpsolver
-        except ImportError:
-            sys.exit("Validation test failed at initialization: there is no compiled solvermodule for this Python in Python/src/mdpsolver or in %s%s, and mdpsolver is not installed. Build it as described in the wiki's Contribution guidelines." % (BUILDDIRS[0], " (only one older than the C++ sources)" if builds else ""))
-        solvermodule = mdpsolver.solvermodule
-        for name in [name for name in sys.modules if name.split(".")[0] == "mdpsolver"]:
-            del sys.modules[name]
-
-        try:
-            version = importlib.metadata.version("mdpsolver")
-        except importlib.metadata.PackageNotFoundError:
-            version = "(version unknown)"
-        solvermodulenote = "The compiled solvermodule was that of the installed mdpsolver %s, %s, whose C++ may be older than that of the working tree." % (version, solvermodule.__file__)
-        if builds:
-            solvermodulenote += " The one in %s is older than the C++ sources and was passed over." % os.path.dirname(builds[0])
-
-    # the Python code in Python/src imports the module as mdpsolver.solvermodule
-    sys.modules["mdpsolver.solvermodule"] = solvermodule
-
-sys.path.insert(0, SRCDIR)
-
-import mdpsolver
-
-if os.path.isdir(os.path.join(SRCDIR, "mdpsolver")) and not os.path.samefile(
-        os.path.dirname(os.path.abspath(mdpsolver.__file__)), os.path.join(SRCDIR, "mdpsolver")):
-    sys.exit("Validation test failed at initialization: mdpsolver was loaded from %s rather than from Python/src." % os.path.dirname(mdpsolver.__file__))
+from loadmdpsolver import mdpsolver, finalline
 
 
 # ------------------------------------------------------------------
@@ -566,7 +487,4 @@ for variantlabel, suffix, newline, lastnewline in FILEVARIANTS:
 
 TMPDIR.cleanup()
 
-if solvermodulenote is None:
-    print("mdp imports: All tests passed.")
-else:
-    print("mdp imports: All tests passed. (%s)" % solvermodulenote)
+print(finalline(__file__))
