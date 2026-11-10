@@ -1,6 +1,6 @@
 '''
-UNIT TEST ON A LARGE MODEL: THE QUEUEING PROBLEM OF test2.py, UNDER EVERY
-ALGORITHM AND UPDATE METHOD.
+UNIT TEST ON A LARGE MODEL: THE QUEUEING PROBLEM OF THE FORMER test2.py, UNDER
+EVERY ALGORITHM AND UPDATE METHOD.
 
 The problem: a loss system with CAPACITY servers, each serving at rate
 SERVICERATE, and no room to wait. Customers of two types arrive at rates
@@ -14,18 +14,19 @@ state k for the first type and CAPACITY + 1 + k for the second, 202 states with
 busy with probability
     prod_{i=j+1}^{m} i mu/(i mu + lambda) * lambda/(j mu + lambda),
 where lambda is the total arrival rate: each of the busy servers in turn either
-finishes before the next arrival or not. (test2.py computed the same
-probabilities by iterating a chain until less than 1e-9 of the probability was
-left; the product is exact, so every row sums to 1, which the average-reward
-criterion needs.)
+finishes before the next arrival or not. (The former test2.py computed the
+same probabilities by iterating a chain until less than 1e-9 of the probability
+was left; the product is exact, so every row sums to 1, which the
+average-reward criterion needs.)
 
 The exact solutions under both criteria are computed by policy iteration with
 exact evaluation (knownsolutions.py), and checked against the optimality
 equations, with a margin for the optimal actions, before they are used. The
-mean of the discounted values rounds to 17075, the value test2.py checked, and
-the optimal policy under both criteria has the trunk reservation form known for
-loss systems: the rare, valuable type is accepted whenever a server is idle,
-and the common one only while fewer than a threshold of servers are busy.
+mean of the discounted values rounds to 17075, the value the former test2.py
+checked, and the optimal policy under both criteria has the trunk reservation
+form known for loss systems: the rare, valuable type is accepted whenever a
+server is idle, and the common one only while fewer than a threshold of servers
+are busy.
 
 Sub-tests:
     Case 1: Discounted reward: value iteration, policy iteration and modified
@@ -38,8 +39,9 @@ Sub-tests:
             the bias. Every action leads to the empty system with positive
             probability, so every policy is unichain and aperiodic, which value
             iteration needs under this criterion (Puterman, 1994, Section 8.5).
-    Case 3: The model given as CSV files, as test2.py gave it, gives the same
-            policies and values as the lists, under each algorithm.
+    Case 3: The model given as CSV files, as the former test2.py gave it,
+            gives the same policies and values as the lists, under each
+            algorithm.
 
 The tolerances keep clear of what double precision allows on values of this
 size (about 1e5): at a tolerance of 1e-9 the stopping threshold of the
@@ -71,7 +73,7 @@ from knownsolutions import checkoptimality, elementwisetranmat, exactaverage, ex
 # INITIALIZATION
 # ------------------------------------------------------------------
 
-# The queueing problem, as in test2.py
+# The queueing problem, as in the former test2.py
 CAPACITY = 100
 ARRIVALRATE1 = 50.0
 ARRIVALRATE2 = 10.0
@@ -79,7 +81,7 @@ SERVICERATE = 3.0 / 4.0
 REWARD1 = 1.0
 REWARD2 = 1000.0
 DISCOUNT = 0.99
-TEST2MEAN = 17075.0          # the rounded mean of the discounted values in test2.py
+TEST2MEAN = 17075.0          # the rounded mean of the discounted values in the former test2.py
 
 TOLERANCE = 1e-6             # the epsilon handed to solve() under discounting
 AVERAGETOLERANCE = 1e-8      # and under the average-reward criterion
@@ -194,7 +196,7 @@ checkoptimality("queueing problem under the average-reward criterion", REWARDS, 
                 averagepolicy, averagebias, 1.0, MINGAP, averagegain)
 
 if round(float(np.mean(exactvalues))) != TEST2MEAN:
-    sys.exit("Validation test failed at initialization: the mean of the exact discounted values is %.4f, which does not round to the %.0f of test2.py, so the model is not that of test2.py." % (np.mean(exactvalues), TEST2MEAN))
+    sys.exit("Validation test failed at initialization: the mean of the exact discounted values is %.4f, which does not round to the %.0f of the former test2.py, so the model is not the one it used." % (np.mean(exactvalues), TEST2MEAN))
 
 for name, policy in (("discounted", exactpolicy), ("average-reward", averagepolicy)):
     threshold = trunkreservation(policy)

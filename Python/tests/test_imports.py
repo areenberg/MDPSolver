@@ -138,8 +138,9 @@ NSTATES = len(MODEL)
 
 # The solver settings under which every comparison is made. Parallel computing
 # is only available with standard updates (see the wiki), so the Gauss-Seidel
-# and SOR settings run serially, as in test1.py. The two settings with standard
-# updates and the discounted criterion cover the parallel and the serial code.
+# and SOR settings run serially, as in the former test1.py. The two settings
+# with standard updates and the discounted criterion cover the parallel and the
+# serial code.
 SOLVERSETTINGS = (
     ("discounted MPI with standard updates",
      dict(criterion="discounted", algorithm="mpi", update="standard", parallel=True)),
