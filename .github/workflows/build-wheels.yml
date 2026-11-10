@@ -49,9 +49,20 @@ jobs:
             CMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp
             MACOSX_DEPLOYMENT_TARGET=14.0
           CIBW_TEST_REQUIRES: numpy
+          # cibuildwheel copies Python/tests into the temporary folder the
+          # tests run in. With no Python/src next to them there, the tests
+          # import the installed wheel as a whole (see
+          # Python/tests/loadmdpsolver.py), and each one ends with a line
+          # saying so.
+          CIBW_TEST_SOURCES: Python/tests
           CIBW_TEST_COMMAND: >
-            python {project}/Python/tests/test1_pip.py &&
-            python {project}/Python/tests/test2_pip.py
+            python Python/tests/test_imports.py &&
+            python Python/tests/test_vi.py &&
+            python Python/tests/test_pi.py &&
+            python Python/tests/test_mpi.py &&
+            python Python/tests/test_random.py &&
+            python Python/tests/test_large.py &&
+            python Python/tests/test_reuse.py
 
       - uses: actions/upload-artifact@v4
         with:
