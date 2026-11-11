@@ -25,7 +25,11 @@
 
 #include "ModifiedPolicyIteration.h"
 #include <iostream>
+//only the #pragma omp lines use OpenMP, so a compiler without it (e.g. Apple's clang
+//without libomp) builds a serial module; CMakeLists.txt treats OpenMP as optional
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <chrono>
 #include <string>
 #include <math.h>
