@@ -1,6 +1,6 @@
 # MDPSolver
 
-<img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
+<img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.07544/status.svg)](https://doi.org/10.21105/joss.07544)
 
@@ -97,6 +97,7 @@ tranMatElementwise = [[0,0,0,0.9],
                       [2,1,0,0.5],
                       [2,1,1,0.5]]
 
+mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
         rewards=rewards,
         tranMatElementwise=tranMatElementwise)
@@ -113,6 +114,7 @@ tranMatColumns = [[[0,1],[0,1]],
                 [[0,1,2],[0,1,2]],
                 [[0,1,2],[0,1]]]
 
+mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
         rewards=rewards,
         tranMatProbs=tranMatProbs,
@@ -122,7 +124,28 @@ mdl.mdp(discount=0.8,
 
 **(3) Load the elementwise representation from a file:**
 
+**transitions.csv**
+```
+stateFrom,action,stateTo,probability
+0,0,0,0.9
+0,0,1,0.1
+0,1,0,0.1
+0,1,1,0.9
+1,0,0,0.4
+1,0,1,0.5
+1,0,2,0.1
+1,1,0,0.3
+1,1,1,0.5
+1,1,2,0.2
+2,0,0,0.2
+2,0,1,0.2
+2,0,2,0.6
+2,1,0,0.5
+2,1,1,0.5
+```
+
 ```python
+mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
         rewards=rewards,
         tranMatFromFile="transitions.csv")

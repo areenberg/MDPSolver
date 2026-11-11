@@ -7,6 +7,7 @@ on:
     paths:
       - "CPP_Source_Code/**"
       - "Python/**"
+      - "pyproject.toml"
       - ".github/workflows/build-wheels.yml"
   workflow_dispatch:
 
@@ -14,7 +15,7 @@ jobs:
   build_wheels:
     name: wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # Safety net: Linux and Windows build+test all 5 Python versions well
+    # Safety net: Linux and Windows build+test all 6 Python versions well
     # under this, so a job still running past it is stuck, not just slow.
     # Without this, a genuine hang runs until the (much longer) GitHub
     # Actions default job timeout instead of failing fast and visibly.
@@ -25,18 +26,18 @@ jobs:
         # macos-15 = Apple Silicon (arm64) only. Intel macOS is
         # intentionally not built - a deliberate scope decision, not a
         # limitation we hit. Users on Intel Macs get the sdist and need a
-        # C++ toolchain + CMake to install. (macos-14 was used until GitHub
-        # retired it on 2026-11-02.)
+        # C++ compiler to install (pip fetches CMake if it is missing;
+        # without libomp the module runs serially). (macos-14 was used
+        # until GitHub retired it on 2026-11-02.)
         os: [ubuntu-latest, windows-latest, macos-15]
     steps:
       - uses: actions/checkout@v4
 
+      # The project (pyproject.toml) is the repository root
       - name: Build wheels
         uses: pypa/cibuildwheel@v4.2.0
-        with:
-          package-dir: Python
         env:
-          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
           CIBW_SKIP: "*-musllinux* *_i686 *-win32"
           # manylinux2014's GCC (10.2.1) is too old to build recent NumPy
           # from source, and NumPy no longer ships prebuilt wheels for that
@@ -67,7 +68,10 @@ jobs:
             python Python/tests/test_mpi.py &&
             python Python/tests/test_random.py &&
             python Python/tests/test_large.py &&
-            python Python/tests/test_reuse.py
+            python Python/tests/test_reuse.py &&
+            python Python/tests/test_order.py &&
+            python Python/tests/test_output.py &&
+            python Python/tests/test_checkmodel.py
 
       - uses: actions/upload-artifact@v4
         with:
@@ -79,7 +83,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pipx run build --sdist Python --outdir dist
+      # The sdist holds the C++ as well as the Python package (see
+      # sdist.exclude in pyproject.toml for what it leaves out)
+      - run: pipx run build --sdist --outdir dist
+      # Install from the sdist, as pip does where no wheel fits, and run the
+      # tests on it from a folder outside the repository, so that they test
+      # the installed package as a whole (see Python/tests/loadmdpsolver.py).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Test the sdist
+        run: |
+          python -m pip install dist/*.tar.gz numpy
+          mkdir "$RUNNER_TEMP/sdisttest"
+          cp -r Python/tests "$RUNNER_TEMP/sdisttest/"
+          cd "$RUNNER_TEMP/sdisttest/tests"
+          for test in test_*.py; do python "$test" || exit 1; done
       - uses: actions/upload-artifact@v4
         with:
           name: sdist

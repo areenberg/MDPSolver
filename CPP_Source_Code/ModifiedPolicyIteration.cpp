@@ -25,7 +25,11 @@
 
 #include "ModifiedPolicyIteration.h"
 #include <iostream>
+//only the #pragma omp lines use OpenMP, so a compiler without it (e.g. Apple's clang
+//without libomp) builds a serial module; CMakeLists.txt treats OpenMP as optional
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <chrono>
 #include <string>
 #include <math.h>
@@ -59,7 +63,15 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	postProcessing(postProcessing),
 	makeFinalCheck(makeFinalCheck),
 	duration(0.0),
+	iter(0),
 	converged(false),
+	polChanges(0),
+	iterationLimitReached(false),
+	evaluationLimitReached(false),
+	valuesOutOfRange(false),
+	diverged(false),
+	outOfRangeState(-1),
+	outOfRangeValue(0.0),
 	parIter(0)
 {
 	//check valid string input
@@ -82,11 +94,11 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
     model = mdl;
     policy = ply;
 	valueVector = vv;
-	if (policy->policy.size()==1&&policy->policy[0]==-1){
+	if (!policy->isSet){
 		policy->setSize(model->getNumberOfStates());
 		initPol=true;
 	}
-	if (valueVector->valueVector.size()==1&&valueVector->valueVector[0]==-1){
+	if (!valueVector->isSet){
 		valueVector->setSize(model->getNumberOfStates());
 		initVal=true;
 	}
@@ -207,16 +219,26 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		}			 
 	}
 
-	if(iter == iterLim && printStuff){
+	iterationLimitReached = (iter >= iterLim);
+	//infinite or NaN values give a norm that is not finite, and NaN ends the loops
+	//as if the tolerance were reached (one scalar test, not a check of the model)
+	diverged = !isfinite(norm);
+	if (iterationLimitReached && printStuff){
 		cout << "Algorithm terminated at iteration limit." << endl;
+	}else if (evaluationLimitReached && printStuff){
+		cout << "Policy evaluation terminated at its iteration limit." << endl;
 	}else if (printStuff){
-		converged = true;
 		cout << "Solution found in " << iter << " iterations and " << duration << " milliseconds." << endl;
 	}
 
 	if (makeFinalCheck){
 		checkFinalValue();
 	}
+	converged = !iterationLimitReached && !evaluationLimitReached && !valuesOutOfRange && !diverged;
+
+	//the policy and the value vector now hold a solution, from which a later run starts
+	policy->isSet = true;
+	valueVector->isSet = true;
 
 }
 
@@ -500,6 +522,7 @@ void ModifiedPolicyIteration::modifiedPolicyIteration(){
 			}
 		}
 
+		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
 		norm = 0;
 		diffMax = -numeric_limits<double>::infinity();
@@ -574,6 +597,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 			}
 		}
 
+		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
 		norm = 0;
 		diffMax = -numeric_limits<double>::infinity();
@@ -649,6 +673,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSORGenMDP(){
 			}
 		}
 
+		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
 		norm = 0;
 		diffMax = -numeric_limits<double>::infinity();
@@ -715,6 +740,7 @@ void ModifiedPolicyIteration::parModifiedPolicyIterationGenMDP(){
 			}
 		}
 
+		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		localPolChanges=0;
 		#pragma omp parallel for reduction(+:localPolChanges)
 		for (int sidx = 0; sidx<nStates; sidx++) {
@@ -773,6 +799,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationGenMDP(){
 			}
 		}
 
+		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
 		norm = 0;
 		diffMax = -numeric_limits<double>::infinity();
@@ -996,8 +1023,12 @@ void ModifiedPolicyIteration::checkFinalValue() {
 
 		for (s = 0; s < model->getNumberOfStates(); ++s) {
 			if (isnan(valueVector->valueVector[s]) || valueVector->valueVector[s] < minRew || valueVector->valueVector[s] > maxRew){
-				cout << "NOT CONVERGED: Erroneous result in value vector at v[" << s << "] = " << valueVector->valueVector[s] << endl;
-				converged = false;
+				valuesOutOfRange = true;
+				outOfRangeState = s;
+				outOfRangeValue = valueVector->valueVector[s];
+				if (printStuff){
+					cout << "NOT CONVERGED: Erroneous result in value vector at v[" << s << "] = " << valueVector->valueVector[s] << endl;
+				}
 				break;
 			}
 		}

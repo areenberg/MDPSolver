@@ -111,6 +111,15 @@ public:
         double duration=0;
         //number of iterations (policy improvement steps; every update is one with VI)
         int iterations=0;
+        //whether the last solve converged, and if not, why
+        bool converged=false;
+        bool iterationLimitReached=false;
+        bool evaluationLimitReached=false;
+        bool valuesOutOfRange=false;
+        bool diverged=false;
+        int outOfRangeState=-1;
+        double outOfRangeValue=0.0;
+        int iterationLimit=0;
     } results;
 
     
@@ -182,6 +191,13 @@ public:
     py::list getPolicy(); //returns the entire policy
     py::list getValueVector(); //returns the entire value vector
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 
+    py::dict getConvergence(); //whether the last solve converged, and if not, why
+
+    //------ model check ------
+
+    //checks the general MDP model for malformed input, and returns a description of each
+    //kind of problem found (an empty list if none). It is never called by mdp() or solve().
+    py::list checkModel(double tolerance=1e-9);
 
 private:
 

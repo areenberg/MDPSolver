@@ -85,3 +85,15 @@ int TransitionMatrix::numberOfActions(int& sidx){
 int TransitionMatrix::numberOfRows(){
     return probs.size();
 }
+
+int TransitionMatrix::numberOfColumnRows(){
+    return cols.size();
+}
+
+int TransitionMatrix::numberOfColumnActions(int sidx){
+    return cols[sidx].size();
+}
+
+int TransitionMatrix::numberOfProbabilities(int sidx, int aidx){
+    return probs[sidx][aidx].size();
+}

@@ -10,11 +10,13 @@ are the margins by which the optimal actions win, so that a policy comparison
 cannot hinge on rounding.
 
 Sub-tests:
-    Case 1: Infeasible arguments abort with an error message: an unknown
-            algorithm, update method or optimality criterion, a tolerance
-            outside (0, 1), an SOR relaxation outside (0, 2), an initial value
-            vector or policy of the wrong length, an initial policy with an
-            action that its state does not have, and Gauss-Seidel or SOR
+    Case 1: Infeasible arguments raise a ValueError, or a TypeError for an
+            entry of the wrong type in an initial vector: an unknown algorithm,
+            update method or optimality criterion, a tolerance outside (0, 1),
+            an SOR relaxation outside (0, 2), an initial value vector or policy
+            of the wrong length, an initial value vector with an entry that is
+            not a number, an initial policy with an action that is not an
+            integer or that its state does not have, and Gauss- Seidel or SOR
             updates under the average-reward criterion (see below).
     Case 2: Arguments that value iteration does not use are accepted silently
             and change nothing: parallel=True with Gauss-Seidel or SOR updates
@@ -52,6 +54,14 @@ Sub-tests:
             unichain and aperiodic (Puterman, 1994, Section 8.5), which is
             checked for every policy of the problem. (The secretary problem is
             left out, as every policy has gain 0 in its absorbing state.)
+    Case 6: An initial value vector is used whatever it holds. In a model of
+            one state, the solver used to take the vector [-1.0] for its own
+            placeholder (a single -1) and replace it; it now gives the values
+            of [-1.0 + 1e-9] up to that difference, far from those of a run
+            without an initial vector. (postProcessing=False, which corrects
+            the values of one state exactly whatever they start from, and
+            makeFinalCheck=False, as the uncorrected values lie outside the
+            range of the final check.)
 
 Gauss-Seidel and SOR updates must be rejected under the average-reward
 criterion, which they do not solve: their in-place updates make the values grow
@@ -166,6 +176,8 @@ INFEASIBLE = (
     ("an initial policy one too long", dict(initPolicy="long"), "initial policy"),
     ("an initial policy with an action beyond the last of its state", dict(initPolicy="beyond"), "initial policy"),
     ("an initial policy with a negative action", dict(initPolicy="negative"), "initial policy"),
+    ("an initial policy with an action that is not an integer", dict(initPolicy="fractional"), "initial policy"),
+    ("an initial value vector with an entry that is not a number", dict(initValueVector="text"), "initial value vector"),
     ("Gauss-Seidel updates under the average-reward criterion", dict(criterion="average", update="gs"), "average"),
     ("SOR updates under the average-reward criterion", dict(criterion="average", update="sor", SORrelaxation=1.2), "average"),
 )
@@ -192,10 +204,11 @@ def arguments(setting, rewards):
     result = dict(setting)
     n = len(rewards)
     values = {"zeros": [0.0] * n, "far": [FARVALUE] * n,
-              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1)}
+              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1), "text": ["0.0"] + [0.0] * (n - 1)}
     policies = {"zeros": [0] * n, "last": [len(r) - 1 for r in rewards],
                 "short": [0] * (n - 1), "long": [0] * (n + 1),
-                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1)}
+                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1),
+                "fractional": [0.5] + [0] * (n - 1)}
     if isinstance(result.get("initValueVector"), str):
         result["initValueVector"] = values[result["initValueVector"]]
     if isinstance(result.get("initPolicy"), str):
@@ -298,15 +311,17 @@ for label, setting, word in INFEASIBLE:
 
     mdl = mdpsolver.model()
     mdl.mdp(discount=0.9, rewards=HUBREWARDS, tranMatWithZeros=densetranmat(HUBTRANSITIONS))
+    # an entry of the wrong type in an initial vector is a TypeError, every other infeasible argument a ValueError
+    expected = TypeError if setting.get("initPolicy") == "fractional" or setting.get("initValueVector") == "text" else ValueError
     try:
         mdl.solve(**given)
-    except SystemExit as error:
-        message = str(error.code)
+    except Exception as error:
+        raised, message = error, str(error)
     else:
         sys.exit("Validation test failed at case 1: %s was accepted." % label)
 
-    if not message.startswith("Error:") or word not in message.lower():
-        sys.exit("Validation test failed at case 1: %s aborted with the message %r, which is not an error message about the %s." % (label, message, word))
+    if type(raised) is not expected or word not in message.lower():
+        sys.exit("Validation test failed at case 1: %s raised %s(%r), where it should raise a %s about the %s." % (label, type(raised).__name__, message, expected.__name__, word))
 
 
 # ------------------------------------------------------------------
@@ -316,8 +331,8 @@ for label, setting, word in INFEASIBLE:
 for label, setting, reference in IGNORED:
     try:
         result = solve(HUBREWARDS, HUBTRANSITIONS, IGNOREDDISCOUNT, setting)
-    except SystemExit as error:
-        sys.exit("Validation test failed at case 2: %s aborted with the message %r." % (label, str(error.code)))
+    except Exception as error:
+        sys.exit("Validation test failed at case 2: %s raised %s(%r)." % (label, type(error).__name__, str(error)))
     expected = solve(HUBREWARDS, HUBTRANSITIONS, IGNOREDDISCOUNT, reference)
 
     if result[2]:
@@ -410,6 +425,27 @@ for settinglabel, setting in AVERAGESETTINGS:
     difference = float(np.max(np.abs(relative - averagebias))) if relative.shape == averagebias.shape else np.inf
     if not np.all(np.isfinite(result[1])) or difference > BIASTOL:
         sys.exit("Validation test failed at case 5: %s gives the values %s, whose differences from the first differ by %.3e from the bias %s, which is more than %.1e." % (label, result[1], difference, averagebias, BIASTOL))
+
+
+# ------------------------------------------------------------------
+# CASE 6: An initial value vector of a single -1
+# ------------------------------------------------------------------
+
+def onestate(**given):
+    '''The value of a model of one state with reward 1 that stays put, after value iteration.'''
+    def run():
+        mdl = mdpsolver.model()
+        mdl.mdp(discount=0.9, rewards=[[1.0]], tranMatWithZeros=[[[1.0]]])
+        mdl.solve(algorithm=ALGORITHM, tolerance=TOLERANCE, postProcessing=False, makeFinalCheck=False, **given)
+        return mdl.getValue(stateIndex=0)
+    value, output = quietly(run)
+    if output:
+        sys.exit("Validation test failed at case 6: solving the model of one state printed %r." % output.strip())
+    return value
+
+minusone, nearby, fresh = onestate(initValueVector=[-1.0]), onestate(initValueVector=[-1.0 + 1e-9]), onestate()
+if abs(minusone - nearby) > 1e-8 or abs(minusone - fresh) < 1.0:
+    sys.exit("Validation test failed at case 6: the initial value vector [-1.0] gives the value %r, [-1.0 + 1e-9] %r, and none %r; [-1.0] must be used like any other." % (minusone, nearby, fresh))
 
 
 # ------------------------------------------------------------------

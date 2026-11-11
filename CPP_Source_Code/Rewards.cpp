@@ -23,6 +23,7 @@
 */
 
 #include "Rewards.h"
+#include <limits>
 
 Rewards::Rewards() {
 }
@@ -52,7 +53,8 @@ void Rewards::setNumberOfRows(int numberOfStates){
 }
 
 void Rewards::setNumberOfActions(int nActions, int& sidx){
-    rewards[sidx].resize(nActions,-1);
+    //rewards that the input leaves out stay NaN, which checkModel() reports
+    rewards[sidx].resize(nActions,numeric_limits<double>::quiet_NaN());
 }
     
 int Rewards::numberOfActions(int& sidx){

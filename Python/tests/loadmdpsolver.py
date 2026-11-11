@@ -14,8 +14,9 @@ has one:
        where the CMake build of the wiki's Contribution guidelines puts it,
        unless it is older than one of the C++ sources (which is when CMake
        would rebuild it);
-    3. the installed mdpsolver package (pip install mdpsolver, or
-       pip install ./Python), whose C++ may be older than the working tree's.
+    3. the installed mdpsolver package (pip install mdpsolver, or pip install .
+       from the repository root), whose C++ may be older than the working
+       tree's.
 Only modules this Python can load are considered, so a build for another Python
 version or platform in a shared folder is passed over. The module must have
 every method that the Python code calls on it, or it is older than that code.

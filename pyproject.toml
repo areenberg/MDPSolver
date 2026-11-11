@@ -3,24 +3,41 @@ requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-# The CMake project lives outside Python/, next to the rest of the C++ sources.
-cmake.source-dir = "../CPP_Source_Code"
+# The repository root is the project directory, so that the source
+# distribution (sdist) holds the C++ in CPP_Source_Code as well as the Python
+# package in Python/src/mdpsolver. pip builds the sdist wherever no wheel fits
+# (e.g. Intel Macs, Linux on ARM, Python versions without wheels).
+cmake.source-dir = "CPP_Source_Code"
 build-dir = "build/{wheel_tag}"
 # CMakeLists.txt installs the extension to DESTINATION mdpsolver itself,
 # so wheel.install-dir stays at the default (wheel root) here.
-sdist.include = ["src/mdpsolver/*.py"]
+wheel.packages = ["Python/src/mdpsolver"]
+# Besides what .gitignore leaves out, the sdist skips what a build does not
+# need (gitignore syntax). CMake finds pybind11 through the pybind11 build
+# requirement, so the pybind11 submodule is not needed either.
+sdist.exclude = [
+    "/.github/",
+    "/.gitattributes",
+    "/.gitmodules",
+    "/Benchmark/",
+    "/Images/",
+    "/CPP_Source_Code/pybind11/",
+    "/CPP_Source_Code/templates/",
+]
 
 [tool.scikit-build.cmake.define]
 CMAKE_BUILD_TYPE = "Release"
 
 [project]
 name = "mdpsolver"
-version = "0.10.3"
+version = "0.11.0"
 authors = [
   { name="Anders Reenberg Andersen", email="andersra@live.dk" },
   { name="Jesper Fink Andersen", email="jesperfinkandersen@gmail.com" },
 ]
 description = "A fast Python solver for Markov Decision Processes"
+# Both the GitHub front page and the PyPI page (so its images need absolute
+# URLs that serve the image itself, e.g. raw.githubusercontent.com)
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [

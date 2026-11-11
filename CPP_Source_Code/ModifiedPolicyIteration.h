@@ -49,8 +49,15 @@ public:
     //other parameters
     double duration;
     int iter;
-    bool converged;
+    bool converged; //no limit was reached and the final check (if made) found the values in range
     int polChanges; //count changes in policy in each iteration
+    bool iterationLimitReached; //the main loop stopped at the iteration limit
+    bool evaluationLimitReached; //a policy evaluation of PI stopped at its limit before reaching the tolerance
+    bool valuesOutOfRange; //the final check found a value outside the possible range
+    bool diverged; //the values became infinite or NaN, which ends the loops (a NaN norm passes their test)
+    int outOfRangeState; //the first state with such a value (-1 if none)
+    double outOfRangeValue; //and its value
+    int getIterationLimit() { return iterLim; }
 
     //methods
     void solve(ModelType * mdl, Policy * ply, ValueVector * vv);

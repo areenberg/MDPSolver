@@ -16,11 +16,13 @@ values are therefore epsilon-optimal for the tolerance, as those of value
 iteration are, and are compared at the same tolerance.
 
 Sub-tests:
-    Case 1: Infeasible arguments abort with an error message: an unknown
-            algorithm, update method or optimality criterion, a tolerance
-            outside (0, 1), an SOR relaxation outside (0, 2), an initial value
-            vector or policy of the wrong length, an initial policy with an
-            action that its state does not have, and Gauss-Seidel or SOR
+    Case 1: Infeasible arguments raise a ValueError, or a TypeError for an
+            entry of the wrong type in an initial vector: an unknown algorithm,
+            update method or optimality criterion, a tolerance outside (0, 1),
+            an SOR relaxation outside (0, 2), an initial value vector or policy
+            of the wrong length, an initial value vector with an entry that is
+            not a number, an initial policy with an action that is not an
+            integer or that its state does not have, and Gauss- Seidel or SOR
             updates under the average-reward criterion (see below).
     Case 2: Arguments that policy iteration does not use are accepted silently
             and change nothing: parallel=True with Gauss-Seidel or SOR updates
@@ -171,6 +173,8 @@ INFEASIBLE = (
     ("an initial policy one too long", dict(initPolicy="long"), "initial policy"),
     ("an initial policy with an action beyond the last of its state", dict(initPolicy="beyond"), "initial policy"),
     ("an initial policy with a negative action", dict(initPolicy="negative"), "initial policy"),
+    ("an initial policy with an action that is not an integer", dict(initPolicy="fractional"), "initial policy"),
+    ("an initial value vector with an entry that is not a number", dict(initValueVector="text"), "initial value vector"),
     ("Gauss-Seidel updates under the average-reward criterion", dict(criterion="average", update="gs"), "average"),
     ("SOR updates under the average-reward criterion", dict(criterion="average", update="sor", SORrelaxation=1.2), "average"),
 )
@@ -197,10 +201,11 @@ def arguments(setting, rewards):
     result = dict(setting)
     n = len(rewards)
     values = {"zeros": [0.0] * n, "far": [FARVALUE] * n,
-              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1)}
+              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1), "text": ["0.0"] + [0.0] * (n - 1)}
     policies = {"zeros": [0] * n, "last": [len(r) - 1 for r in rewards],
                 "short": [0] * (n - 1), "long": [0] * (n + 1),
-                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1)}
+                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1),
+                "fractional": [0.5] + [0] * (n - 1)}
     if isinstance(result.get("initValueVector"), str):
         result["initValueVector"] = values[result["initValueVector"]]
     if isinstance(result.get("initPolicy"), str):
@@ -310,15 +315,17 @@ for label, setting, word in INFEASIBLE:
 
     mdl = mdpsolver.model()
     mdl.mdp(discount=0.9, rewards=HUBREWARDS, tranMatWithZeros=densetranmat(HUBTRANSITIONS))
+    # an entry of the wrong type in an initial vector is a TypeError, every other infeasible argument a ValueError
+    expected = TypeError if setting.get("initPolicy") == "fractional" or setting.get("initValueVector") == "text" else ValueError
     try:
         mdl.solve(**given)
-    except SystemExit as error:
-        message = str(error.code)
+    except Exception as error:
+        raised, message = error, str(error)
     else:
         sys.exit("Validation test failed at case 1: %s was accepted." % label)
 
-    if not message.startswith("Error:") or word not in message.lower():
-        sys.exit("Validation test failed at case 1: %s aborted with the message %r, which is not an error message about the %s." % (label, message, word))
+    if type(raised) is not expected or word not in message.lower():
+        sys.exit("Validation test failed at case 1: %s raised %s(%r), where it should raise a %s about the %s." % (label, type(raised).__name__, message, expected.__name__, word))
 
 
 # ------------------------------------------------------------------
@@ -328,8 +335,8 @@ for label, setting, word in INFEASIBLE:
 for label, setting, reference in IGNORED:
     try:
         result = solve(HUBREWARDS, HUBTRANSITIONS, IGNOREDDISCOUNT, setting)
-    except SystemExit as error:
-        sys.exit("Validation test failed at case 2: %s aborted with the message %r." % (label, str(error.code)))
+    except Exception as error:
+        sys.exit("Validation test failed at case 2: %s raised %s(%r)." % (label, type(error).__name__, str(error)))
     expected = solve(HUBREWARDS, HUBTRANSITIONS, IGNOREDDISCOUNT, reference)
 
     if result[2]:

@@ -1,3 +1,0 @@
-graft src
-
-global-exclude __pycache__
