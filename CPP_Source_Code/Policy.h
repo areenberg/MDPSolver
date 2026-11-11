@@ -41,6 +41,9 @@ public:
     
     //VARIABLES
     vector<int> policy;
+    //whether the policy has been set (by an initial policy or a solve), rather than
+    //being the placeholder of a single -1 that a new object holds
+    bool isSet = false;
     
     //METHODS
     int* getPolicy(int& sidx);

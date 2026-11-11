@@ -49,18 +49,28 @@ Sub-tests:
             alike, give the results of the reference.
     Case 4: Files with Windows line endings (CR LF), and files without a line
             break after the last row, give the results of the reference.
-    Case 5: Input that is missing or given twice aborts with an error naming
-            the arguments involved, before anything is loaded, and prints
-            nothing besides: rewards or transition probabilities that are not
-            given while the default file (rewards.csv, transitions.csv) is
-            missing from the working directory, a file that cannot be opened,
-            tranMatProbs without tranMatColumns and the other way round, and
-            every pair of formats for the rewards or for the transition
-            probabilities. (Missing rewards made Python crash in solve(), and
-            the rest was ignored, the default file read in place of what was
-            given.) A rejected call leaves the model object free for a valid
-            one. With neither given, the default files in the working
-            directory are read and give the results of the reference.
+    Case 5: Input that is missing or given twice raises an error naming the
+            arguments involved, before anything is loaded, and prints nothing
+            besides (the OSError of opening the file for a file that cannot be
+            opened, ValueError otherwise): rewards or transition probabilities
+            that are not given while the default file (rewards.csv,
+            transitions.csv) is missing from the working directory, a file that
+            cannot be opened, tranMatProbs without tranMatColumns and the other
+            way round, and every pair of formats for the rewards or for the
+            transition probabilities. (Missing rewards made Python crash in
+            solve(), and the rest was ignored, the default file read in place
+            of what was given.) A rejected call leaves the model object free
+            for a valid one. With neither given, the default files in the
+            working directory are read and give the results of the reference.
+    Case 6: The loaders guard only against rows that would make them crash: a
+            negative state, action or next-state index, a row with too few
+            entries, and in files an index or a number that cannot be read
+            raise a ValueError naming the list and row, or the file and line,
+            and print nothing besides. (A negative index and a blank line in a
+            file made Python crash, and a short row in a file read past its
+            end.) Blank lines in files are skipped, and give the results of the
+            reference. Nothing else about the model is checked when it is
+            loaded; that is left to checkModel() (test_checkmodel.py).
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
@@ -505,42 +515,47 @@ os.mkdir(WORKDIR)
 MISSINGFILE = os.path.join(TMPDIR.name, "missing.csv")
 TESTDIR = os.getcwd()
 
-# Each rejected call, with the words its message must contain
+# Each rejected call, with the words its message must contain and the error it
+# raises (opening a directory is IsADirectoryError on Linux and macOS, and
+# PermissionError on Windows: both OSErrors)
 REJECTED = [
-    ("rewards not given, with no rewards.csv", TRANMATFORMATS["tranMatWithZeros"], ("rewards", "rewards.csv")),
-    ("transition probabilities not given, with no transitions.csv", REWARDFORMATS["rewards"], ("transition", "transitions.csv")),
-    ("nothing given, with neither default file", {}, ("rewards", "rewards.csv")),
-    ("rewardsFromFile naming a file that does not exist", {"rewardsFromFile": MISSINGFILE, **TRANMATFORMATS["tranMatWithZeros"]}, (MISSINGFILE,)),
-    ("tranMatFromFile naming a file that does not exist", {**REWARDFORMATS["rewards"], "tranMatFromFile": MISSINGFILE}, (MISSINGFILE,)),
-    ("rewardsFromFile naming a directory", {"rewardsFromFile": WORKDIR, **TRANMATFORMATS["tranMatWithZeros"]}, (WORKDIR,)),
-    ("tranMatProbs without tranMatColumns", {**REWARDFORMATS["rewards"], "tranMatProbs": tranmatprobs}, ("tranMatProbs", "tranMatColumns")),
-    ("tranMatColumns without tranMatProbs", {**REWARDFORMATS["rewards"], "tranMatColumns": tranmatcolumns}, ("tranMatProbs", "tranMatColumns")),
+    ("rewards not given, with no rewards.csv", TRANMATFORMATS["tranMatWithZeros"], ("rewards", "rewards.csv"), OSError),
+    ("transition probabilities not given, with no transitions.csv", REWARDFORMATS["rewards"], ("transition", "transitions.csv"), OSError),
+    ("nothing given, with neither default file", {}, ("rewards", "rewards.csv"), OSError),
+    ("rewardsFromFile naming a file that does not exist", {"rewardsFromFile": MISSINGFILE, **TRANMATFORMATS["tranMatWithZeros"]}, (MISSINGFILE,), FileNotFoundError),
+    ("tranMatFromFile naming a file that does not exist", {**REWARDFORMATS["rewards"], "tranMatFromFile": MISSINGFILE}, (MISSINGFILE,), FileNotFoundError),
+    ("rewardsFromFile naming a directory", {"rewardsFromFile": WORKDIR, **TRANMATFORMATS["tranMatWithZeros"]}, (WORKDIR,), OSError),
+    ("tranMatProbs without tranMatColumns", {**REWARDFORMATS["rewards"], "tranMatProbs": tranmatprobs}, ("tranMatProbs", "tranMatColumns"), ValueError),
+    ("tranMatColumns without tranMatProbs", {**REWARDFORMATS["rewards"], "tranMatColumns": tranmatcolumns}, ("tranMatProbs", "tranMatColumns"), ValueError),
 ]
 for (label1, arguments1), (label2, arguments2) in itertools.combinations(REWARDFORMATS.items(), 2):
     REJECTED.append(("the rewards as %s and %s" % (label1, label2),
-                     {**arguments1, **arguments2, **TRANMATFORMATS["tranMatWithZeros"]}, tuple(arguments1) + tuple(arguments2)))
+                     {**arguments1, **arguments2, **TRANMATFORMATS["tranMatWithZeros"]}, tuple(arguments1) + tuple(arguments2), ValueError))
 for (label1, arguments1), (label2, arguments2) in itertools.combinations(TRANMATFORMATS.items(), 2):
     REJECTED.append(("the transition probabilities as %s and %s" % (label1, label2),
-                     {**REWARDFORMATS["rewards"], **arguments1, **arguments2}, tuple(arguments1) + tuple(arguments2)))
+                     {**REWARDFORMATS["rewards"], **arguments1, **arguments2}, tuple(arguments1) + tuple(arguments2), ValueError))
 
-os.chdir(WORKDIR)
-for label, arguments, words in REJECTED:
-    mdl = mdpsolver.model()
-
-    def attempt():
+def attempt(mdl, arguments):
+    '''Calls mdp() with everything printed captured; returns the exception it raised (None if it did not) and the output.'''
+    def run():
         try:
             mdl.mdp(discount=DISCOUNT, **arguments)
-        except SystemExit as error:
-            return str(error.code)
+        except Exception as error:
+            return error
         return None
+    return quietly(run)
 
-    message, output = quietly(attempt)
-    if message is None:
+
+os.chdir(WORKDIR)
+for label, arguments, words, expected in REJECTED:
+    mdl = mdpsolver.model()
+    error, output = attempt(mdl, arguments)
+    if error is None:
         sys.exit("Validation test failed at case 5: mdp() with %s was accepted." % label)
-    if not message.startswith("Error:") or any(word not in message for word in words):
-        sys.exit("Validation test failed at case 5: mdp() with %s aborted with the message %r, which is not an error message naming %s." % (label, message, " and ".join(words)))
+    if not isinstance(error, expected) or any(word not in str(error) for word in words):
+        sys.exit("Validation test failed at case 5: mdp() with %s raised %r, where it should raise a %s naming %s." % (label, error, expected.__name__, " and ".join(words)))
     if output:
-        sys.exit("Validation test failed at case 5: mdp() with %s printed %r besides aborting." % (label, output.strip()))
+        sys.exit("Validation test failed at case 5: mdp() with %s printed %r besides raising an error." % (label, output.strip()))
 
     # The object is free for a valid call
     settinglabel, setting = SOLVERSETTINGS[0]
@@ -556,6 +571,86 @@ for settinglabel, setting in SOLVERSETTINGS:
     result = solve({}, setting)
     compare(5, "the default files rewards.csv and transitions.csv", settinglabel, result, reference[settinglabel])
 os.chdir(TESTDIR)
+
+
+# ------------------------------------------------------------------
+# CASE 6: Rows that would crash the loaders
+# ------------------------------------------------------------------
+
+ROW = 3   # the row (of the elementwise lists, after the header in files) that is spoiled
+
+def spoiled(rows, entries):
+    '''The rows with row ROW replaced by entries.'''
+    return rows[:ROW] + [entries] + rows[ROW + 1:]
+
+rewardrows, tranmatrows = elementwiserewards(MODEL), elementwisetranmat(MODEL)
+s, a, j, p = tranmatrows[ROW]
+r = rewardrows[ROW][2]
+if len(rewardrows) <= ROW or len(tranmatrows) <= ROW:
+    sys.exit("Validation test failed at case 6: the model has too few rows to spoil row %d." % ROW)
+
+# For the lists: the argument, the spoiled row, and the words the message must contain
+LISTROWS = [
+    ("rewardsElementwise", [-1, a, r], ("negative state",)),
+    ("rewardsElementwise", [s, -2, r], ("negative action",)),
+    ("rewardsElementwise", [s, a], ("2 entries", "3 are needed")),
+    ("tranMatElementwise", [-1, a, j, p], ("negative state",)),
+    ("tranMatElementwise", [s, -1, j, p], ("negative action",)),
+    ("tranMatElementwise", [s, a, -1, p], ("negative next-state",)),
+    ("tranMatElementwise", [s, a, j], ("3 entries", "4 are needed")),
+]
+# For the files: the argument, the spoiled row (written with str()), and the words
+FILEROWS = [
+    ("rewardsFromFile", [-1, a, r], ("negative state",)),
+    ("rewardsFromFile", [s, -2, r], ("negative action",)),
+    ("rewardsFromFile", [s, a], ("2 fields", "3 are needed")),
+    ("rewardsFromFile", ["x", a, r], ("state index 'x'", "not an integer")),
+    ("rewardsFromFile", [s, a, "high"], ("reward 'high'", "not a number")),
+    ("tranMatFromFile", [-1, a, j, p], ("negative state",)),
+    ("tranMatFromFile", [s, -1, j, p], ("negative action",)),
+    ("tranMatFromFile", [s, a, -1, p], ("negative next-state",)),
+    ("tranMatFromFile", [s, a, j], ("3 fields", "4 are needed")),
+    ("tranMatFromFile", [s, a, j, "p"], ("probability 'p'", "not a number")),
+]
+
+def checkguard(label, arguments, words):
+    '''Exits unless mdp() raises a ValueError containing every word, printing nothing besides.'''
+    error, output = attempt(mdpsolver.model(), arguments)
+    if type(error) is not ValueError or any(word not in str(error) for word in words):
+        sys.exit("Validation test failed at case 6: mdp() with %s gave %r, where it should raise a ValueError naming %s." % (label, error, " and ".join(words)))
+    if output:
+        sys.exit("Validation test failed at case 6: mdp() with %s printed %r besides raising an error." % (label, output.strip()))
+
+for name, row, words in LISTROWS:
+    arguments = {**REFERENCEARGUMENTS}
+    arguments.pop("rewards" if name.startswith("rewards") else "tranMatWithZeros")
+    arguments[name] = spoiled(rewardrows if name.startswith("rewards") else tranmatrows, row)
+    checkguard("%s[%d] = %s" % (name, ROW, row), arguments, ("%s[%d]" % (name, ROW),) + words)
+
+for name, row, words in FILEROWS:
+    rewards = name.startswith("rewards")
+    path = os.path.join(TMPDIR.name, "spoiled.csv")
+    rows = [",".join(str(x) for x in line) for line in spoiled(rewardrows if rewards else tranmatrows, row)]
+    with open(path, "w", newline="") as file:
+        file.write("\n".join([REWARDHEADER if rewards else TRANMATHEADER] + rows) + "\n")
+    arguments = {**REFERENCEARGUMENTS}
+    arguments.pop("rewards" if rewards else "tranMatWithZeros")
+    arguments[name] = path
+    # the header is line 1, so row ROW is on line ROW + 2
+    checkguard("%s holding the row %s" % (name, ",".join(str(x) for x in row)), arguments, ("Line %d of %s" % (ROW + 2, path),) + words)
+
+# Blank lines, also with spaces or a carriage return, are skipped
+for label, blank in (("empty lines", ""), ("lines of spaces", "   "), ("lines holding a carriage return", "\r")):
+    files = []
+    for name, header, rows in (("rewards_blank.csv", REWARDHEADER, rewardrows), ("transitions_blank.csv", TRANMATHEADER, tranmatrows)):
+        lines = [",".join(repr(x) for x in line) for line in rows]
+        lines = [header] + lines[:ROW] + [blank] + lines[ROW:] + [blank]
+        files.append(os.path.join(TMPDIR.name, name))
+        with open(files[-1], "w", newline="") as file:
+            file.write("\n".join(lines) + "\n")
+    for settinglabel, setting in SOLVERSETTINGS:
+        result = solve({"rewardsFromFile": files[0], "tranMatFromFile": files[1]}, setting)
+        compare(6, "rewardsFromFile with tranMatFromFile, with %s," % label, settinglabel, result, reference[settinglabel])
 
 
 # ------------------------------------------------------------------

@@ -58,6 +58,11 @@ public:
     int numberOfColumns(int& sidx, int& aidx);
     int numberOfActions(int& sidx);
     int numberOfRows();
+    //sizes of the column list, which can differ from those of the probabilities
+    //when tranMatProbs and tranMatColumns do not match (used by checkModel())
+    int numberOfColumnRows();
+    int numberOfColumnActions(int sidx);
+    int numberOfProbabilities(int sidx, int aidx);
     
 private:
 

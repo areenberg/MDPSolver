@@ -38,6 +38,9 @@ public:
         
     //VARIABLES
     vector<double> valueVector;    
+    //whether the value vector has been set (by an initial value vector or a solve),
+    //rather than being the placeholder of a single -1 that a new object holds
+    bool isSet = false;
     
     //METHODS
     double* getValue(int& sidx);

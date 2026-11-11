@@ -1,1 +1,1 @@
-from mdpsolver.model import model
+from mdpsolver.model import model, ConvergenceWarning

@@ -2,8 +2,8 @@
 UNIT TEST FOR USING A MODEL OBJECT MORE THAN ONCE.
 
 A model object holds one model, so mdp() can be called only once per model
-object, and a second call aborts with an error telling the user to create a new
-model object. (A second model loaded into the same object made Python crash
+object, and a second call raises a RuntimeError telling the user to create a
+new model object. (A second model loaded into the same object made Python crash
 when the transition probabilities were given elementwise or from a file, whose
 loaders look for free places that the first model had filled, and left the
 solver with parts of both models otherwise.)
@@ -18,8 +18,8 @@ The test uses the hub-and-spoke problem of knownsolutions.py, whose solution is
 known in closed form.
 
 Sub-tests:
-    Case 1: A second call of mdp() aborts with an error that tells the user to
-            create a new model object, whichever format the first call gave the
+    Case 1: A second call of mdp() raises a RuntimeError that tells the user
+            to create a new model object, whichever format the first call gave the
             transition probabilities in, and whether or not the model was
             solved in between. The object keeps the first model: solving it
             gives the solution of that model at its discount factor. A call of
@@ -124,12 +124,12 @@ def formats(directory):
 
 
 def attempt(function):
-    '''Runs function with everything printed captured; returns the message it aborted with (None if it did not) and the output.'''
+    '''Runs function with everything printed captured; returns the exception it raised (None if it did not) and the output.'''
     def run():
         try:
             function()
-        except SystemExit as error:
-            return str(error.code)
+        except Exception as error:
+            return error
         return None
     return quietly(run)
 
@@ -188,13 +188,13 @@ for firstlabel, first in FORMATS.items():
             if solvedfirst:
                 solve(mdl, "vi")
 
-            message, output = attempt(lambda: mdl.mdp(discount=OTHERDISCOUNT, **second))
-            if message is None:
+            error, output = attempt(lambda: mdl.mdp(discount=OTHERDISCOUNT, **second))
+            if error is None:
                 sys.exit("Validation test failed at case 1: %s was accepted." % label)
-            if not message.startswith("Error:") or "new model object" not in message:
-                sys.exit("Validation test failed at case 1: %s aborted with the message %r, which is not an error message telling to create a new model object." % (label, message))
+            if type(error) is not RuntimeError or "new model object" not in str(error):
+                sys.exit("Validation test failed at case 1: %s raised %r, which is not a RuntimeError telling to create a new model object." % (label, error))
             if output:
-                sys.exit("Validation test failed at case 1: %s printed %r besides aborting." % (label, output.strip()))
+                sys.exit("Validation test failed at case 1: %s printed %r besides raising an error." % (label, output.strip()))
 
             # The object still holds the first model, at the first discount factor
             policy, values, iterations, output = solve(mdl, "vi", initValueVector=[0.0] * NSTATES)
@@ -204,12 +204,12 @@ for firstlabel, first in FORMATS.items():
 
 # A call rejected by the checks of mdp() leaves the object free for a valid one
 mdl = mdpsolver.model()
-message, output = attempt(lambda: mdl.mdp(discount=1.5, **FORMATS["tranMatWithZeros"]))
-if message is None or not message.startswith("Error:") or "discount" not in message:
-    sys.exit("Validation test failed at case 1: mdp() with the discount factor 1.5 gave %r, where it should abort with an error about the discount factor." % message)
-message, output = attempt(lambda: mdl.mdp(discount=DISCOUNT, **FORMATS["tranMatElementwise"]))
-if message is not None or output:
-    sys.exit("Validation test failed at case 1: mdp() after a call rejected for its discount factor gave %r and printed %r, where it should define the model." % (message, output.strip()))
+error, output = attempt(lambda: mdl.mdp(discount=1.5, **FORMATS["tranMatWithZeros"]))
+if type(error) is not ValueError or "discount" not in str(error):
+    sys.exit("Validation test failed at case 1: mdp() with the discount factor 1.5 gave %r, where it should raise a ValueError about the discount factor." % error)
+error, output = attempt(lambda: mdl.mdp(discount=DISCOUNT, **FORMATS["tranMatElementwise"]))
+if error is not None or output:
+    sys.exit("Validation test failed at case 1: mdp() after a call rejected for its discount factor gave %r and printed %r, where it should define the model." % (error, output.strip()))
 policy, values, iterations, output = solve(mdl, "vi")
 if output:
     sys.exit("Validation test failed at case 1: solving the model defined after a rejected call of mdp() printed %r." % output.strip())
@@ -243,9 +243,9 @@ for algorithmlabel, algorithm in ALGORITHMS:
 # A run rejected by the checks of solve() does not count as a run, before or after a real one
 mdl = newmodel(FORMATS["tranMatWithZeros"])
 for when in ("before", "after"):
-    message, output = attempt(lambda: mdl.solve(algorithm="pi", tolerance=2.0))
-    if message is None or not message.startswith("Error:") or output:
-        sys.exit("Validation test failed at case 2: solve() with the tolerance 2.0 %s the first run gave %r and printed %r, where it should abort with an error and print nothing else." % (when, message, output.strip()))
+    error, output = attempt(lambda: mdl.solve(algorithm="pi", tolerance=2.0))
+    if type(error) is not ValueError or output:
+        sys.exit("Validation test failed at case 2: solve() with the tolerance 2.0 %s the first run gave %r and printed %r, where it should raise a ValueError and print nothing else." % (when, error, output.strip()))
     if when == "before":
         output = solve(mdl, "pi")[3]
         if output:

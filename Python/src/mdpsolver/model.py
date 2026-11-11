@@ -7,17 +7,22 @@ solve it, and extract the resulting policy and value vectors.
 """
 
 import numbers
-import sys
+import warnings
 from mdpsolver import solvermodule
 
 
-def _openingError(fileName):
-    """The reason why a file cannot be opened for reading, or None if it can be."""
+class ConvergenceWarning(UserWarning):
+    """
+    Issued by solve() when a run has not converged.
+    """
+
+def _openError(fileName, mode="r"):
+    """The OSError raised when the file is opened in the given mode, or None if it can be opened."""
     try:
-        with open(fileName):
+        with open(fileName, mode):
             pass
     except OSError as error:
-        return error.strerror or str(error)
+        return error
     return None
 
 
@@ -42,14 +47,12 @@ class model:
 
     def _requireSolution(self, method):
         """
-        Abort unless solve() has run on this model object. Before that, the
-        solver holds a placeholder policy and value vector (a single -1), which
-        the output methods would return as if it were a solution.
+        Raise RuntimeError unless solve() has run on this model object.
         """
         if not self._modelDefined:
-            sys.exit("Error: No model has been defined and solved for this model object, so %s() has no solution to use. Call mdp() and then solve() first." % method)
+            raise RuntimeError("No model has been defined and solved for this model object, so %s() has no solution to use. Call mdp() and then solve() first." % method)
         if not self._solved:
-            sys.exit("Error: The model has not been solved yet, so %s() has no solution to use. Call solve() first." % method)
+            raise RuntimeError("The model has not been solved yet, so %s() has no solution to use. Call solve() first." % method)
 
     def solve(
         self,
@@ -93,37 +96,37 @@ class model:
         """
         
         if not self._modelDefined:
-            sys.exit("Error: No model has been defined for this model object. Call mdp() before solve().")
+            raise RuntimeError("No model has been defined for this model object. Call mdp() before solve().")
         if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
-            sys.exit("Error: Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
+            raise ValueError("Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
         if tolerance <= 0.0 or tolerance >= 1.0:
-            sys.exit("Error: The tolerance needs to be between 0.0 and 1.0 (i.e. 0 < tolerance < 1).")
+            raise ValueError("The tolerance needs to be between 0.0 and 1.0 (i.e. 0 < tolerance < 1).")
         if not (update == "standard" or update == "gs" or update == "sor"):
-            sys.exit("Error: Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
+            raise ValueError("Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
         if not (criterion == "discounted" or criterion == "average"):
-            sys.exit("Error: Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
+            raise ValueError("Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
         if criterion == "average" and (update == "gs" or update == "sor"):
-            sys.exit("Error: Gauss-Seidel and SOR updates are not available with the average reward criterion. Select update='standard'.")
+            raise ValueError("Gauss-Seidel and SOR updates are not available with the average reward criterion. Select update='standard'.")
         if parIterLim <= 0 and algorithm == "mpi":
-            sys.exit("Error: The partial evaluation limit needs to be a positive number.")
+            raise ValueError("The partial evaluation limit needs to be a positive number.")
         if (SORrelaxation <= 0.0 or SORrelaxation >= 2.0) and update == "sor":
-            sys.exit("Error: The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
+            raise ValueError("The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
         if len(initPolicy) > 0 or len(initValueVector) > 0:
             numberOfStates = self.mdl.getNumberOfStates()
             if numberOfStates >= 0 and len(initPolicy) > 0 and len(initPolicy) != numberOfStates:
-                sys.exit("Error: The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
+                raise ValueError("The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
             if numberOfStates >= 0 and len(initValueVector) > 0 and len(initValueVector) != numberOfStates:
-                sys.exit("Error: The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
+                raise ValueError("The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
             for stateIndex, value in enumerate(initValueVector):
                 if not isinstance(value, numbers.Real):
-                    sys.exit("Error: The initial value vector needs a number for every state (state %d has %r)." % (stateIndex, value))
+                    raise TypeError("The initial value vector needs a number for every state (state %d has %r)." % (stateIndex, value))
             if numberOfStates >= 0 and len(initPolicy) > 0:
                 for stateIndex, action in enumerate(initPolicy):
                     if not isinstance(action, numbers.Integral):
-                        sys.exit("Error: The initial policy needs an integer action index for every state (state %d has %r)." % (stateIndex, action))
+                        raise TypeError("The initial policy needs an integer action index for every state (state %d has %r)." % (stateIndex, action))
                     numberOfActions = self.mdl.getNumberOfActions(stateIndex=stateIndex)
                     if not 0 <= action < numberOfActions:
-                        sys.exit("Error: The initial policy assigns action %s to state %d, which has %d actions (indices 0 to %d)." % (action, stateIndex, numberOfActions, numberOfActions - 1))
+                        raise ValueError("The initial policy assigns action %s to state %d, which has %d actions (indices 0 to %d)." % (action, stateIndex, numberOfActions, numberOfActions - 1))
 
         # The solver keeps the policy and the value vector of the previous run,
         # unless initPolicy or initValueVector replace them.
@@ -152,6 +155,50 @@ class model:
         # Set after the run, so that a run that did not finish leaves the
         # object without a solution
         self._solved = True
+
+        convergence = self.mdl.getConvergence()
+        hint = " Under the average reward criterion, this happens with periodic models." if criterion == "average" else ""
+        if convergence["iterationLimitReached"]:
+            warnings.warn("solve() stopped at the iteration limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=2)
+        elif convergence["evaluationLimitReached"]:
+            warnings.warn("A policy evaluation of policy iteration stopped at its limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=2)
+        if convergence["valuesOutOfRange"] and not postProcessing and update == "standard":
+            # The values are left uncorrected, and may lie outside the range
+            # even when the policy is right
+            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow. With postProcessing=False, the values are not corrected and may lie outside it; use postProcessing=True for correct values, or makeFinalCheck=False to skip the check." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=2)
+        elif convergence["valuesOutOfRange"]:
+            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow, so the results are wrong. checkModel() can look for errors in the model." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=2)
+        elif convergence["diverged"]:
+            warnings.warn("solve() stopped because the values became infinite or NaN, so the results are wrong. checkModel() can look for errors in the model.", ConvergenceWarning, stacklevel=2)
+
+    def hasConverged(self) -> bool:
+        """
+        Whether the last run of solve() converged.
+
+        Returns:
+            bool: True if the last run converged.
+        """
+        self._requireSolution("hasConverged")
+        return bool(self.mdl.getConvergence()["converged"])
+
+    def checkModel(self, tolerance: float = 1e-9) -> list:
+        """
+        Check the model defined by mdp() for errors, and describe each kind of
+        problem found. The check reads the whole model, so it is never run by
+        mdp() or solve(); call it when the results look wrong or the model may
+        be malformed.
+
+        Args:
+            tolerance (float): How far the probabilities of a state-action pair may sum from 1.
+
+        Returns:
+            list: One message per kind of problem, with how many were found and the first examples. Empty if none was found.
+        """
+        if not self._modelDefined:
+            raise RuntimeError("No model has been defined for this model object. Call mdp() before checkModel().")
+        if not isinstance(tolerance, numbers.Real) or not tolerance >= 0.0:
+            raise ValueError("The tolerance of checkModel() needs to be zero or a positive number.")
+        return list(self.mdl.checkModel(tolerance=tolerance))
 
     def getRuntime(self) -> float:
         """
@@ -194,6 +241,8 @@ class model:
 
         Returns:
             int: Action for the given state.
+
+        Raises IndexError for a state outside the model.
         """
         self._requireSolution("getAction")
         return self.mdl.getAction(stateIndex=stateIndex)
@@ -207,6 +256,8 @@ class model:
 
         Returns:
             float: Value for the given state.
+
+        Raises IndexError for a state outside the model.
         """
         self._requireSolution("getValue")
         return self.mdl.getValue(stateIndex=stateIndex)
@@ -245,7 +296,11 @@ class model:
         
         self._requireSolution("saveToFile")
         if not (type == "policy" or type == "value"):
-            sys.exit("Error: Type not recognized. Select either: 'policy' or 'value'.")
+            raise ValueError("Type not recognized. Select either: 'policy' or 'value'.")
+        error = _openError(fileName, "w")
+        if error is not None:
+            # (the argument type hides the built-in type())
+            raise error.__class__("The file %s could not be opened for writing (%s)." % (fileName, error.strerror or error))
 
         return self.mdl.saveToFile(fileName=fileName, type=type)
 
@@ -288,15 +343,15 @@ class model:
         """
         
         if self._modelDefined:
-            sys.exit("Error: A model has already been defined for this model object, and mdp() can only be called once per model object. Create a new model object (e.g. mdl = mdpsolver.model()) to define another model.")
+            raise RuntimeError("A model has already been defined for this model object, and mdp() can only be called once per model object. Create a new model object (e.g. mdl = mdpsolver.model()) to define another model.")
         if discount <= 0.0 or discount >= 1.0:
-            sys.exit("Error: The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
+            raise ValueError("The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
         
         # The formats given. A file name other than the default counts as
         # given; the default file is read only when no list is given.
         if (len(tranMatProbs) > 0) != (len(tranMatColumns) > 0):
             given, missing = ("tranMatProbs", "tranMatColumns") if len(tranMatProbs) > 0 else ("tranMatColumns", "tranMatProbs")
-            sys.exit("Error: %s was given without %s. This format needs both: the non-zero transition probabilities in tranMatProbs and their next states in tranMatColumns." % (given, missing))
+            raise ValueError("%s was given without %s. This format needs both: the non-zero transition probabilities in tranMatProbs and their next states in tranMatColumns." % (given, missing))
         rewardFormats = [name for name, isGiven in (
             ("rewards", len(rewards) > 0),
             ("rewardsElementwise", len(rewardsElementwise) > 0),
@@ -307,24 +362,25 @@ class model:
             ("tranMatProbs and tranMatColumns", len(tranMatProbs) > 0),
             ("tranMatFromFile", tranMatFromFile != "transitions.csv")) if isGiven]
         if len(rewardFormats) > 1:
-            sys.exit("Error: The rewards were given in more than one format (%s). Give them in one format only." % ", ".join(rewardFormats))
+            raise ValueError("The rewards were given in more than one format (%s). Give them in one format only." % ", ".join(rewardFormats))
         if len(tranMatFormats) > 1:
-            sys.exit("Error: The transition probabilities were given in more than one format (%s). Give them in one format only." % ", ".join(tranMatFormats))
+            raise ValueError("The transition probabilities were given in more than one format (%s). Give them in one format only." % ", ".join(tranMatFormats))
 
         # A file that cannot be opened would leave the model without rewards
         # or transition probabilities
+        # (raised as the OSError that opening the file gave, e.g. FileNotFoundError)
         if rewardFormats in ([], ["rewardsFromFile"]):
-            reason = _openingError(rewardsFromFile)
-            if reason is not None and rewardFormats:
-                sys.exit("Error: The rewards file %s could not be opened (%s)." % (rewardsFromFile, reason))
-            if reason is not None:
-                sys.exit("Error: No rewards were given, and the file %s, which is read when none are given, could not be opened (%s). Give the rewards with rewards, rewardsElementwise or rewardsFromFile." % (rewardsFromFile, reason))
+            error = _openError(rewardsFromFile)
+            if error is not None and rewardFormats:
+                raise type(error)("The rewards file %s could not be opened (%s)." % (rewardsFromFile, error.strerror or error))
+            if error is not None:
+                raise type(error)("No rewards were given, and the file %s, which is read when none are given, could not be opened (%s). Give the rewards with rewards, rewardsElementwise or rewardsFromFile." % (rewardsFromFile, error.strerror or error))
         if tranMatFormats in ([], ["tranMatFromFile"]):
-            reason = _openingError(tranMatFromFile)
-            if reason is not None and tranMatFormats:
-                sys.exit("Error: The transition probabilities file %s could not be opened (%s)." % (tranMatFromFile, reason))
-            if reason is not None:
-                sys.exit("Error: No transition probabilities were given, and the file %s, which is read when none are given, could not be opened (%s). Give the transition probabilities with tranMatWithZeros, tranMatElementwise, tranMatProbs and tranMatColumns, or tranMatFromFile." % (tranMatFromFile, reason))
+            error = _openError(tranMatFromFile)
+            if error is not None and tranMatFormats:
+                raise type(error)("The transition probabilities file %s could not be opened (%s)." % (tranMatFromFile, error.strerror or error))
+            if error is not None:
+                raise type(error)("No transition probabilities were given, and the file %s, which is read when none are given, could not be opened (%s). Give the transition probabilities with tranMatWithZeros, tranMatElementwise, tranMatProbs and tranMatColumns, or tranMatFromFile." % (tranMatFromFile, error.strerror or error))
 
         # Set before loading, so that a load that fails halfway cannot be
         # followed by another into the same object

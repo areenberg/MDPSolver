@@ -3,8 +3,9 @@ UNIT TEST FOR CALLING THE METHODS OF A MODEL OBJECT IN THE WRONG ORDER.
 
 A model object is used in three steps: mdp() defines the model, solve() solves
 it, and the output methods (getPolicy(), getValueVector(), getAction(),
-getValue(), getRuntime(), getIterations(), printPolicy(), printValueVector()
-and saveToFile()) report the solution. Before a solution exists, the solver
+getValue(), getRuntime(), getIterations(), hasConverged(), printPolicy(),
+printValueVector() and saveToFile()) report the solution. checkModel() needs
+only mdp(). Before a solution exists, the solver
 holds a placeholder policy and value vector, a single -1 each, which the output
 methods used to return as if it were a solution: getPolicy() gave [-1] and
 getValue(0) gave -1.0, also for a model of several states, and saveToFile()
@@ -14,20 +15,22 @@ solve() before mdp() was kept unchecked, returned by getPolicy() as if it were
 a solution, and used by the next run even when it was too short for the model
 defined in between, so that the solver wrote past its end.
 
-Each of these calls now aborts with an error that says which method to call
+Each of these calls now raises a RuntimeError that says which method to call
 first, and leaves the model object as it was.
 
 The test uses the hub-and-spoke problem of knownsolutions.py, whose solution is
 known in closed form.
 
 Sub-tests:
-    Case 1: Every output method aborts with an error naming itself, mdp() and
-            solve() on a new model object, and naming itself and solve() after
-            mdp(), also after a run of solve() rejected by its own checks. It
-            prints nothing besides, and saveToFile() writes no file. The list
-            of output methods is checked against the methods of the class, so
-            that an output method added later cannot go untested unnoticed.
-    Case 2: solve() before mdp() aborts with an error naming mdp(), with or
+    Case 1: Every output method raises a RuntimeError naming itself, mdp()
+            and solve() on a new model object, and naming itself and solve()
+            after mdp(), also after a run of solve() rejected by its own
+            checks. It prints nothing besides, and saveToFile() writes no
+            file. The list of output methods is checked against the methods of
+            the class, so that an output method added later cannot go untested
+            unnoticed. checkModel() before mdp() raises a RuntimeError naming
+            mdp().
+    Case 2: solve() before mdp() raises a RuntimeError naming mdp(), with or
             without initial vectors and whatever its other arguments, and
             prints nothing besides. It leaves the object as new: mdp() and
             solve() then give the known solution, without the note that the
@@ -38,7 +41,8 @@ Sub-tests:
             others: getAction() and getValue() with getPolicy() and
             getValueVector(), which are the known solution; printPolicy(),
             printValueVector() and the file of saveToFile() with them; and
-            getIterations() and getRuntime() are a positive count and a time.
+            getIterations() and getRuntime() are a positive count and a time,
+            and hasConverged() is True.
             A later run of solve() rejected by its own checks leaves the
             solution in place.
 
@@ -81,6 +85,7 @@ OUTPUTFILE = os.path.join(tmpdir.name, "policy.csv")
 OUTPUTMETHODS = {
     "getRuntime": dict(),
     "getIterations": dict(),
+    "hasConverged": dict(),
     "printPolicy": dict(),
     "printValueVector": dict(),
     "getAction": dict(stateIndex=1),
@@ -91,7 +96,7 @@ OUTPUTMETHODS = {
 }
 
 # Every public method of the class other than these is an output method
-STEPMETHODS = {"initialize", "mdp", "solve"}
+STEPMETHODS = {"initialize", "mdp", "solve", "checkModel"}
 publicmethods = {name for name, _ in inspect.getmembers(mdpsolver.model, inspect.isfunction) if not name.startswith("_")}
 if publicmethods - STEPMETHODS != set(OUTPUTMETHODS):
     sys.exit("Validation test failed at initialization: the output methods of the model class are %s, but the test covers %s." % (sorted(publicmethods - STEPMETHODS), sorted(OUTPUTMETHODS)))
@@ -112,12 +117,12 @@ EARLYSOLVES = (
 # ------------------------------------------------------------------
 
 def attempt(function):
-    '''Runs function with everything printed captured; returns the message it aborted with (None if it did not) and the output.'''
+    '''Runs function with everything printed captured; returns the exception it raised (None if it did not) and the output.'''
     def run():
         try:
             function()
-        except SystemExit as error:
-            return str(error.code)
+        except Exception as error:
+            return error
         return None
     return quietly(run)
 
@@ -133,16 +138,17 @@ def removeoutputfile():
 
 
 def checkrefused(case, label, mdl, method, named, unnamed):
-    '''Exits unless the output method aborts with an error that names the method and every call in named, and no call in unnamed.'''
+    '''Exits unless the output method raises a RuntimeError that names the method and every call in named, and no call in unnamed.'''
     removeoutputfile()
-    message, output = attempt(lambda: call(mdl, method))
-    if message is None:
+    error, output = attempt(lambda: call(mdl, method))
+    if error is None:
         sys.exit("Validation test failed at case %d: %s() %s was accepted." % (case, method, label))
-    if not message.startswith("Error:") or method + "()" not in message \
+    message = str(error)
+    if type(error) is not RuntimeError or method + "()" not in message \
             or any(name not in message for name in named) or any(name in message for name in unnamed):
-        sys.exit("Validation test failed at case %d: %s() %s aborted with the message %r, which is not an error message naming %s() and %s." % (case, method, label, message, method, " and ".join(named)))
+        sys.exit("Validation test failed at case %d: %s() %s raised %r, which is not a RuntimeError naming %s() and %s." % (case, method, label, error, method, " and ".join(named)))
     if output:
-        sys.exit("Validation test failed at case %d: %s() %s printed %r besides aborting." % (case, method, label, output.strip()))
+        sys.exit("Validation test failed at case %d: %s() %s printed %r besides raising an error." % (case, method, label, output.strip()))
     if os.path.exists(OUTPUTFILE):
         sys.exit("Validation test failed at case %d: %s() %s wrote a file." % (case, method, label))
 
@@ -170,10 +176,15 @@ for method in OUTPUTMETHODS:
     mdl.mdp(**MODEL)
     checkrefused(1, "after mdp()", mdl, method, ("solve()",), ("mdp()",))
 
-    message, output = attempt(lambda: mdl.solve(tolerance=2.0))
-    if message is None or not message.startswith("Error:") or "tolerance" not in message:
-        sys.exit("Validation test failed at case 1: solve() with the tolerance 2.0 gave %r, where it should abort with an error about the tolerance." % message)
+    error, output = attempt(lambda: mdl.solve(tolerance=2.0))
+    if type(error) is not ValueError or "tolerance" not in str(error):
+        sys.exit("Validation test failed at case 1: solve() with the tolerance 2.0 gave %r, where it should raise a ValueError about the tolerance." % error)
     checkrefused(1, "after mdp() and a rejected run of solve()", mdl, method, ("solve()",), ("mdp()",))
+
+# checkModel() needs a model, but no solution
+error, output = attempt(lambda: mdpsolver.model().checkModel())
+if type(error) is not RuntimeError or "mdp()" not in str(error) or output:
+    sys.exit("Validation test failed at case 1: checkModel() on a new model object gave %r and printed %r, where it should raise a RuntimeError naming mdp() and print nothing else." % (error, output.strip()))
 
 
 # ------------------------------------------------------------------
@@ -182,13 +193,13 @@ for method in OUTPUTMETHODS:
 
 for label, given in EARLYSOLVES:
     mdl = mdpsolver.model()
-    message, output = attempt(lambda: mdl.solve(**given))
-    if message is None:
+    error, output = attempt(lambda: mdl.solve(**given))
+    if error is None:
         sys.exit("Validation test failed at case 2: %s before mdp() was accepted." % label)
-    if not message.startswith("Error:") or "mdp()" not in message:
-        sys.exit("Validation test failed at case 2: %s before mdp() aborted with the message %r, which is not an error message naming mdp()." % (label, message))
+    if type(error) is not RuntimeError or "mdp()" not in str(error):
+        sys.exit("Validation test failed at case 2: %s before mdp() raised %r, which is not a RuntimeError naming mdp()." % (label, error))
     if output:
-        sys.exit("Validation test failed at case 2: %s before mdp() printed %r besides aborting." % (label, output.strip()))
+        sys.exit("Validation test failed at case 2: %s before mdp() printed %r besides raising an error." % (label, output.strip()))
 
     # The object is as new: no initial vector was kept, and no run counted
     mdl.mdp(**MODEL)
@@ -212,9 +223,9 @@ quietly(lambda: mdl.solve(tolerance=TOLERANCE))
 for rejected in (False, True):
     after = "after a rejected run of solve()" if rejected else "after solve()"
     if rejected:
-        message, output = attempt(lambda: mdl.solve(tolerance=2.0))
-        if message is None or not message.startswith("Error:") or output:
-            sys.exit("Validation test failed at case 3: solve() with the tolerance 2.0 after a run gave %r and printed %r, where it should abort with an error and print nothing else." % (message, output.strip()))
+        error, output = attempt(lambda: mdl.solve(tolerance=2.0))
+        if type(error) is not ValueError or output:
+            sys.exit("Validation test failed at case 3: solve() with the tolerance 2.0 after a run gave %r and printed %r, where it should raise a ValueError and print nothing else." % (error, output.strip()))
 
     # What each output method returns and prints; only the print methods print
     results, printed = {}, {}
@@ -222,8 +233,8 @@ for rejected in (False, True):
         removeoutputfile()
         try:
             results[method], printed[method] = quietly(lambda: call(mdl, method))
-        except SystemExit as error:
-            sys.exit("Validation test failed at case 3: %s() %s aborted with the message %r." % (method, after, str(error.code)))
+        except Exception as error:
+            sys.exit("Validation test failed at case 3: %s() %s raised %r." % (method, after, error))
         if printed[method] and not method.startswith("print"):
             sys.exit("Validation test failed at case 3: %s() %s printed %r." % (method, after, printed[method].strip()))
 
@@ -254,6 +265,8 @@ for rejected in (False, True):
         sys.exit("Validation test failed at case 3: getIterations() %s gives %r, where it should be a positive number of iterations." % (after, iterations))
     if not isinstance(runtime, float) or not runtime >= 0.0:
         sys.exit("Validation test failed at case 3: getRuntime() %s gives %r, where it should be a runtime in milliseconds." % (after, runtime))
+    if results["hasConverged"] is not True:
+        sys.exit("Validation test failed at case 3: hasConverged() %s gives %r, where the run converged." % (after, results["hasConverged"]))
 
 tmpdir.cleanup()
 
