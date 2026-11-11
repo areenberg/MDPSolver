@@ -6,8 +6,20 @@ and solve Markov Decision Processes (MDPs). It provides methods to configure the
 solve it, and extract the resulting policy and value vectors.
 """
 
+import numbers
 import sys
 from mdpsolver import solvermodule
+
+
+def _openingError(fileName):
+    """The reason why a file cannot be opened for reading, or None if it can be."""
+    try:
+        with open(fileName):
+            pass
+    except OSError as error:
+        return error.strerror or str(error)
+    return None
+
 
 class model:
     """
@@ -27,6 +39,17 @@ class model:
         # A model object contains only one model
         self._modelDefined = False
         self._solved = False
+
+    def _requireSolution(self, method):
+        """
+        Abort unless solve() has run on this model object. Before that, the
+        solver holds a placeholder policy and value vector (a single -1), which
+        the output methods would return as if it were a solution.
+        """
+        if not self._modelDefined:
+            sys.exit("Error: No model has been defined and solved for this model object, so %s() has no solution to use. Call mdp() and then solve() first." % method)
+        if not self._solved:
+            sys.exit("Error: The model has not been solved yet, so %s() has no solution to use. Call solve() first." % method)
 
     def solve(
         self,
@@ -60,14 +83,17 @@ class model:
             makeFinalCheck (bool): If True, makes a final check of the value vector. This process checks if the resulting values are reasonable.
             parallel (bool): If True, enables parallel computation for faster solving. This option is only available for the custom MDP model with standard updates.
 
-        Solving the same model object again starts from the policy and the
-        value vector of the previous run, unless initPolicy or initValueVector
-        replace them. Create a new model object to start over.
+        Call mdp() to define the model first. Solving the same model object
+        again starts from the policy and the value vector of the previous run,
+        unless initPolicy or initValueVector replace them. Create a new model
+        object to start over.
 
         Returns:
             None
         """
         
+        if not self._modelDefined:
+            sys.exit("Error: No model has been defined for this model object. Call mdp() before solve().")
         if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
             sys.exit("Error: Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
         if tolerance <= 0.0 or tolerance >= 1.0:
@@ -88,8 +114,13 @@ class model:
                 sys.exit("Error: The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
             if numberOfStates >= 0 and len(initValueVector) > 0 and len(initValueVector) != numberOfStates:
                 sys.exit("Error: The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
+            for stateIndex, value in enumerate(initValueVector):
+                if not isinstance(value, numbers.Real):
+                    sys.exit("Error: The initial value vector needs a number for every state (state %d has %r)." % (stateIndex, value))
             if numberOfStates >= 0 and len(initPolicy) > 0:
                 for stateIndex, action in enumerate(initPolicy):
+                    if not isinstance(action, numbers.Integral):
+                        sys.exit("Error: The initial policy needs an integer action index for every state (state %d has %r)." % (stateIndex, action))
                     numberOfActions = self.mdl.getNumberOfActions(stateIndex=stateIndex)
                     if not 0 <= action < numberOfActions:
                         sys.exit("Error: The initial policy assigns action %s to state %d, which has %d actions (indices 0 to %d)." % (action, stateIndex, numberOfActions, numberOfActions - 1))
@@ -103,7 +134,6 @@ class model:
             reusesValueVector = len(initValueVector) == 0
             if reusesPolicy or reusesValueVector:
                 print("Note: This model has been solved before. Create a new model object to run solver with initial values.", flush=True)
-        self._solved = True
 
         self.mdl.solve(
             algorithm=algorithm,
@@ -119,6 +149,9 @@ class model:
             makeFinalCheck=makeFinalCheck,
             parallel=parallel,
         )
+        # Set after the run, so that a run that did not finish leaves the
+        # object without a solution
+        self._solved = True
 
     def getRuntime(self) -> float:
         """
@@ -127,6 +160,7 @@ class model:
         Returns:
             float: Runtime in milliseconds.
         """
+        self._requireSolution("getRuntime")
         return self.mdl.getRuntime()
 
     def getIterations(self) -> int:
@@ -138,14 +172,17 @@ class model:
         Returns:
             int: Number of iterations.
         """
+        self._requireSolution("getIterations")
         return self.mdl.getIterations()
 
     def printPolicy(self) -> None:
         """Print the entire policy to the terminal."""
+        self._requireSolution("printPolicy")
         self.mdl.printPolicy()
 
     def printValueVector(self) -> None:
         """Print the entire value vector to the terminal."""
+        self._requireSolution("printValueVector")
         self.mdl.printValueVector()
 
     def getAction(self, stateIndex: int = 0) -> int:
@@ -158,6 +195,7 @@ class model:
         Returns:
             int: Action for the given state.
         """
+        self._requireSolution("getAction")
         return self.mdl.getAction(stateIndex=stateIndex)
 
     def getValue(self, stateIndex: int = 0) -> float:
@@ -170,6 +208,7 @@ class model:
         Returns:
             float: Value for the given state.
         """
+        self._requireSolution("getValue")
         return self.mdl.getValue(stateIndex=stateIndex)
 
     def getPolicy(self) -> list:
@@ -179,6 +218,7 @@ class model:
         Returns:
             list: Optimized policy.
         """
+        self._requireSolution("getPolicy")
         return self.mdl.getPolicy()
 
     def getValueVector(self):
@@ -188,6 +228,7 @@ class model:
         Returns:
             list: Optimized value vector.
         """
+        self._requireSolution("getValueVector")
         return self.mdl.getValueVector()
 
     def saveToFile(self, fileName: str = "result.csv", type: str = "policy") -> None:
@@ -202,6 +243,7 @@ class model:
             None
         """
         
+        self._requireSolution("saveToFile")
         if not (type == "policy" or type == "value"):
             sys.exit("Error: Type not recognized. Select either: 'policy' or 'value'.")
 
@@ -233,6 +275,11 @@ class model:
             tranMatColumns (list): Sparse transition probabilities (option 2, part 2). A 3D-list containing the columns of the non-zero transition probabilities.
             tranMatFromFile (str): Load the transition probabilities from a comma-separated (,) file.
 
+        Give the rewards in one format and the transition probabilities in one
+        format. When no list is given for either, it is read from the file
+        named by rewardsFromFile or tranMatFromFile, by default rewards.csv or
+        transitions.csv in the working directory.
+
         A model object holds one model, so mdp() can be called only once per
         model object. Create a new model object to define another model.
 
@@ -245,6 +292,40 @@ class model:
         if discount <= 0.0 or discount >= 1.0:
             sys.exit("Error: The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
         
+        # The formats given. A file name other than the default counts as
+        # given; the default file is read only when no list is given.
+        if (len(tranMatProbs) > 0) != (len(tranMatColumns) > 0):
+            given, missing = ("tranMatProbs", "tranMatColumns") if len(tranMatProbs) > 0 else ("tranMatColumns", "tranMatProbs")
+            sys.exit("Error: %s was given without %s. This format needs both: the non-zero transition probabilities in tranMatProbs and their next states in tranMatColumns." % (given, missing))
+        rewardFormats = [name for name, isGiven in (
+            ("rewards", len(rewards) > 0),
+            ("rewardsElementwise", len(rewardsElementwise) > 0),
+            ("rewardsFromFile", rewardsFromFile != "rewards.csv")) if isGiven]
+        tranMatFormats = [name for name, isGiven in (
+            ("tranMatWithZeros", len(tranMatWithZeros) > 0),
+            ("tranMatElementwise", len(tranMatElementwise) > 0),
+            ("tranMatProbs and tranMatColumns", len(tranMatProbs) > 0),
+            ("tranMatFromFile", tranMatFromFile != "transitions.csv")) if isGiven]
+        if len(rewardFormats) > 1:
+            sys.exit("Error: The rewards were given in more than one format (%s). Give them in one format only." % ", ".join(rewardFormats))
+        if len(tranMatFormats) > 1:
+            sys.exit("Error: The transition probabilities were given in more than one format (%s). Give them in one format only." % ", ".join(tranMatFormats))
+
+        # A file that cannot be opened would leave the model without rewards
+        # or transition probabilities
+        if rewardFormats in ([], ["rewardsFromFile"]):
+            reason = _openingError(rewardsFromFile)
+            if reason is not None and rewardFormats:
+                sys.exit("Error: The rewards file %s could not be opened (%s)." % (rewardsFromFile, reason))
+            if reason is not None:
+                sys.exit("Error: No rewards were given, and the file %s, which is read when none are given, could not be opened (%s). Give the rewards with rewards, rewardsElementwise or rewardsFromFile." % (rewardsFromFile, reason))
+        if tranMatFormats in ([], ["tranMatFromFile"]):
+            reason = _openingError(tranMatFromFile)
+            if reason is not None and tranMatFormats:
+                sys.exit("Error: The transition probabilities file %s could not be opened (%s)." % (tranMatFromFile, reason))
+            if reason is not None:
+                sys.exit("Error: No transition probabilities were given, and the file %s, which is read when none are given, could not be opened (%s). Give the transition probabilities with tranMatWithZeros, tranMatElementwise, tranMatProbs and tranMatColumns, or tranMatFromFile." % (tranMatFromFile, reason))
+
         # Set before loading, so that a load that fails halfway cannot be
         # followed by another into the same object
         self._modelDefined = True

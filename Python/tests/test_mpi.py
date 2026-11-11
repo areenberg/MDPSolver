@@ -21,10 +21,11 @@ Sub-tests:
     Case 1: Infeasible arguments abort with an error message: an unknown
             algorithm, update method or optimality criterion, a tolerance
             outside (0, 1), an SOR relaxation outside (0, 2), an initial value
-            vector or policy of the wrong length, an initial policy with an
-            action that its state does not have, a partial evaluation limit
-            below one, and Gauss-Seidel or SOR updates under the average-reward
-            criterion (see below).
+            vector or policy of the wrong length, an initial value vector with
+            an entry that is not a number, an initial policy with an action
+            that is not an integer or that its state does not have, a partial
+            evaluation limit below one, and Gauss-Seidel or SOR updates under
+            the average-reward criterion (see below).
     Case 2: Arguments that modified policy iteration does not use are accepted
             silently and change nothing: parallel=True with Gauss-Seidel or SOR
             updates (parallel computing is only available with standard
@@ -180,6 +181,8 @@ INFEASIBLE = (
     ("an initial policy one too long", dict(initPolicy="long"), "initial policy"),
     ("an initial policy with an action beyond the last of its state", dict(initPolicy="beyond"), "initial policy"),
     ("an initial policy with a negative action", dict(initPolicy="negative"), "initial policy"),
+    ("an initial policy with an action that is not an integer", dict(initPolicy="fractional"), "initial policy"),
+    ("an initial value vector with an entry that is not a number", dict(initValueVector="text"), "initial value vector"),
     ("a partial evaluation limit of zero", dict(parIterLim=0), "partial evaluation"),
     ("a negative partial evaluation limit", dict(parIterLim=-5), "partial evaluation"),
     ("Gauss-Seidel updates under the average-reward criterion", dict(criterion="average", update="gs"), "average"),
@@ -206,10 +209,11 @@ def arguments(setting, rewards):
     result = dict(setting)
     n = len(rewards)
     values = {"zeros": [0.0] * n, "far": [FARVALUE] * n,
-              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1)}
+              "short": [0.0] * (n - 1), "long": [0.0] * (n + 1), "text": ["0.0"] + [0.0] * (n - 1)}
     policies = {"zeros": [0] * n, "last": [len(r) - 1 for r in rewards],
                 "short": [0] * (n - 1), "long": [0] * (n + 1),
-                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1)}
+                "beyond": [0] * (n - 1) + [len(rewards[-1])], "negative": [-1] + [0] * (n - 1),
+                "fractional": [0.5] + [0] * (n - 1)}
     if isinstance(result.get("initValueVector"), str):
         result["initValueVector"] = values[result["initValueVector"]]
     if isinstance(result.get("initPolicy"), str):

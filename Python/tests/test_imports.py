@@ -49,6 +49,18 @@ Sub-tests:
             alike, give the results of the reference.
     Case 4: Files with Windows line endings (CR LF), and files without a line
             break after the last row, give the results of the reference.
+    Case 5: Input that is missing or given twice aborts with an error naming
+            the arguments involved, before anything is loaded, and prints
+            nothing besides: rewards or transition probabilities that are not
+            given while the default file (rewards.csv, transitions.csv) is
+            missing from the working directory, a file that cannot be opened,
+            tranMatProbs without tranMatColumns and the other way round, and
+            every pair of formats for the rewards or for the transition
+            probabilities. (Missing rewards made Python crash in solve(), and
+            the rest was ignored, the default file read in place of what was
+            given.) A rejected call leaves the model object free for a valid
+            one. With neither given, the default files in the working
+            directory are read and give the results of the reference.
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
@@ -63,7 +75,7 @@ import tempfile
 
 import numpy as np
 
-from loadmdpsolver import mdpsolver, finalline
+from loadmdpsolver import mdpsolver, finalline, quietly
 
 
 # ------------------------------------------------------------------
@@ -480,6 +492,70 @@ for variantlabel, suffix, newline, lastnewline in FILEVARIANTS:
     for settinglabel, setting in SOLVERSETTINGS:
         result = solve({"rewardsFromFile": rewardfile, "tranMatFromFile": tranmatfile}, setting)
         compare(4, "rewardsFromFile with tranMatFromFile, as %s," % variantlabel, settinglabel, result, reference[settinglabel])
+
+
+# ------------------------------------------------------------------
+# CASE 5: Input missing or given twice
+# ------------------------------------------------------------------
+
+# The default files are looked for in the working directory, so the calls run
+# in a directory of their own: empty at first, then holding the default files
+WORKDIR = os.path.join(TMPDIR.name, "workdir")
+os.mkdir(WORKDIR)
+MISSINGFILE = os.path.join(TMPDIR.name, "missing.csv")
+TESTDIR = os.getcwd()
+
+# Each rejected call, with the words its message must contain
+REJECTED = [
+    ("rewards not given, with no rewards.csv", TRANMATFORMATS["tranMatWithZeros"], ("rewards", "rewards.csv")),
+    ("transition probabilities not given, with no transitions.csv", REWARDFORMATS["rewards"], ("transition", "transitions.csv")),
+    ("nothing given, with neither default file", {}, ("rewards", "rewards.csv")),
+    ("rewardsFromFile naming a file that does not exist", {"rewardsFromFile": MISSINGFILE, **TRANMATFORMATS["tranMatWithZeros"]}, (MISSINGFILE,)),
+    ("tranMatFromFile naming a file that does not exist", {**REWARDFORMATS["rewards"], "tranMatFromFile": MISSINGFILE}, (MISSINGFILE,)),
+    ("rewardsFromFile naming a directory", {"rewardsFromFile": WORKDIR, **TRANMATFORMATS["tranMatWithZeros"]}, (WORKDIR,)),
+    ("tranMatProbs without tranMatColumns", {**REWARDFORMATS["rewards"], "tranMatProbs": tranmatprobs}, ("tranMatProbs", "tranMatColumns")),
+    ("tranMatColumns without tranMatProbs", {**REWARDFORMATS["rewards"], "tranMatColumns": tranmatcolumns}, ("tranMatProbs", "tranMatColumns")),
+]
+for (label1, arguments1), (label2, arguments2) in itertools.combinations(REWARDFORMATS.items(), 2):
+    REJECTED.append(("the rewards as %s and %s" % (label1, label2),
+                     {**arguments1, **arguments2, **TRANMATFORMATS["tranMatWithZeros"]}, tuple(arguments1) + tuple(arguments2)))
+for (label1, arguments1), (label2, arguments2) in itertools.combinations(TRANMATFORMATS.items(), 2):
+    REJECTED.append(("the transition probabilities as %s and %s" % (label1, label2),
+                     {**REWARDFORMATS["rewards"], **arguments1, **arguments2}, tuple(arguments1) + tuple(arguments2)))
+
+os.chdir(WORKDIR)
+for label, arguments, words in REJECTED:
+    mdl = mdpsolver.model()
+
+    def attempt():
+        try:
+            mdl.mdp(discount=DISCOUNT, **arguments)
+        except SystemExit as error:
+            return str(error.code)
+        return None
+
+    message, output = quietly(attempt)
+    if message is None:
+        sys.exit("Validation test failed at case 5: mdp() with %s was accepted." % label)
+    if not message.startswith("Error:") or any(word not in message for word in words):
+        sys.exit("Validation test failed at case 5: mdp() with %s aborted with the message %r, which is not an error message naming %s." % (label, message, " and ".join(words)))
+    if output:
+        sys.exit("Validation test failed at case 5: mdp() with %s printed %r besides aborting." % (label, output.strip()))
+
+    # The object is free for a valid call
+    settinglabel, setting = SOLVERSETTINGS[0]
+    mdl.mdp(discount=DISCOUNT, **REFERENCEARGUMENTS)
+    mdl.solve(tolerance=TOLERANCE, **setting)
+    result = list(mdl.getPolicy()), np.array(mdl.getValueVector(), dtype=float)
+    compare(5, "the model defined after mdp() with %s" % label, settinglabel, result, reference[settinglabel])
+
+# With nothing given, the default files in the working directory are read
+writefile(os.path.join(WORKDIR, "rewards.csv"), REWARDHEADER, elementwiserewards(MODEL))
+writefile(os.path.join(WORKDIR, "transitions.csv"), TRANMATHEADER, elementwisetranmat(MODEL))
+for settinglabel, setting in SOLVERSETTINGS:
+    result = solve({}, setting)
+    compare(5, "the default files rewards.csv and transitions.csv", settinglabel, result, reference[settinglabel])
+os.chdir(TESTDIR)
 
 
 # ------------------------------------------------------------------

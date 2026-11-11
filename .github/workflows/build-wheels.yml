@@ -67,7 +67,8 @@ jobs:
             python Python/tests/test_mpi.py &&
             python Python/tests/test_random.py &&
             python Python/tests/test_large.py &&
-            python Python/tests/test_reuse.py
+            python Python/tests/test_reuse.py &&
+            python Python/tests/test_order.py
 
       - uses: actions/upload-artifact@v4
         with:
