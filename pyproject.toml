@@ -36,8 +36,9 @@ authors = [
   { name="Jesper Fink Andersen", email="jesperfinkandersen@gmail.com" },
 ]
 description = "A fast Python solver for Markov Decision Processes"
-# The PyPI page; the README.md next to this file is the GitHub front page
-readme = "Python/README.md"
+# Both the GitHub front page and the PyPI page (so its images need absolute
+# URLs that serve the image itself, e.g. raw.githubusercontent.com)
+readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",

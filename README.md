@@ -1,6 +1,6 @@
 # MDPSolver
 
-<img src="https://github.com/areenberg/MDPSolver/blob/anders_development/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
+<img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.07544/status.svg)](https://doi.org/10.21105/joss.07544)
 
