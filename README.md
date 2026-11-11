@@ -2,6 +2,8 @@
 
 <img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
 
+[![PyPI](https://img.shields.io/pypi/v/mdpsolver)](https://pypi.org/project/mdpsolver/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/areenberg/MDPSolver/blob/master/LICENSE)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.07544/status.svg)](https://doi.org/10.21105/joss.07544)
 
 MDPSolver is a Python package for large Markov Decision Processes (MDPs) with infinite-horizons. 
