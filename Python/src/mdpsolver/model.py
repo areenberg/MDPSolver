@@ -8,6 +8,9 @@ solve it, and extract the resulting policy and value vectors.
 
 import numbers
 import warnings
+
+import numpy as np
+
 from mdpsolver import solvermodule
 
 
@@ -42,17 +45,12 @@ def _asInput(name, value, integer=False, toArray=False):
     """
     An input format of mdp(): a list as it is (unless toArray), anything else as a
     C-contiguous NumPy array of float64 (int64 for integer) with the format's number of
-    dimensions. An empty array is returned as an empty list, i.e. as not given. NumPy is
-    imported only here, so that lists work without it.
+    dimensions. An empty array is returned as an empty list, i.e. as not given.
     """
     if isinstance(value, list) and not toArray:
         return value
     if value is None or isinstance(value, (str, bytes)):
         raise TypeError("%s needs a list or a NumPy array, not %r." % (name, value))
-    try:
-        import numpy as np
-    except ImportError:
-        raise TypeError("%s needs a list (or a NumPy array, with NumPy installed), not a %s." % (name, type(value).__name__)) from None
     try:
         array = np.asarray(value)
     except ValueError as error:
@@ -321,22 +319,22 @@ class model:
         self._requireSolution("getValue")
         return self.mdl.getValue(stateIndex=stateIndex)
 
-    def getPolicy(self) -> list:
+    def getPolicy(self) -> np.ndarray:
         """
         Get the entire optimized policy.
 
         Returns:
-            list: Optimized policy.
+            numpy.ndarray: The optimized policy, the action index (int64) of each state.
         """
         self._requireSolution("getPolicy")
         return self.mdl.getPolicy()
 
-    def getValueVector(self):
+    def getValueVector(self) -> np.ndarray:
         """
         Get the entire optimized value vector.
 
         Returns:
-            list: Optimized value vector.
+            numpy.ndarray: The optimized value vector, the value (float64) of each state.
         """
         self._requireSolution("getValueVector")
         return self.mdl.getValueVector()

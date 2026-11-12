@@ -190,8 +190,8 @@ public:
     int getIterations(); //returns the number of iterations (policy improvement steps)
     int getNumberOfStates(); //returns the number of states of the general MDP model (-1 for the built-in models)
     int getNumberOfActions(int sidx); //returns the number of actions of a state of the general MDP model (-1 for the built-in models or a state outside the model)
-    py::list getPolicy(); //returns the entire policy
-    py::list getValueVector(); //returns the entire value vector
+    py::array_t<int64_t> getPolicy(); //returns the entire policy, as a NumPy array (a copy)
+    py::array_t<double> getValueVector(); //returns the entire value vector, as a NumPy array (a copy)
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 
     py::dict getConvergence(); //whether the last solve converged, and if not, why
 

@@ -40,6 +40,8 @@ description = "A fast Python solver for Markov Decision Processes"
 # URLs that serve the image itself, e.g. raw.githubusercontent.com)
 readme = "README.md"
 requires-python = ">=3.10"
+# NumPy arrays are the default input and output
+dependencies = ["numpy"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",

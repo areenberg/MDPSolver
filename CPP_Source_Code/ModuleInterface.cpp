@@ -306,12 +306,22 @@ void ModuleInterface::setInitValueVector(py::list initValueVector){
     }    
 }
 
-py::list ModuleInterface::getPolicy(){
-    return(py::cast(problem.policy.policy));
+py::array_t<int64_t> ModuleInterface::getPolicy(){
+    //a NumPy array of int64 (NumPy's default integer), copied from the policy
+    const vector<int>& policy = problem.policy.policy;
+    py::array_t<int64_t> result((py::ssize_t)policy.size());
+    int64_t* out = result.mutable_data();
+    for (size_t sidx=0; sidx<policy.size(); sidx++){
+        out[sidx] = policy[sidx];
+    }
+    return result;
 }
 
-py::list ModuleInterface::getValueVector(){
-    return(py::cast(problem.valueVector.valueVector));
+py::array_t<double> ModuleInterface::getValueVector(){
+    //a NumPy array of float64, copied from the value vector (with no base object given,
+    //pybind11 copies the data, so later solves cannot change an array already returned)
+    const vector<double>& values = problem.valueVector.valueVector;
+    return py::array_t<double>((py::ssize_t)values.size(), values.data());
 }
 
 int ModuleInterface::getAction(int sidx){

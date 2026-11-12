@@ -53,15 +53,15 @@ Sub-tests:
             given, as an empty list does.
     Case 5: initPolicy and initValueVector given as arrays give exactly the
             results of the same vectors given as lists.
-    Case 6: Lists need no NumPy: a model given and solved as lists, in a fresh
-            Python process, does not import numpy.
+
+(getPolicy() and getValueVector() return NumPy arrays, which test_output.py
+checks.)
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
 '''
 
 import os
-import subprocess
 import sys
 import tempfile
 import warnings
@@ -301,25 +301,6 @@ for algorithm in ("pi", "mpi"):
     fromlists, _ = run(ARRAYS["rewards"] | ARRAYS["tranMatProbs and tranMatColumns"], algorithm=algorithm, initPolicy=INITPOLICY.tolist(), initValueVector=INITVALUES.tolist())
     if fromarrays != fromlists:
         sys.exit("Validation test failed at case 5: %s with initPolicy and initValueVector as arrays does not give the results of the same lists." % algorithm)
-
-
-# ------------------------------------------------------------------
-# CASE 6: Lists need no NumPy
-# ------------------------------------------------------------------
-
-PROGRAM = """
-import sys
-sys.path.insert(0, %r)
-from loadmdpsolver import mdpsolver
-mdl = mdpsolver.model()
-mdl.mdp(discount=0.9, rewards=[[1.0, 0.0], [0.0, 1.0]], tranMatProbs=[[[1.0], [1.0]], [[1.0], [1.0]]], tranMatColumns=[[[0], [1]], [[1], [0]]])
-mdl.solve()
-mdl.getPolicy(); mdl.getValueVector()
-print("numpy" in sys.modules)
-""" % os.path.dirname(os.path.abspath(__file__))
-result = subprocess.run([sys.executable, "-c", PROGRAM], capture_output=True, text=True)
-if result.returncode != 0 or result.stdout.strip().splitlines()[-1:] != ["False"]:
-    sys.exit("Validation test failed at case 6: a model given and solved as lists imported numpy, or failed (%r %r)." % (result.stdout.strip(), result.stderr.strip()[-300:]))
 
 
 # ------------------------------------------------------------------

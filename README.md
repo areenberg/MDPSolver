@@ -74,11 +74,11 @@ We can now optimize the policy.
 mdl.solve()
 ```
 
-The optimized policy can be returned in a variety of ways. Here, we return the policy as a list and print directly in the terminal. 
+The optimized policy can be returned in a variety of ways. Here, we return the policy as a NumPy array and print it directly in the terminal.
 
 ```python
 print(mdl.getPolicy())
-#[1, 1, 0]
+#[1 1 0]
 ```
 
 ## Sparse transition matrix?

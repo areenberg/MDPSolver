@@ -38,13 +38,18 @@ Sub-tests:
             makeFinalCheck=False, and uncorrected values with
             postProcessing=False, whose warning says so. The warning can be
             turned into an error, and is mdpsolver.ConvergenceWarning.
+    Case 4: getPolicy() and getValueVector() return NumPy arrays, of int64
+            and float64, with one entry per state: the solution. Each call
+            returns a copy, so changing one changes neither the model nor what
+            the methods return later, and a later solve() does not change an
+            array returned before it. (They returned lists until 0.11.0.)
 
-The models are given to mdp() as NumPy arrays, in the elementwise formats
-(rewardsElementwise and tranMatElementwise), since the states of the hub-and-spoke
-problem have different numbers of actions; the rows of each state-action pair are in the order of
-tranMatWithZeros, so that the results are those of the dense lists exactly.
-The small models of case 3 are
-plain arrays. test_arrays.py checks that every format gives the same results as an array and
+The models are given to mdp() as NumPy arrays. The hub-and-spoke problem,
+whose states have different numbers of actions, is given in the elementwise
+formats (rewardsElementwise and tranMatElementwise), with the rows of each
+state-action pair in the order of tranMatWithZeros, so that the results are
+those of the dense lists exactly; the small models of case 3 are plain arrays.
+test_arrays.py checks that every format gives the same results as an array and
 as a list.
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
@@ -218,6 +223,39 @@ if not isinstance(error, mdpsolver.ConvergenceWarning):
     sys.exit("Validation test failed at case 3: with ConvergenceWarning turned into an error, solve() gave %r." % error)
 
 tmpdir.cleanup()
+
+
+# ------------------------------------------------------------------
+# CASE 4: The policy and the value vector as NumPy arrays
+# ------------------------------------------------------------------
+
+mdl, caught, output = solved(HUBMODEL)
+policy, values = mdl.getPolicy(), mdl.getValueVector()
+for name, array, dtype in (("getPolicy()", policy, np.int64), ("getValueVector()", values, np.float64)):
+    if not isinstance(array, np.ndarray) or array.dtype != dtype or array.shape != (NSTATES,):
+        sys.exit("Validation test failed at case 4: %s returned %r, where it should return a NumPy array of %s with %d entries." % (name, array, np.dtype(dtype).name, NSTATES))
+if policy.tolist() != HUBPOLICY or float(np.max(np.abs(values - HUBVALUES))) > TOLERANCE:
+    sys.exit("Validation test failed at case 4: getPolicy() and getValueVector() give %s and %s, which are not the known solution." % (policy, values))
+
+# Copies: changing them changes neither the model nor what the methods return later
+expectedpolicy, expectedvalues = policy.copy(), values.copy()
+policy[:] = -7
+values[:] = np.nan
+if not np.array_equal(mdl.getPolicy(), expectedpolicy) or not np.array_equal(mdl.getValueVector(), expectedvalues) \
+        or mdl.getAction(stateIndex=0) != expectedpolicy[0] or mdl.getValue(stateIndex=0) != expectedvalues[0]:
+    sys.exit("Validation test failed at case 4: changing the arrays that getPolicy() and getValueVector() returned changed the model's results.")
+
+# A later solve() leaves the arrays returned before it as they were
+heldpolicy, heldvalues = mdl.getPolicy(), mdl.getValueVector()
+def resolve():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        mdl.solve(algorithm="vi", tolerance=0.5, initValueVector=np.zeros(NSTATES))
+quietly(resolve)
+if np.array_equal(mdl.getValueVector(), expectedvalues):
+    sys.exit("Validation test failed at case 4: the second solve() gave the same values as the first, so it cannot show whether arrays returned before it change.")
+if not np.array_equal(heldpolicy, expectedpolicy) or not np.array_equal(heldvalues, expectedvalues):
+    sys.exit("Validation test failed at case 4: a later solve() changed the arrays that getPolicy() and getValueVector() returned before it.")
 
 
 # ------------------------------------------------------------------
