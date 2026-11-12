@@ -23,6 +23,7 @@
 */
 
 #include "GeneralMDPmodel.h"
+#include <limits>
 
 GeneralMDPmodel::GeneralMDPmodel(Rewards * rw, TransitionMatrix * tm, double discount):
 rewards(rw),
@@ -40,48 +41,70 @@ GeneralMDPmodel::~GeneralMDPmodel() {
 
 
 void GeneralMDPmodel::initialize(){
-    numberOfStates=tranMat->numberOfRows();
+    tranMat->fillTables(csr);
+    numberOfStates=csr.numberOfStates;
     cidx=0;
+
+    //The tables need one reward per pair of the transition probabilities. In a well-formed
+    //model the rewards have the same numbers of actions, and so the same numbering, and
+    //their array is used as it is. Otherwise (which checkModel() reports) a copy numbered
+    //like the pairs is made, so that the solver reads no memory outside the rewards.
+    bool aligned = rewards->numberOfRows() >= numberOfStates;
+    for (int sidx=0; aligned && sidx<numberOfStates; sidx++){
+        aligned = rewards->numberOfActions(sidx) == tranMat->numberOfActions(sidx);
+    }
+    if (aligned){
+        csr.reward = rewards->data();
+    }else{
+        alignedRewards.assign(csr.stateStart[numberOfStates], numeric_limits<double>::quiet_NaN());
+        for (int sidx=0; sidx<numberOfStates && sidx<rewards->numberOfRows(); sidx++){
+            for (int aidx=0; aidx<tranMat->numberOfActions(sidx) && aidx<rewards->numberOfActions(sidx); aidx++){
+                alignedRewards[pair(sidx,aidx)] = rewards->getReward(sidx,aidx);
+            }
+        }
+        csr.reward = alignedRewards.data();
+    }
 }
-        
+
 double GeneralMDPmodel::reward(int &sidx, int &aidx){
     //calculates and returns the reward of taking action
     //aidx when in current state sidx
 
-    return rewards->getReward(sidx,aidx);
+    return csr.reward[pair(sidx,aidx)];
 }
 
 double GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
-    //calculates the probability of jumping to state jidx from
-    //the current state sidx when taking action aidx.
-    //returns the calculated probability.
+    //returns the jidx-th non-zero transition probability of taking
+    //action aidx in state sidx (jidx counts the non-zero probabilities)
 
-    return tranMat->getProb(sidx,aidx,jidx);
+    return csr.prob[entry(sidx,aidx,jidx)];
 }
 
 int GeneralMDPmodel::getNumberOfJumps(int &sidx, int &aidx){
-    return tranMat->numberOfColumns(sidx,aidx);
+    int64_t i = pair(sidx,aidx);
+    return (int)(csr.pairStart[i+1] - csr.pairStart[i]);
 }
 
 void GeneralMDPmodel::updateNextState(int &sidx, int &aidx, int &jidx){
     //updates the next possible state, nextState, and the associated
-    //transition probability, psj.    
-    while (tranMat->getColumn(sidx,aidx,cidx)!=jidx){ //this will in many cases immediately evaluate to False
+    //transition probability, psj.
+    int nJumps = getNumberOfJumps(sidx,aidx);
+    while (csr.column[entry(sidx,aidx,cidx)]!=jidx){ //this will in many cases immediately evaluate to False
         cidx++;
-        if (cidx==tranMat->numberOfColumns(sidx,aidx)){ //to make sure cidx is always feasible
+        if (cidx==nJumps){ //to make sure cidx is always feasible
             cidx=0;
-        }    
+        }
     }
     cidx++; //move one additional step
-    if (cidx==tranMat->numberOfColumns(sidx,aidx)){
+    if (cidx==nJumps){
         cidx=0;
     }
-    nextState = tranMat->getColumn(sidx,aidx,cidx);
-    psj = tranMat->getProb(sidx,aidx,cidx);
-}    
+    nextState = csr.column[entry(sidx,aidx,cidx)];
+    psj = csr.prob[entry(sidx,aidx,cidx)];
+}
 
 int GeneralMDPmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){
-    return tranMat->getColumn(sidx,aidx,cidx);
+    return csr.column[entry(sidx,aidx,cidx)];
 }
 
 int GeneralMDPmodel::postDecisionIdx(int &sidx, int &aidx){
@@ -90,7 +113,7 @@ int GeneralMDPmodel::postDecisionIdx(int &sidx, int &aidx){
     //both returns the value of the first new state, and
     //stores it in the variable nextState.
     cidx=0;
-    nextState = tranMat->getColumn(sidx,aidx,cidx);
+    nextState = csr.column[entry(sidx,aidx,cidx)];
     return nextState;
 }
 
@@ -103,7 +126,7 @@ int GeneralMDPmodel::getNumberOfStates(){
 }
 
 void GeneralMDPmodel::updateNumberOfActions(int &sidx){
-    numberOfActions=tranMat->numberOfActions(sidx);
+    numberOfActions=(int)(csr.stateStart[sidx+1] - csr.stateStart[sidx]);
 }
 
 int GeneralMDPmodel::getNumberOfActions(){
@@ -111,7 +134,7 @@ int GeneralMDPmodel::getNumberOfActions(){
 }
 
 int GeneralMDPmodel::getNumberOfActions(int &sidx){
-    return tranMat->numberOfActions(sidx);
+    return (int)(csr.stateStart[sidx+1] - csr.stateStart[sidx]);
 }
 
 int * GeneralMDPmodel::getNextState(){

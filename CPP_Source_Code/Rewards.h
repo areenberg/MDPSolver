@@ -23,41 +23,55 @@
 */
 
 #include <vector>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <cstdint>
 
 using namespace std;
-namespace py = pybind11;
 
 #ifndef REWARDS_H
 #define REWARDS_H
 
+//The rewards of the general MDP model, one per state-action pair, in one flat array that is
+//numbered like the pairs of TransitionMatrix: state by state, and within a state in the order
+//of its actions. When the rewards have the same numbers of actions as the transition
+//probabilities, which is the case in a well-formed model, the solver reads this array as it
+//is (see GeneralMDPmodel).
 class Rewards {
 public:
-    
+
     Rewards();
     Rewards(const Rewards& orig);
     virtual ~Rewards();
-    
+
     //METHODS
-    
+
+    //sizes
+    int numberOfRows() const { return (int)stateStart.size() - 1; } //the number of states
+    int numberOfActions(int sidx) const { return (int)(stateStart[sidx+1] - stateStart[sidx]); }
+
     //read and write values
-    double getReward(int& sidx, int& aidx);
-    void assignReward(double reward, int& sidx, int& aidx); //assign single probability
-    void assignRewardsFromList(py::list pyRewards); //cast probabilities directly from Python list
-    
-    //set size of array
-    void setNumberOfRows(int numberOfStates);
-    void setNumberOfActions(int nActions, int& sidx);
-    
-    int numberOfActions(int& sidx);
-    int numberOfRows();
-    
+    double getReward(int sidx, int aidx) const { return values[stateStart[sidx] + aidx]; }
+    void assignReward(double reward, int sidx, int aidx) { values[stateStart[sidx] + aidx] = reward; }
+    const double* data() const { return values.data(); }
+
+    //BUILDING (by the loaders in ModuleInterface)
+
+    void clear(); //no states
+
+    //in order: the rewards of each state, then the states
+    void reserve(int64_t nPairs) { values.reserve(nPairs); }
+    void addReward(double reward) { values.push_back(reward); }
+    void endState() { stateStart.push_back((int64_t)values.size()); }
+
+    //or the number of actions of each state first, then the rewards in any order
+    //(rewards that the input leaves out stay NaN, which checkModel() reports)
+    void setActions(const vector<int>& nActions);
+
 private:
 
     //VARIABLES
-    vector<vector<double>> rewards; //array of rewards (index1: state, index2: action)
-    
+    vector<int64_t> stateStart; //numberOfRows()+1 entries: the rewards of state s are stateStart[s], ..., stateStart[s+1]-1
+    vector<double> values; //the reward of each state-action pair
+
 };
 
 #endif /* REWARDS_H */

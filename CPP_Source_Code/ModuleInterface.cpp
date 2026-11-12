@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <limits>
 #include <cmath>
+#include <climits>
 
 #include "ModuleInterface.h"
 
@@ -51,11 +52,10 @@ void ModuleInterface::mdp(double discount,
     //select the general MDP problem
     problem.problemType="mdp";
     problem.discount=discount;
-    settings.genMDP=true;
 
     //load the rewards
     if (rewards.size()!=0){
-        problem.rewards.assignRewardsFromList(rewards);
+        loadRewardsFromList(rewards);
     }else if(rewardsElementwise.size()!=0){
         loadRewardsElementwise(rewardsElementwise);
     }else{
@@ -68,8 +68,7 @@ void ModuleInterface::mdp(double discount,
     }else if(tranMatElementwise.size()!=0){
         loadTranMatElementwise(tranMatElementwise);
     }else if(tranMatProbs.size()!=0&&tranMatColumns.size()!=0){
-        problem.tranMat.assignProbsFromList(tranMatProbs);
-        problem.tranMat.assignColumnsFromList(tranMatColumns);
+        loadTranMatFromLists(tranMatProbs,tranMatColumns);
     }else{
         loadTranMatFromFile(tranMatFromFile,',',true);
     }
@@ -88,7 +87,6 @@ void ModuleInterface::tbm(double discount,
     double failureProbHat){
     //selects the TBM problem
     problem.problemType="tbm";
-    settings.genMDP=false;
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
@@ -114,7 +112,6 @@ void ModuleInterface::cbm(double discount,
     int kOfN){
     //selects the CBM problem
     problem.problemType="cbm";
-    settings.genMDP=false;
     problem.discount=discount;
     problem.components=components;
     problem.stages=stages;
@@ -163,7 +160,7 @@ void ModuleInterface::solve(string algorithm,
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm,
     settings.update, settings.criterion, settings.parIterLim, settings.SORrelaxation, settings.verbose,
-    settings.postProcessing, settings.makeFinalCheck, settings.parallel, settings.genMDP);
+    settings.postProcessing, settings.makeFinalCheck, settings.parallel);
 
     //create model object
     if (problem.problemType.compare("mdp")==0){
@@ -346,30 +343,150 @@ int ModuleInterface::getNumberOfActions(int sidx){
     }
 }
 
-void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
-        vector<vector<vector<double>>> tempMat = tranMatWithZeros.cast<vector<vector<vector<double>>>>();
-        int cidx;
-        problem.tranMat.setNumberOfRows(tempMat.size());
-        for (int sidx=0; sidx<tempMat.size(); sidx++){
-            problem.tranMat.setNumberOfActions(tempMat[sidx].size(),sidx);
-            for (int aidx=0; aidx<tempMat[sidx].size(); aidx++){
-                cidx=0;
-                for (int jidx=0; jidx<tempMat[sidx][aidx].size(); jidx++){
-                    if (tempMat[sidx][aidx][jidx]>0.0){
-                        cidx++;
-                    }
-                }
-                problem.tranMat.setNumberOfColumns(cidx,sidx,aidx);
-                cidx=0;
-                for (int jidx=0; jidx<tempMat[sidx][aidx].size(); jidx++){
-                    if (tempMat[sidx][aidx][jidx]>0.0){
-                        problem.tranMat.assignColumn(jidx,sidx,aidx,cidx);
-                        problem.tranMat.assignProb(tempMat[sidx][aidx][jidx],sidx,aidx,cidx);
-                        cidx++;
-                    }
-                }
-            } 
+//---------------------------------------
+//  LOADING: the nested lists
+//---------------------------------------
+//The nested lists (rewards, tranMatWithZeros, tranMatProbs and tranMatColumns) are read item
+//by item straight into the flat arrays of Rewards and TransitionMatrix, without a nested C++
+//copy in between. Lists and tuples are read in place, and any other sequence (e.g. a NumPy
+//array as a row) is first turned into a list, as pybind11 accepted them before. Floats and
+//ints are read directly; any other item (a NumPy scalar, a bool, ...) is converted by
+//pybind11 as before, with the same errors.
+
+namespace {
+
+//the items of a Python sequence
+class Items{
+public:
+    Items() : items(nullptr), n(0) {}
+    Items(py::handle sequence, const char* name){
+        PyObject* o = sequence.ptr();
+        if (PyList_Check(o) || PyTuple_Check(o)){
+            fast = py::reinterpret_borrow<py::object>(sequence);
+        }else if (PySequence_Check(o) && !PyUnicode_Check(o) && !PyBytes_Check(o)){
+            fast = py::reinterpret_steal<py::object>(PySequence_Fast(o, ""));
+            if (!fast){
+                throw py::error_already_set();
+            }
+        }else{
+            throw py::cast_error(string(name) + " holds a " + Py_TYPE(o)->tp_name + " where a list is needed.");
         }
+        n = PySequence_Fast_GET_SIZE(fast.ptr());
+        items = PySequence_Fast_ITEMS(fast.ptr());
+    }
+    Py_ssize_t size() const { return n; }
+    py::handle operator[](Py_ssize_t i) const { return items[i]; }
+private:
+    py::object fast;
+    PyObject** items;
+    Py_ssize_t n;
+};
+
+inline double toDouble(py::handle item){
+    if (PyFloat_Check(item.ptr())){
+        return PyFloat_AS_DOUBLE(item.ptr());
+    }
+    return item.cast<double>();
+}
+
+inline int toInt(py::handle item){
+    if (PyLong_CheckExact(item.ptr())){
+        int overflow;
+        long value = PyLong_AsLongAndOverflow(item.ptr(), &overflow);
+        if (!overflow && value >= INT_MIN && value <= INT_MAX){
+            return (int)value;
+        }
+    }
+    return item.cast<int>(); //raises pybind11's error, as before
+}
+
+}
+
+void ModuleInterface::loadRewardsFromList(py::list rewardsList){
+    Rewards& rewards = problem.rewards;
+    rewards.clear();
+    Items states(rewardsList,"rewards");
+    for (Py_ssize_t sidx=0; sidx<states.size(); sidx++){
+        Items actions(states[sidx],"rewards");
+        for (Py_ssize_t aidx=0; aidx<actions.size(); aidx++){
+            rewards.addReward(toDouble(actions[aidx]));
+        }
+        rewards.endState();
+    }
+}
+
+void ModuleInterface::loadTranMatFromLists(py::list tranMatProbs, py::list tranMatColumns){
+    //A pair keeps as many entries as both lists have for it, and the actions and states that
+    //tranMatColumns lacks have none; checkModel() reports where the two lists differ in shape,
+    //from the record made here.
+    TransitionMatrix& tranMat = problem.tranMat;
+    tranMat.clear();
+    Items probStates(tranMatProbs,"tranMatProbs");
+    Items columnStates(tranMatColumns,"tranMatColumns");
+    Py_ssize_t nStates = probStates.size();
+    Py_ssize_t nColumnStates = columnStates.size();
+    tranMat.columnRows = (int)nColumnStates;
+
+    //the sizes first, so that the arrays are allocated once
+    int64_t nPairs = 0, nEntries = 0;
+    for (Py_ssize_t sidx=0; sidx<nStates; sidx++){
+        Items probActions(probStates[sidx],"tranMatProbs");
+        nPairs += probActions.size();
+        if (sidx < nColumnStates){
+            Items columnActions(columnStates[sidx],"tranMatColumns");
+            for (Py_ssize_t aidx=0; aidx<min(probActions.size(),columnActions.size()); aidx++){
+                nEntries += min(Items(probActions[aidx],"tranMatProbs").size(), Items(columnActions[aidx],"tranMatColumns").size());
+            }
+        }
+    }
+    tranMat.reserve(nPairs,nEntries);
+
+    for (Py_ssize_t sidx=0; sidx<nStates; sidx++){
+        Items probActions(probStates[sidx],"tranMatProbs");
+        Items columnActions;
+        if (sidx < nColumnStates){
+            columnActions = Items(columnStates[sidx],"tranMatColumns");
+            if (columnActions.size() != probActions.size()){
+                tranMat.shapeMismatches.push_back({(int)sidx, -1, (int)probActions.size(), (int)columnActions.size()});
+            }
+        }
+        for (Py_ssize_t aidx=0; aidx<probActions.size(); aidx++){
+            if (aidx < columnActions.size()){
+                Items probs(probActions[aidx],"tranMatProbs");
+                Items columns(columnActions[aidx],"tranMatColumns");
+                if (probs.size() != columns.size()){
+                    tranMat.shapeMismatches.push_back({(int)sidx, (int)aidx, (int)probs.size(), (int)columns.size()});
+                }
+                for (Py_ssize_t cidx=0; cidx<min(probs.size(),columns.size()); cidx++){
+                    tranMat.addEntry(toInt(columns[cidx]), toDouble(probs[cidx]));
+                }
+            }
+            tranMat.endPair();
+        }
+        tranMat.endState();
+    }
+}
+
+void ModuleInterface::loadTranMatWithZeros(py::list tranMatWithZeros){
+    //the probabilities above zero, with their column indices as next states
+    TransitionMatrix& tranMat = problem.tranMat;
+    tranMat.clear();
+    Items states(tranMatWithZeros,"tranMatWithZeros");
+    for (Py_ssize_t sidx=0; sidx<states.size(); sidx++){
+        Items actions(states[sidx],"tranMatWithZeros");
+        for (Py_ssize_t aidx=0; aidx<actions.size(); aidx++){
+            Items row(actions[aidx],"tranMatWithZeros");
+            for (Py_ssize_t jidx=0; jidx<row.size(); jidx++){
+                double prob = toDouble(row[jidx]);
+                if (prob > 0.0){
+                    tranMat.addEntry((int)jidx, prob);
+                }
+            }
+            tranMat.endPair();
+        }
+        tranMat.endState();
+    }
+    tranMat.shrink();
 }
 
 //---------------------------------------
@@ -467,10 +584,10 @@ void ModuleInterface::loadRewardsElementwise(py::list rewardsElementwise){
         }
     }
     //allocate memory
-    problem.rewards.setNumberOfRows(numberOfStates);
     for (int sidx=0; sidx<numberOfStates; sidx++){
-        problem.rewards.setNumberOfActions((nAct[sidx]+1),sidx);
-    }    
+        nAct[sidx]++; //from the highest action index to the number of actions
+    }
+    problem.rewards.setActions(nAct);
     //assign values
     for (int i=0; i<rewardsElementwise.size(); i++){
         innerRew = rewardsElementwise[i].cast<py::list>();
@@ -529,10 +646,10 @@ void ModuleInterface::loadRewardsFromFile(string rewardsFromFile, char sep, bool
     file.seekg(0,ios::beg);
 
     //allocate memory
-    problem.rewards.setNumberOfRows(numberOfStates);
     for (int sidx=0; sidx<numberOfStates; sidx++){
-        problem.rewards.setNumberOfActions((nAct[sidx]+1),sidx);
+        nAct[sidx]++; //from the highest action index to the number of actions
     }
+    problem.rewards.setActions(nAct);
 
     //assign values
     i=0;
@@ -553,8 +670,7 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
     const string columns = "state, action, next state, probability";
     py::list innerRew;
     vector<int> nAct;
-    vector<vector<int>> nCol;
-    int k0,k1,k2,cidx;
+    int k0,k1,k2;
     double prob;
     int numberOfStates=0;
     //determine number of States
@@ -567,7 +683,6 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
     }       
     numberOfStates++;
     nAct.resize(numberOfStates,0);
-    nCol.resize(numberOfStates);
     //determine number of actions and columns (next states) in each state
     for (int i=0; i<tranMatElementwise.size(); i++){
         innerRew = tranMatElementwise[i].cast<py::list>();
@@ -577,34 +692,25 @@ void ModuleInterface::loadTranMatElementwise(py::list tranMatElementwise){
         }
     }
     for (int sidx=0; sidx<numberOfStates; sidx++){
-        nCol[sidx].resize((nAct[sidx]+1),0);
+        nAct[sidx]++; //from the highest action index to the number of actions
     }
+    problem.tranMat.setActions(nAct);
+    //count the entries of each state-action pair
     for (int i=0; i<tranMatElementwise.size(); i++){
         innerRew = tranMatElementwise[i].cast<py::list>();
         k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
-        nCol[k0][k1]++;
+        problem.tranMat.countEntry(k0,k1);
     }
     //allocate memory
-    problem.tranMat.setNumberOfRows(numberOfStates);
-    for (int sidx=0; sidx<numberOfStates; sidx++){
-        problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
-        for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
-            problem.tranMat.setNumberOfColumns(nCol[sidx][aidx],sidx,aidx);
-        }
-    }
-    //assign values
+    problem.tranMat.allocateEntries();
+    //assign values, each to the next free entry of its pair (in the order of the list)
     for (int i=0; i<tranMatElementwise.size(); i++){
         innerRew = tranMatElementwise[i].cast<py::list>();
         k0 = innerRew[0].cast<int>(); k1 = innerRew[1].cast<int>();
         k2 = listIndex(innerRew,2,i,name,"next-state"); prob = innerRew[3].cast<double>();
-        //find cidx (the next free place, marked -1, which a negative k2 would leave free)
-        cidx=0;
-        while (problem.tranMat.getColumn(k0,k1,cidx)!=-1){
-            cidx++;
-        }
-        problem.tranMat.assignColumn(k2,k0,k1,cidx);
-        problem.tranMat.assignProb(prob,k0,k1,cidx);
+        problem.tranMat.fillEntry(k0,k1,k2,prob);
     }
+    problem.tranMat.finishEntries();
 }
 
 
@@ -614,8 +720,7 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     string line;
     vector<string> fields;
     vector<int> nAct;
-    vector<vector<int>> nCol;
-    int i,k0,k1,k2,cidx;
+    int i,k0,k1,k2;
     double prob;
     int numberOfStates=0;
 
@@ -636,7 +741,6 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     }
     numberOfStates++;
     nAct.resize(numberOfStates,0);
-    nCol.resize(numberOfStates);
 
     //reset
     file.clear();
@@ -654,18 +758,20 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
         i++;
     }
     for (int sidx=0; sidx<numberOfStates; sidx++){
-        nCol[sidx].resize((nAct[sidx]+1),0);
+        nAct[sidx]++; //from the highest action index to the number of actions
     }
+    problem.tranMat.setActions(nAct);
 
     //reset
     file.clear();
     file.seekg(0,ios::beg);
 
+    //count the entries of each state-action pair
     i=0;
     while (getline(file,line)){
         if ((!header||i>0) && fileRow(line,sep,4,tranMatFromFile,i+1,columns,fields)){
             k0 = stoi(fields[0]); k1 = stoi(fields[1]);
-            nCol[k0][k1]++;
+            problem.tranMat.countEntry(k0,k1);
         }
         i++;
     }
@@ -675,32 +781,21 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     file.seekg(0,ios::beg);
 
     //allocate memory
-    problem.tranMat.setNumberOfRows(numberOfStates);
-    for (int sidx=0; sidx<numberOfStates; sidx++){
-        problem.tranMat.setNumberOfActions((nAct[sidx]+1),sidx);
-        for (int aidx=0; aidx<(nAct[sidx]+1); aidx++){
-            problem.tranMat.setNumberOfColumns(nCol[sidx][aidx],sidx,aidx);
-        }
-    }
+    problem.tranMat.allocateEntries();
 
-    //assign values
+    //assign values, each to the next free entry of its pair (in the order of the file)
     i=0;
     while (getline(file,line)){
         if ((!header||i>0) && fileRow(line,sep,4,tranMatFromFile,i+1,columns,fields)){
             k0 = stoi(fields[0]); k1 = stoi(fields[1]);
             k2 = fileIndex(fields[2],tranMatFromFile,i+1,"next-state");
             prob = fileNumber(fields[3],tranMatFromFile,i+1,"probability");
-            //find cidx (the next free place, marked -1, which a negative k2 would leave free)
-            cidx=0;
-            while (problem.tranMat.getColumn(k0,k1,cidx)!=-1){
-                cidx++;
-            }
-            problem.tranMat.assignColumn(k2,k0,k1,cidx);
-            problem.tranMat.assignProb(prob,k0,k1,cidx);
+            problem.tranMat.fillEntry(k0,k1,k2,prob);
         }
         i++;
     }
     file.close();
+    problem.tranMat.finishEntries();
 }
 
 
@@ -786,6 +881,11 @@ py::list ModuleInterface::checkModel(double tolerance){
 
     ProblemKind noActions, actionMismatch, shapeMismatch, noTransitions, nextStateOutside, badProbability, badSum, badReward;
 
+    //where tranMatProbs and tranMatColumns differ in shape, as recorded while loading them
+    //(in the order of the loop below); a pair kept as many entries as both lists have
+    const vector<TransitionMatrix::ShapeMismatch>& mismatches = tranMat.shapeMismatches;
+    size_t nextMismatch = 0;
+
     for (int sidx=0; sidx<nStates; sidx++){
         int nActions = tranMat.numberOfActions(sidx);
         if (nActions == 0){
@@ -797,18 +897,20 @@ py::list ModuleInterface::checkModel(double tolerance){
         if (sidx >= nColumnStates){
             continue;
         }
-        int nColumnActions = tranMat.numberOfColumnActions(sidx);
-        if (nColumnActions != nActions){
+        int nColumnActions = nActions;
+        if (nextMismatch < mismatches.size() && mismatches[nextMismatch].sidx == sidx && mismatches[nextMismatch].aidx == -1){
+            nColumnActions = mismatches[nextMismatch].nColumns;
+            nextMismatch++;
             shapeMismatch.add("state " + to_string(sidx) + " (" + counted(nActions,"action","actions") + " in tranMatProbs, " + to_string(nColumnActions) + " in tranMatColumns)");
         }
 
         for (int aidx=0; aidx<min(nActions,nColumnActions); aidx++){
-            int nProbs = tranMat.numberOfProbabilities(sidx,aidx);
-            int nColumns = tranMat.numberOfColumns(sidx,aidx);
-            if (nProbs != nColumns){
-                shapeMismatch.add(stateAction(sidx,aidx) + " (" + counted(nProbs,"entry","entries") + " in tranMatProbs, " + to_string(nColumns) + " in tranMatColumns)");
+            if (nextMismatch < mismatches.size() && mismatches[nextMismatch].sidx == sidx && mismatches[nextMismatch].aidx == aidx){
+                const TransitionMatrix::ShapeMismatch& m = mismatches[nextMismatch];
+                nextMismatch++;
+                shapeMismatch.add(stateAction(sidx,aidx) + " (" + counted(m.nProbs,"entry","entries") + " in tranMatProbs, " + to_string(m.nColumns) + " in tranMatColumns)");
             }
-            int nJumps = min(nProbs,nColumns);
+            int nJumps = tranMat.numberOfColumns(sidx,aidx);
             if (nJumps == 0){
                 noTransitions.add(stateAction(sidx,aidx));
                 continue;

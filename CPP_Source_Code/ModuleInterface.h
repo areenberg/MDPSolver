@@ -101,7 +101,6 @@ public:
         bool postProcessing;
         bool makeFinalCheck;
         bool parallel;
-        bool genMDP;
     } settings;
 
 
@@ -204,6 +203,8 @@ private:
     //METHODS
     void setInitPolicy(py::list initPolicy);
     void setInitValueVector(py::list initValueVector);
+    void loadRewardsFromList(py::list rewards);
+    void loadTranMatFromLists(py::list tranMatProbs, py::list tranMatColumns);
     void loadTranMatWithZeros(py::list tranMatWithZeros);
     void loadRewardsElementwise(py::list rewardsElementwise);
     void loadTranMatElementwise(py::list tranMatElementwise);

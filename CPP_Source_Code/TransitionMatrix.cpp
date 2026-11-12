@@ -25,75 +25,62 @@
 #include "TransitionMatrix.h"
 
 TransitionMatrix::TransitionMatrix() {
+    clear();
 }
 
 TransitionMatrix::TransitionMatrix(const TransitionMatrix& orig) {
+    clear();
 }
 
 TransitionMatrix::~TransitionMatrix() {
 }
 
-double TransitionMatrix::getProb(int& sidx, int& aidx, int& cidx){
-    return probs[sidx][aidx][cidx];
-}
- 
-int TransitionMatrix::getColumn(int& sidx, int& aidx, int& cidx){
-    return cols[sidx][aidx][cidx];
-}
-
-void TransitionMatrix::assignProb(double prob, int& sidx, int& aidx, int& cidx){
-    probs[sidx][aidx][cidx]=prob; 
+void TransitionMatrix::clear(){
+    stateStart.assign(1,0);
+    pairStart.assign(1,0);
+    column.clear();
+    prob.clear();
+    fillPosition.clear();
+    shapeMismatches.clear();
+    columnRows = -1;
 }
 
-void TransitionMatrix::assignColumn(int column, int& sidx, int& aidx, int& cidx){
-    cols[sidx][aidx][cidx]=column;
+void TransitionMatrix::fillTables(CSRTables& tables) const{
+    tables.numberOfStates = numberOfRows();
+    tables.stateStart = stateStart.data();
+    tables.pairStart = pairStart.data();
+    tables.column = column.data();
+    tables.prob = prob.data();
 }
 
-void TransitionMatrix::assignProbsFromList(py::list pyProbs){ 
-    //cast probabilities directly from Python list
-    probs=pyProbs.cast<vector<vector<vector<double>>>>();
-}
-    
-void TransitionMatrix::assignColumnsFromList(py::list pyCols){ 
-    //cast column indices directly from Python list
-    cols=pyCols.cast<vector<vector<vector<int>>>>();
-}    
-    
-void TransitionMatrix::setNumberOfRows(int numberOfStates){
-    probs.resize(numberOfStates);
-    cols.resize(numberOfStates);
+void TransitionMatrix::reserve(int64_t nPairs, int64_t nEntries){
+    pairStart.reserve(nPairs + 1);
+    column.reserve(nEntries);
+    prob.reserve(nEntries);
 }
 
-void TransitionMatrix::setNumberOfActions(int nActions, int& sidx){
-    probs[sidx].resize(nActions);
-    cols[sidx].resize(nActions);
+void TransitionMatrix::shrink(){
+    column.shrink_to_fit();
+    prob.shrink_to_fit();
+    pairStart.shrink_to_fit();
+    stateStart.shrink_to_fit();
 }
 
-void TransitionMatrix::setNumberOfColumns(int nJumps, int& sidx, int& aidx){
-    probs[sidx][aidx].resize(nJumps,-1);
-    cols[sidx][aidx].resize(nJumps,-1);
+void TransitionMatrix::setActions(const vector<int>& nActions){
+    clear();
+    stateStart.resize(nActions.size() + 1);
+    for (size_t sidx=0; sidx<nActions.size(); sidx++){
+        stateStart[sidx+1] = stateStart[sidx] + nActions[sidx];
+    }
+    pairStart.assign(stateStart.back() + 1, 0);
 }
 
-int TransitionMatrix::numberOfColumns(int& sidx, int& aidx){
-    return cols[sidx][aidx].size();
-}
-
-int TransitionMatrix::numberOfActions(int& sidx){
-    return probs[sidx].size();
-}
-
-int TransitionMatrix::numberOfRows(){
-    return probs.size();
-}
-
-int TransitionMatrix::numberOfColumnRows(){
-    return cols.size();
-}
-
-int TransitionMatrix::numberOfColumnActions(int sidx){
-    return cols[sidx].size();
-}
-
-int TransitionMatrix::numberOfProbabilities(int sidx, int aidx){
-    return probs[sidx][aidx].size();
+void TransitionMatrix::allocateEntries(){
+    //pairStart holds the count of pair i in entry i+1: sum them up into offsets
+    for (size_t i=1; i<pairStart.size(); i++){
+        pairStart[i] += pairStart[i-1];
+    }
+    column.assign(pairStart.back(), -1);
+    prob.assign(pairStart.back(), 0.0);
+    fillPosition.assign(pairStart.begin(), pairStart.end() - 1);
 }
