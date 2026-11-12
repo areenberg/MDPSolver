@@ -6,7 +6,9 @@ and solve Markov Decision Processes (MDPs). It provides methods to configure the
 solve it, and extract the resulting policy and value vectors.
 """
 
+import functools
 import numbers
+import threading
 import warnings
 
 import numpy as np
@@ -81,6 +83,20 @@ def _asList(value):
     return list(value) if not isinstance(value, (str, bytes)) else value
 
 
+def _oneAtATime(method):
+    """
+    Runs a method of a model object with the object's lock held. solve() lets other
+    Python threads run while it computes, so models in several threads are solved at
+    the same time; the lock runs the calls on one model object one at a time, so that
+    no call reads or changes the model while another thread solves it.
+    """
+    @functools.wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return locked
+
+
 class model:
     """
     Creates an MDPSolver object.
@@ -91,8 +107,10 @@ class model:
 
     def __init__(self):
         """Initialize the model by creating a solver module object."""
+        self._lock = threading.RLock()
         self.initialize()
 
+    @_oneAtATime
     def initialize(self):
         """Create and initialize the solver module object."""
         self.mdl = solvermodule.Model()
@@ -109,6 +127,7 @@ class model:
         if not self._solved:
             raise RuntimeError("The model has not been solved yet, so %s() has no solution to use. Call solve() first." % method)
 
+    @_oneAtATime
     def solve(
         self,
         algorithm: str = "mpi",
@@ -228,6 +247,7 @@ class model:
         elif convergence["diverged"]:
             warnings.warn("solve() stopped because the values became infinite or NaN, so the results are wrong. checkModel() can look for errors in the model.", ConvergenceWarning, stacklevel=2)
 
+    @_oneAtATime
     def hasConverged(self) -> bool:
         """
         Whether the last run of solve() converged.
@@ -238,6 +258,7 @@ class model:
         self._requireSolution("hasConverged")
         return bool(self.mdl.getConvergence()["converged"])
 
+    @_oneAtATime
     def checkModel(self, tolerance: float = 1e-9) -> list:
         """
         Check the model defined by mdp() for errors, and describe each kind of
@@ -257,6 +278,7 @@ class model:
             raise ValueError("The tolerance of checkModel() needs to be zero or a positive number.")
         return list(self.mdl.checkModel(tolerance=tolerance))
 
+    @_oneAtATime
     def getRuntime(self) -> float:
         """
         Get the runtime of the last solver execution.
@@ -267,6 +289,7 @@ class model:
         self._requireSolution("getRuntime")
         return self.mdl.getRuntime()
 
+    @_oneAtATime
     def getIterations(self) -> int:
         """
         Get the number of iterations of the last solver execution.
@@ -279,16 +302,19 @@ class model:
         self._requireSolution("getIterations")
         return self.mdl.getIterations()
 
+    @_oneAtATime
     def printPolicy(self) -> None:
         """Print the entire policy to the terminal."""
         self._requireSolution("printPolicy")
         self.mdl.printPolicy()
 
+    @_oneAtATime
     def printValueVector(self) -> None:
         """Print the entire value vector to the terminal."""
         self._requireSolution("printValueVector")
         self.mdl.printValueVector()
 
+    @_oneAtATime
     def getAction(self, stateIndex: int = 0) -> int:
         """
         Get the action from the optimized policy for a specific state.
@@ -304,6 +330,7 @@ class model:
         self._requireSolution("getAction")
         return self.mdl.getAction(stateIndex=stateIndex)
 
+    @_oneAtATime
     def getValue(self, stateIndex: int = 0) -> float:
         """
         Get the value from the optimized value vector for a specific state.
@@ -319,6 +346,7 @@ class model:
         self._requireSolution("getValue")
         return self.mdl.getValue(stateIndex=stateIndex)
 
+    @_oneAtATime
     def getPolicy(self) -> np.ndarray:
         """
         Get the entire optimized policy.
@@ -329,6 +357,7 @@ class model:
         self._requireSolution("getPolicy")
         return self.mdl.getPolicy()
 
+    @_oneAtATime
     def getValueVector(self) -> np.ndarray:
         """
         Get the entire optimized value vector.
@@ -339,6 +368,7 @@ class model:
         self._requireSolution("getValueVector")
         return self.mdl.getValueVector()
 
+    @_oneAtATime
     def saveToFile(self, fileName: str = "result.csv", type: str = "policy") -> None:
         """
         Save the optimized policy or value vector to a file.
@@ -361,6 +391,7 @@ class model:
 
         return self.mdl.saveToFile(fileName=fileName, type=type)
 
+    @_oneAtATime
     def mdp(
         self,
         discount: float = 0.99,

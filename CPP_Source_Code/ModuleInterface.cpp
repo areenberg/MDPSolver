@@ -230,6 +230,13 @@ void ModuleInterface::solve(string algorithm,
     setInitPolicy(initPolicy);
     setInitValueVector(initValueVector);
 
+    //From here on nothing touches a Python object, so Python's global interpreter lock is
+    //released, and other Python threads run while the model is solved (models in several
+    //threads are solved at the same time). It is taken back when solve() returns, or when an
+    //exception leaves it. model.py runs the calls on one model object one at a time, so no
+    //other call reads or changes this object meanwhile.
+    py::gil_scoped_release releasedGIL;
+
     //create and setup solver object
     ModifiedPolicyIteration solver(settings.tolerance, settings.algorithm,
     settings.update, settings.criterion, settings.parIterLim, settings.SORrelaxation, settings.verbose,
