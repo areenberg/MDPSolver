@@ -20,7 +20,7 @@ known in closed form.
 Sub-tests:
     Case 1: A second call of mdp() raises a RuntimeError that tells the user
             to create a new model object, whichever format the first call gave the
-            transition probabilities in, and whether or not the model was
+            transition probabilities in (as lists, NumPy arrays or files), and whether or not the model was
             solved in between. The object keeps the first model: solving it
             gives the solution of that model at its discount factor. A call of
             mdp() rejected by its own checks (an invalid discount factor) does
@@ -37,6 +37,12 @@ Sub-tests:
             first needed more, and gives the same policy and values, under
             both criteria. A new model object starts afresh, as the note says.
 
+Cases 2 and 3 give the model to mdp() as NumPy arrays, in the elementwise
+formats (the states of the problem have different numbers of actions), with
+the rows of each state-action pair in the order of tranMatWithZeros.
+test_arrays.py checks that every format gives the same results as an array and
+as a list.
+
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
 '''
@@ -48,7 +54,7 @@ import tempfile
 import numpy as np
 
 from loadmdpsolver import mdpsolver, finalline, quietly
-from knownsolutions import densetranmat, elementwisetranmat, hubaverage, hubdiscounted, hubproblem
+from knownsolutions import arrayinput, densetranmat, elementwisetranmat, hubaverage, hubdiscounted, hubproblem
 
 
 # ------------------------------------------------------------------
@@ -110,6 +116,7 @@ def formats(directory):
     elementwiserewards = [[s, a, reward] for s, state in enumerate(HUBREWARDS) for a, reward in enumerate(state)]
     return {
         "tranMatWithZeros": dict(rewards=HUBREWARDS, tranMatWithZeros=densetranmat(HUBTRANSITIONS)),
+        "NumPy arrays": arrayinput(HUBREWARDS, HUBTRANSITIONS, bycolumn=True),
         "tranMatElementwise": dict(rewardsElementwise=elementwiserewards,
                                    tranMatElementwise=elementwisetranmat(HUBTRANSITIONS)),
         "tranMatProbs and tranMatColumns": dict(
@@ -204,7 +211,7 @@ for firstlabel, first in FORMATS.items():
 
 # A call rejected by the checks of mdp() leaves the object free for a valid one
 mdl = mdpsolver.model()
-error, output = attempt(lambda: mdl.mdp(discount=1.5, **FORMATS["tranMatWithZeros"]))
+error, output = attempt(lambda: mdl.mdp(discount=1.5, **FORMATS["NumPy arrays"]))
 if type(error) is not ValueError or "discount" not in str(error):
     sys.exit("Validation test failed at case 1: mdp() with the discount factor 1.5 gave %r, where it should raise a ValueError about the discount factor." % error)
 error, output = attempt(lambda: mdl.mdp(discount=DISCOUNT, **FORMATS["tranMatElementwise"]))
@@ -223,7 +230,7 @@ checksolution(1, "the model defined after a rejected call of mdp()", policy, val
 for algorithmlabel, algorithm in ALGORITHMS:
     for givenlabel, given in GIVEN.items():
         label = "%s with %s" % (algorithmlabel, givenlabel)
-        mdl = newmodel(FORMATS["tranMatWithZeros"])
+        mdl = newmodel(FORMATS["NumPy arrays"])
 
         output = solve(mdl, algorithm)[3]
         if output:
@@ -241,7 +248,7 @@ for algorithmlabel, algorithm in ALGORITHMS:
                 sys.exit("Validation test failed at case 2: %s printed %r, where it should print one note that the model has been solved before and that a new model object starts afresh." % (runlabel, output.strip()))
 
 # A run rejected by the checks of solve() does not count as a run, before or after a real one
-mdl = newmodel(FORMATS["tranMatWithZeros"])
+mdl = newmodel(FORMATS["NumPy arrays"])
 for when in ("before", "after"):
     error, output = attempt(lambda: mdl.solve(algorithm="pi", tolerance=2.0))
     if type(error) is not ValueError or output:
@@ -259,7 +266,7 @@ for when in ("before", "after"):
 for criterion in CRITERIA:
     for algorithmlabel, algorithm in ALGORITHMS:
         label = "%s under the %s criterion" % (algorithmlabel, criterion)
-        mdl = newmodel(FORMATS["tranMatWithZeros"])
+        mdl = newmodel(FORMATS["NumPy arrays"])
         firstpolicy, firstvalues, firstiterations, output = solve(mdl, algorithm, criterion)
         checksolution(3, "the first run of " + label, firstpolicy, firstvalues, criterion)
         if firstiterations < 2:
@@ -273,7 +280,7 @@ for criterion in CRITERIA:
         checksolution(3, "the second run of " + label, policy, values, criterion)
 
         # A new model object starts from scratch, just as the first did
-        policy, values, iterations, output = solve(newmodel(FORMATS["tranMatWithZeros"]), algorithm, criterion)
+        policy, values, iterations, output = solve(newmodel(FORMATS["NumPy arrays"]), algorithm, criterion)
         if output or iterations != firstiterations or policy != firstpolicy or not np.array_equal(values, firstvalues):
             sys.exit("Validation test failed at case 3: %s on a new model object needs %d iterations and printed %r, where it should repeat the first run on the first object (%d iterations, nothing printed, the same results)." % (label, iterations, output.strip(), firstiterations))
 

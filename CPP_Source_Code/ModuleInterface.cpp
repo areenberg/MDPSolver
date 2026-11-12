@@ -40,35 +40,108 @@ ModuleInterface::ModuleInterface(const ModuleInterface& orig) {
 ModuleInterface::~ModuleInterface() {
 }
 
+//---------------------------------------
+//  mdp(): lists or NumPy arrays
+//---------------------------------------
+//Each format but the files can be given as a list or as a NumPy array. A list goes to the
+//list loaders below, and never makes Python import NumPy. Anything else is taken as an array
+//(model.py has already checked its shape and converted it to C-contiguous float64, or int64
+//for the column indices), and only the few lines here touch it through pybind11: the array
+//loaders get plain pointers and sizes.
+
+namespace {
+
+//whether a format was given: a non-empty list or array
+bool given(const py::object& argument){
+    return !argument.is_none() && py::len(argument) > 0;
+}
+
+//an argument as a C-contiguous NumPy array of T with ndim dimensions
+template <typename T>
+py::array_t<T, py::array::c_style | py::array::forcecast> asArray(const py::object& argument, const string& name, int ndim){
+    auto array = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(argument);
+    if (!array){
+        throw py::type_error(name + " needs a list or a NumPy array of numbers.");
+    }
+    if (array.ndim() != ndim){
+        throw invalid_argument(name + " as an array needs " + to_string(ndim) + " dimensions, not " + to_string(array.ndim()) + ".");
+    }
+    return array;
+}
+
+//the length of dimension k of an array, as a number of states, actions or entries
+template <typename A>
+int arrayExtent(const A& array, int k, const string& name){
+    if (array.shape(k) > INT_MAX){
+        throw invalid_argument(name + " is too large: dimension " + to_string(k+1) + " has " + to_string(array.shape(k)) + " entries.");
+    }
+    return (int)array.shape(k);
+}
+
+}
+
 void ModuleInterface::mdp(double discount,
-    py::list rewards, 
-    py::list rewardsElementwise,
+    py::object rewards,
+    py::object rewardsElementwise,
     string rewardsFromFile,
-    py::list tranMatWithZeros,
-    py::list tranMatElementwise,
-    py::list tranMatProbs,
-    py::list tranMatColumns, 
+    py::object tranMatWithZeros,
+    py::object tranMatElementwise,
+    py::object tranMatProbs,
+    py::object tranMatColumns,
     string tranMatFromFile){
     //select the general MDP problem
     problem.problemType="mdp";
     problem.discount=discount;
 
     //load the rewards
-    if (rewards.size()!=0){
-        loadRewardsFromList(rewards);
-    }else if(rewardsElementwise.size()!=0){
-        loadRewardsElementwise(rewardsElementwise);
+    if (given(rewards)){
+        if (py::isinstance<py::list>(rewards)){
+            loadRewardsFromList(rewards.cast<py::list>());
+        }else{
+            auto array = asArray<double>(rewards,"rewards",2);
+            loadRewardsFromArray(array.data(), arrayExtent(array,0,"rewards"), arrayExtent(array,1,"rewards"));
+        }
+    }else if(given(rewardsElementwise)){
+        if (py::isinstance<py::list>(rewardsElementwise)){
+            loadRewardsElementwise(rewardsElementwise.cast<py::list>());
+        }else{
+            auto array = asArray<double>(rewardsElementwise,"rewardsElementwise",2);
+            loadRewardsElementwiseArray(array.data(), array.shape(0), array.shape(1));
+        }
     }else{
         loadRewardsFromFile(rewardsFromFile,',',true);
     }
 
     //load the transition probabilities
-    if (tranMatWithZeros.size()!=0){
-        loadTranMatWithZeros(tranMatWithZeros);    
-    }else if(tranMatElementwise.size()!=0){
-        loadTranMatElementwise(tranMatElementwise);
-    }else if(tranMatProbs.size()!=0&&tranMatColumns.size()!=0){
-        loadTranMatFromLists(tranMatProbs,tranMatColumns);
+    if (given(tranMatWithZeros)){
+        if (py::isinstance<py::list>(tranMatWithZeros)){
+            loadTranMatWithZeros(tranMatWithZeros.cast<py::list>());
+        }else{
+            auto array = asArray<double>(tranMatWithZeros,"tranMatWithZeros",3);
+            loadTranMatWithZerosArray(array.data(), arrayExtent(array,0,"tranMatWithZeros"),
+                arrayExtent(array,1,"tranMatWithZeros"), arrayExtent(array,2,"tranMatWithZeros"));
+        }
+    }else if(given(tranMatElementwise)){
+        if (py::isinstance<py::list>(tranMatElementwise)){
+            loadTranMatElementwise(tranMatElementwise.cast<py::list>());
+        }else{
+            auto array = asArray<double>(tranMatElementwise,"tranMatElementwise",2);
+            loadTranMatElementwiseArray(array.data(), array.shape(0), array.shape(1));
+        }
+    }else if(given(tranMatProbs) && given(tranMatColumns)){
+        if (py::isinstance<py::list>(tranMatProbs) && py::isinstance<py::list>(tranMatColumns)){
+            loadTranMatFromLists(tranMatProbs.cast<py::list>(),tranMatColumns.cast<py::list>());
+        }else{
+            auto probs = asArray<double>(tranMatProbs,"tranMatProbs",3);
+            auto columns = asArray<int64_t>(tranMatColumns,"tranMatColumns",3);
+            for (int k=0; k<3; k++){
+                if (probs.shape(k) != columns.shape(k)){
+                    throw invalid_argument("tranMatProbs and tranMatColumns as arrays need the same shape.");
+                }
+            }
+            loadTranMatFromArrays(probs.data(), columns.data(), arrayExtent(probs,0,"tranMatProbs"),
+                arrayExtent(probs,1,"tranMatProbs"), arrayExtent(probs,2,"tranMatProbs"));
+        }
     }else{
         loadTranMatFromFile(tranMatFromFile,',',true);
     }
@@ -796,6 +869,153 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     }
     file.close();
     problem.tranMat.finishEntries();
+}
+
+
+//---------------------------------------
+//  LOADING: NumPy arrays
+//---------------------------------------
+//The same formats as the lists, read from the data of NumPy arrays (C-contiguous, row by
+//row). These loaders use no Python, so that they stay the same whatever binds them. They
+//keep the order of the entries and the crash guards of the list loaders: an elementwise
+//row's state, action and next state must be whole numbers and not negative.
+
+namespace {
+
+//a number as text: -1 as "-1", 1.5 as "1.5"
+string numberText(double x){
+    ostringstream text;
+    text << x;
+    return text.str();
+}
+
+//an index in row i of an elementwise array: a whole number, not negative
+int arrayIndex(double x, int64_t i, const string& name, const string& what){
+    if (!(x == floor(x))){ //also NaN and infinity
+        throw invalid_argument(name + "[" + to_string(i) + "] has the " + what + " index " + numberText(x) + ", which is not an integer.");
+    }
+    if (x < 0){
+        throw invalid_argument(name + "[" + to_string(i) + "] has the negative " + what + " index " + numberText(x) + ".");
+    }
+    if (x > INT_MAX){
+        throw invalid_argument(name + "[" + to_string(i) + "] has the " + what + " index " + numberText(x) + ", which is too large.");
+    }
+    return (int)x;
+}
+
+//an elementwise array needs at least n columns
+void checkRowLength(int64_t rowLength, int64_t n, const string& name, const string& columns){
+    if (rowLength < n){
+        throw invalid_argument(name + " has " + to_string(rowLength) + " columns, where " + to_string(n) + " are needed (" + columns + ").");
+    }
+}
+
+}
+
+void ModuleInterface::loadRewardsFromArray(const double* rewardsArray, int nStates, int nActions){
+    //rewards[s][a] = rewardsArray[s*nActions + a]
+    Rewards& rewards = problem.rewards;
+    rewards.clear();
+    rewards.reserve((int64_t)nStates * nActions);
+    for (int sidx=0; sidx<nStates; sidx++){
+        for (int aidx=0; aidx<nActions; aidx++){
+            rewards.addReward(rewardsArray[(int64_t)sidx*nActions + aidx]);
+        }
+        rewards.endState();
+    }
+}
+
+void ModuleInterface::loadRewardsElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength){
+    //row i: state, action, reward (as for the list, the last reward of a pair counts)
+    const string name = "rewardsElementwise";
+    checkRowLength(rowLength,3,name,"state, action, reward");
+    int numberOfStates=0;
+    for (int64_t i=0; i<nRows; i++){
+        numberOfStates = max(numberOfStates, arrayIndex(rows[i*rowLength],i,name,"state") + 1);
+    }
+    vector<int> nAct(numberOfStates,1);
+    for (int64_t i=0; i<nRows; i++){
+        int k0 = (int)rows[i*rowLength];
+        nAct[k0] = max(nAct[k0], arrayIndex(rows[i*rowLength+1],i,name,"action") + 1);
+    }
+    problem.rewards.setActions(nAct);
+    for (int64_t i=0; i<nRows; i++){
+        problem.rewards.assignReward(rows[i*rowLength+2], (int)rows[i*rowLength], (int)rows[i*rowLength+1]);
+    }
+}
+
+void ModuleInterface::loadTranMatWithZerosArray(const double* probs, int nStates, int nActions, int nColumns){
+    //the probabilities above zero of probs[s][a][j] = probs[(s*nActions + a)*nColumns + j],
+    //with their column indices j as next states
+    TransitionMatrix& tranMat = problem.tranMat;
+    tranMat.clear();
+    int64_t nEntries = 0, nElements = (int64_t)nStates * nActions * nColumns;
+    for (int64_t k=0; k<nElements; k++){
+        if (probs[k] > 0.0){
+            nEntries++;
+        }
+    }
+    tranMat.reserve((int64_t)nStates * nActions, nEntries);
+    for (int sidx=0; sidx<nStates; sidx++){
+        for (int aidx=0; aidx<nActions; aidx++){
+            const double* row = probs + ((int64_t)sidx*nActions + aidx) * nColumns;
+            for (int jidx=0; jidx<nColumns; jidx++){
+                if (row[jidx] > 0.0){
+                    tranMat.addEntry(jidx, row[jidx]);
+                }
+            }
+            tranMat.endPair();
+        }
+        tranMat.endState();
+    }
+}
+
+void ModuleInterface::loadTranMatElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength){
+    //row i: state, action, next state, probability; each entry goes to the next free place
+    //of its pair, in the order of the rows
+    const string name = "tranMatElementwise";
+    checkRowLength(rowLength,4,name,"state, action, next state, probability");
+    int numberOfStates=0;
+    for (int64_t i=0; i<nRows; i++){
+        numberOfStates = max(numberOfStates, arrayIndex(rows[i*rowLength],i,name,"state") + 1);
+    }
+    vector<int> nAct(numberOfStates,1);
+    for (int64_t i=0; i<nRows; i++){
+        int k0 = (int)rows[i*rowLength];
+        nAct[k0] = max(nAct[k0], arrayIndex(rows[i*rowLength+1],i,name,"action") + 1);
+    }
+    TransitionMatrix& tranMat = problem.tranMat;
+    tranMat.setActions(nAct);
+    for (int64_t i=0; i<nRows; i++){
+        tranMat.countEntry((int)rows[i*rowLength], (int)rows[i*rowLength+1]);
+    }
+    tranMat.allocateEntries();
+    for (int64_t i=0; i<nRows; i++){
+        const double* row = rows + i*rowLength;
+        tranMat.fillEntry((int)row[0], (int)row[1], arrayIndex(row[2],i,name,"next-state"), row[3]);
+    }
+    tranMat.finishEntries();
+}
+
+void ModuleInterface::loadTranMatFromArrays(const double* probs, const int64_t* columns, int nStates, int nActions, int nEntries){
+    //nEntries probabilities and next states per pair, all kept (a padding probability of 0
+    //adds nothing to a value)
+    TransitionMatrix& tranMat = problem.tranMat;
+    tranMat.clear();
+    tranMat.reserve((int64_t)nStates * nActions, (int64_t)nStates * nActions * nEntries);
+    int64_t k = 0;
+    for (int sidx=0; sidx<nStates; sidx++){
+        for (int aidx=0; aidx<nActions; aidx++){
+            for (int cidx=0; cidx<nEntries; cidx++, k++){
+                if (columns[k] < INT_MIN || columns[k] > INT_MAX){
+                    throw invalid_argument("tranMatColumns holds the column index " + to_string(columns[k]) + ", which is too large.");
+                }
+                tranMat.addEntry((int)columns[k], probs[k]);
+            }
+            tranMat.endPair();
+        }
+        tranMat.endState();
+    }
 }
 
 

@@ -24,7 +24,9 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 #include <vector>
+#include <cstdint>
 #include <string>
 #include <iostream>
 
@@ -129,14 +131,15 @@ public:
     //------ problem selection ------
 
     //the general MDP problem
+    //(each format but the files is a list or a NumPy array; see mdp() in ModuleInterface.cpp)
     void mdp(double discount,
-    py::list rewards, //option1: complete reward list 
-    py::list rewardsElementwise, //option2: rewards where each row is an element and columns specify sidx,aidx,reward
+    py::object rewards, //option1: complete reward list 
+    py::object rewardsElementwise, //option2: rewards where each row is an element and columns specify sidx,aidx,reward
     string rewardsFromFile, //option3: rewards are loaded from a file
-    py::list tranMatWithZeros, //option1: complete transition mat incl. zeros
-    py::list tranMatElementwise, //option2: tran mat where each row is a non-zero element and columns specify sidx,aidx,jidx,prob
-    py::list tranMatProbs, //option3a: transition mat non-zero probabilities
-    py::list tranMatColumns, //option3b: transition mat column indices 
+    py::object tranMatWithZeros, //option1: complete transition mat incl. zeros
+    py::object tranMatElementwise, //option2: tran mat where each row is a non-zero element and columns specify sidx,aidx,jidx,prob
+    py::object tranMatProbs, //option3a: transition mat non-zero probabilities
+    py::object tranMatColumns, //option3b: transition mat column indices 
     string tranMatFromFile); //option4: transition mat is loaded from a file
 
     // ------ pre-defined MDP problems ------  
@@ -209,6 +212,13 @@ private:
     void loadRewardsElementwise(py::list rewardsElementwise);
     void loadTranMatElementwise(py::list tranMatElementwise);
     void loadRewardsFromFile(string rewardsFromFile, char sep, bool header);
+    //the same formats as NumPy arrays: mdp() hands over the arrays' data as C-contiguous
+    //doubles (int64 for the column indices), and these loaders use no Python
+    void loadRewardsFromArray(const double* rewards, int nStates, int nActions);
+    void loadRewardsElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength);
+    void loadTranMatWithZerosArray(const double* probs, int nStates, int nActions, int nColumns);
+    void loadTranMatElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength);
+    void loadTranMatFromArrays(const double* probs, const int64_t* columns, int nStates, int nActions, int nEntries);
     void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
     void savePolicyToFile(string fileName, char sep);
     void saveValueVectorToFile(string fileName, char sep);

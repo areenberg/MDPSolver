@@ -39,6 +39,14 @@ Sub-tests:
             postProcessing=False, whose warning says so. The warning can be
             turned into an error, and is mdpsolver.ConvergenceWarning.
 
+The models are given to mdp() as NumPy arrays, in the elementwise formats
+(rewardsElementwise and tranMatElementwise), since the states of the hub-and-spoke
+problem have different numbers of actions; the rows of each state-action pair are in the order of
+tranMatWithZeros, so that the results are those of the dense lists exactly.
+The small models of case 3 are
+plain arrays. test_arrays.py checks that every format gives the same results as an array and
+as a list.
+
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
 '''
@@ -51,7 +59,7 @@ import warnings
 import numpy as np
 
 from loadmdpsolver import mdpsolver, finalline, quietly
-from knownsolutions import densetranmat, hubdiscounted, hubproblem
+from knownsolutions import arrayinput, hubdiscounted, hubproblem
 
 
 # ------------------------------------------------------------------
@@ -64,7 +72,7 @@ ITERATIONLIMIT = 1000000
 
 HUBREWARDS, HUBTRANSITIONS = hubproblem()
 NSTATES = len(HUBREWARDS)
-HUBMODEL = dict(rewards=HUBREWARDS, tranMatWithZeros=densetranmat(HUBTRANSITIONS))
+HUBMODEL = arrayinput(HUBREWARDS, HUBTRANSITIONS, bycolumn=True)
 HUBPOLICY, HUBVALUES = hubdiscounted(DISCOUNT)
 
 # Case 3: the models and runs that do not converge, with the words their
@@ -72,9 +80,9 @@ HUBPOLICY, HUBVALUES = hubdiscounted(DISCOUNT)
 # iteration under the average reward criterion never settles. (parallel=False,
 # since a parallel region per sweep would make 1,000,000 sweeps of two states
 # slow.)
-PERIODIC = dict(rewards=[[1.0], [0.0]], tranMatWithZeros=[[[0.0, 1.0]], [[1.0, 0.0]]])
-SUMTO18 = dict(rewards=[[5.0, 10.0], [-1.0, 1.0]], tranMatWithZeros=[[[0.9, 0.9], [0.1, 0.9]], [[0.4, 0.6], [0.8, 0.2]]])
-ONESTATE = dict(rewards=[[1.0]], tranMatWithZeros=[[[1.0]]])
+PERIODIC = dict(rewards=np.array([[1.0], [0.0]]), tranMatWithZeros=np.array([[[0.0, 1.0]], [[1.0, 0.0]]]))
+SUMTO18 = dict(rewards=np.array([[5.0, 10.0], [-1.0, 1.0]]), tranMatWithZeros=np.array([[[0.9, 0.9], [0.1, 0.9]], [[0.4, 0.6], [0.8, 0.2]]]))
+ONESTATE = dict(rewards=np.array([[1.0]]), tranMatWithZeros=np.array([[[1.0]]]))
 NOTCONVERGED = (
     ("value iteration on a periodic chain under the average reward criterion", PERIODIC,
      dict(algorithm="vi", criterion="average", parallel=False), ("iteration limit of 1000000", "periodic")),

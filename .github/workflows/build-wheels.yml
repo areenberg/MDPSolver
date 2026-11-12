@@ -71,7 +71,8 @@ jobs:
             python Python/tests/test_reuse.py &&
             python Python/tests/test_order.py &&
             python Python/tests/test_output.py &&
-            python Python/tests/test_checkmodel.py
+            python Python/tests/test_checkmodel.py &&
+            python Python/tests/test_arrays.py
 
       - uses: actions/upload-artifact@v4
         with:

@@ -40,7 +40,7 @@ Sub-tests:
             probability, so every policy is unichain and aperiodic, which value
             iteration needs under this criterion (Puterman, 1994, Section 8.5).
     Case 3: The model given as CSV files, as the former test2.py gave it,
-            gives the same policies and values as the lists, under each
+            gives the same policies and values as the arrays, under each
             algorithm.
 
 The tolerances keep clear of what double precision allows on values of this
@@ -50,6 +50,10 @@ rounding of the values, and the solver would run to its iteration limit. The
 average-reward iterates grow by the gain in every iteration and reach about
 1e6, so the same holds there below about 1e-9. Nothing may be printed by any
 of the runs.
+
+The models are given to mdp() as NumPy arrays, in the elementwise formats
+(rewardsElementwise and tranMatElementwise). test_arrays.py checks that every
+format gives the same results as an array and as a list.
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
@@ -66,7 +70,7 @@ import tempfile
 import numpy as np
 
 from loadmdpsolver import mdpsolver, finalline, quietly
-from knownsolutions import checkoptimality, elementwisetranmat, exactaverage, exactdiscounted
+from knownsolutions import arrayinput, checkoptimality, elementwisetranmat, exactaverage, exactdiscounted
 
 
 # ------------------------------------------------------------------
@@ -145,11 +149,11 @@ def queueproblem():
 
 
 def solve(algorithm, setting, criterion="discounted", files=None):
-    '''One algorithm under one setting, the model given as lists or files; returns the policy, the values and anything printed.'''
+    '''One algorithm under one setting, the model given as arrays or files; returns the policy, the values and anything printed.'''
     def run():
         mdl = mdpsolver.model()
         if files is None:
-            mdl.mdp(discount=discount, rewards=REWARDS, tranMatElementwise=ELEMENTWISE)
+            mdl.mdp(discount=discount, **ARRAYS)
         else:
             mdl.mdp(discount=discount, rewardsFromFile=files[0], tranMatFromFile=files[1])
         mdl.solve(algorithm=algorithm, tolerance=tolerance, criterion=criterion, **setting)
@@ -176,6 +180,7 @@ def trunkreservation(policy):
 
 REWARDS, TRANSITIONS = queueproblem()
 ELEMENTWISE = elementwisetranmat(TRANSITIONS)
+ARRAYS = arrayinput(REWARDS, TRANSITIONS)
 NSTATES = len(REWARDS)
 
 # The exact solutions are the whole test, so they are checked against the
@@ -251,7 +256,7 @@ for algorithmlabel, algorithm in ALGORITHMS:
 # CASE 3: The model given as files
 # ------------------------------------------------------------------
 
-# The files hold the same numbers as the lists (repr() round-trips a float) in
+# The files hold the same numbers as the arrays (repr() round-trips a float) in
 # the same order, so the results must be the same exactly.
 with tempfile.TemporaryDirectory() as directory:
     rewardfile = os.path.join(directory, "rewards.csv")
@@ -275,7 +280,7 @@ with tempfile.TemporaryDirectory() as directory:
             if output:
                 sys.exit("Validation test failed at case 3: %s printed %r." % (label, output.strip()))
             if policy != reference[0] or values.shape != reference[1].shape or not np.array_equal(values, reference[1]):
-                sys.exit("Validation test failed at case 3: %s does not give the policy and values it gives with the model given as lists." % label)
+                sys.exit("Validation test failed at case 3: %s does not give the policy and values it gives with the model given as arrays." % label)
 
 
 # ------------------------------------------------------------------

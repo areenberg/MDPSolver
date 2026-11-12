@@ -26,6 +26,63 @@ def _openError(fileName, mode="r"):
     return None
 
 
+# The formats of mdp() as NumPy arrays: the number of dimensions and the shape (n = the
+# number of rows)
+_ARRAYSHAPES = {
+    "rewards": (2, "states x actions"),
+    "rewardsElementwise": (2, "n x 3: state, action, reward"),
+    "tranMatWithZeros": (3, "states x actions x states"),
+    "tranMatElementwise": (2, "n x 4: state, action, next state, probability"),
+    "tranMatProbs": (3, "states x actions x next states per pair"),
+    "tranMatColumns": (3, "states x actions x next states per pair"),
+}
+
+
+def _asInput(name, value, integer=False, toArray=False):
+    """
+    An input format of mdp(): a list as it is (unless toArray), anything else as a
+    C-contiguous NumPy array of float64 (int64 for integer) with the format's number of
+    dimensions. An empty array is returned as an empty list, i.e. as not given. NumPy is
+    imported only here, so that lists work without it.
+    """
+    if isinstance(value, list) and not toArray:
+        return value
+    if value is None or isinstance(value, (str, bytes)):
+        raise TypeError("%s needs a list or a NumPy array, not %r." % (name, value))
+    try:
+        import numpy as np
+    except ImportError:
+        raise TypeError("%s needs a list (or a NumPy array, with NumPy installed), not a %s." % (name, type(value).__name__)) from None
+    try:
+        array = np.asarray(value)
+    except ValueError as error:
+        # e.g. a list whose rows differ in length
+        raise ValueError("%s cannot be made a NumPy array (%s). Give it as an array of the shape %s, or give the format entirely as lists." % (name, error, _ARRAYSHAPES[name][1])) from None
+    if array.dtype.kind not in "biuf":
+        raise TypeError("%s needs numbers, but the array holds the type %s." % (name, array.dtype))
+    ndim, shape = _ARRAYSHAPES[name]
+    if array.ndim > 0 and len(array) == 0:
+        return list()
+    if array.ndim != ndim:
+        raise ValueError("%s as a NumPy array needs %d dimensions (%s), but the array has %d." % (name, ndim, shape, array.ndim))
+    if not integer:
+        return np.ascontiguousarray(array, dtype=np.float64)
+    if array.dtype.kind == "f":
+        whole = np.isfinite(array) & (np.floor(array) == array)
+        if not whole.all():
+            raise ValueError("%s holds the column index %r, which is not an integer." % (name, float(array[~whole].flat[0])))
+    return np.ascontiguousarray(array, dtype=np.int64)
+
+
+def _asList(value):
+    """An initial policy or value vector as a list (e.g. from a NumPy array or a tuple)."""
+    if isinstance(value, list):
+        return value
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    return list(value) if not isinstance(value, (str, bytes)) else value
+
+
 class model:
     """
     Creates an MDPSolver object.
@@ -62,8 +119,8 @@ class model:
         criterion: str = "discounted",
         parIterLim: int = 100,
         SORrelaxation: float = 1.0,
-        initPolicy: list = list(),
-        initValueVector: list = list(),
+        initPolicy: "list | numpy.ndarray" = list(),
+        initValueVector: "list | numpy.ndarray" = list(),
         verbose: bool = False,
         postProcessing: bool = True,
         makeFinalCheck: bool = True,
@@ -79,8 +136,8 @@ class model:
             criterion (str): The optimality criterion.
             parIterLim (int): The partial evaluation limit employed in the modified policy iteration algorithm.
             SORrelaxation (float): Relaxation parameter for the Successive Over-Relaxation method.
-            initPolicy (list): A 1D-list defining the initial policy, one valid action index per state. This option can be used for "warm starting" the optimization procedure.
-            initValueVector (list): A 1D-list defining the initial value vector, one value per state. This option can be used for "warm starting" the optimization procedure.
+            initPolicy (list or NumPy array): The initial policy, one valid action index per state. This option can be used for "warm starting" the optimization procedure.
+            initValueVector (list or NumPy array): The initial value vector, one value per state. This option can be used for "warm starting" the optimization procedure.
             verbose (bool): If True, prints solver progress to console.
             postProcessing (bool): If True, performs post-processing after solving.
             makeFinalCheck (bool): If True, makes a final check of the value vector. This process checks if the resulting values are reasonable.
@@ -97,6 +154,8 @@ class model:
         
         if not self._modelDefined:
             raise RuntimeError("No model has been defined for this model object. Call mdp() before solve().")
+        initPolicy = _asList(initPolicy)
+        initValueVector = _asList(initValueVector)
         if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
             raise ValueError("Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
         if tolerance <= 0.0 or tolerance >= 1.0:
@@ -307,13 +366,13 @@ class model:
     def mdp(
         self,
         discount: float = 0.99,
-        rewards: list = list(),
-        rewardsElementwise: list = list(),
+        rewards: "numpy.ndarray | list" = list(),
+        rewardsElementwise: "numpy.ndarray | list" = list(),
         rewardsFromFile: str = "rewards.csv",
-        tranMatWithZeros: list = list(),
-        tranMatElementwise: list = list(),
-        tranMatProbs: list = list(),
-        tranMatColumns: list = list(),
+        tranMatWithZeros: "numpy.ndarray | list" = list(),
+        tranMatElementwise: "numpy.ndarray | list" = list(),
+        tranMatProbs: "numpy.ndarray | list" = list(),
+        tranMatColumns: "numpy.ndarray | list" = list(),
         tranMatFromFile: str = "transitions.csv",
     ) -> None:
         """
@@ -321,19 +380,25 @@ class model:
 
         Args:
             discount (float): Discount factor.
-            rewards (list): A 2D-list containing the reward (float) of a particular action in a particular state.
-            rewardsElementwise (list): Alternative reward format. A 2D-list where each row corresponds to a combination of a state and an action.
+            rewards (NumPy array or list): The reward of each action in each state, of the shape states x actions.
+            rewardsElementwise (NumPy array or list): Alternative reward format. One row per state and action: state, action, reward (n x 3).
             rewardsFromFile (str): Load the rewards from a comma-separated (,) file.
-            tranMatWithZeros (list): A 3D-list containing the transition probabilities.
-            tranMatElementwise (list): Sparse transition probabilities (option 1). A 2D-list where each row corresponds to a combination of a current state, an action, and a next state.
-            tranMatProbs (list): Sparse transition probabilities (option 2, part 1). A 3D-list containing the non-zero transition probabilities.
-            tranMatColumns (list): Sparse transition probabilities (option 2, part 2). A 3D-list containing the columns of the non-zero transition probabilities.
+            tranMatWithZeros (NumPy array or list): The transition probabilities, zeros included, of the shape states x actions x states.
+            tranMatElementwise (NumPy array or list): Sparse transition probabilities (option 1). One row per non-zero probability: state, action, next state, probability (n x 4).
+            tranMatProbs (NumPy array or list): Sparse transition probabilities (option 2, part 1). The non-zero transition probabilities of each state and action, of the shape states x actions x next states per pair.
+            tranMatColumns (NumPy array or list): Sparse transition probabilities (option 2, part 2). The next states (columns) of the probabilities in tranMatProbs, of the same shape.
             tranMatFromFile (str): Load the transition probabilities from a comma-separated (,) file.
 
         Give the rewards in one format and the transition probabilities in one
-        format. When no list is given for either, it is read from the file
-        named by rewardsFromFile or tranMatFromFile, by default rewards.csv or
-        transitions.csv in the working directory.
+        format. When neither an array nor a list is given for either, it is read
+        from the file named by rewardsFromFile or tranMatFromFile, by default
+        rewards.csv or transitions.csv in the working directory.
+
+        As arrays, the formats need the same number of actions in every state,
+        and tranMatProbs and tranMatColumns the same number of next states for
+        every state and action: pad with the probability 0 and any state of the
+        model as the next state (e.g. 0), or use tranMatElementwise. Lists may
+        have different numbers of actions and next states.
 
         A model object holds one model, so mdp() can be called only once per
         model object. Create a new model object to define another model.
@@ -346,6 +411,22 @@ class model:
             raise RuntimeError("A model has already been defined for this model object, and mdp() can only be called once per model object. Create a new model object (e.g. mdl = mdpsolver.model()) to define another model.")
         if discount <= 0.0 or discount >= 1.0:
             raise ValueError("The discount needs to be in the interval between 0.0 and 1.0 (i.e. 0 < discount < 1).")
+
+        # Each format but the files may be a NumPy array or a list. Lists are passed on as
+        # they are; arrays are checked for their number of dimensions and passed on as
+        # C-contiguous float64 (int64 for the column indices)
+        rewards = _asInput("rewards", rewards)
+        rewardsElementwise = _asInput("rewardsElementwise", rewardsElementwise)
+        tranMatWithZeros = _asInput("tranMatWithZeros", tranMatWithZeros)
+        tranMatElementwise = _asInput("tranMatElementwise", tranMatElementwise)
+        tranMatProbs = _asInput("tranMatProbs", tranMatProbs)
+        tranMatColumns = _asInput("tranMatColumns", tranMatColumns, integer=True)
+        # tranMatProbs and tranMatColumns go together, so an array makes both arrays
+        if len(tranMatProbs) > 0 and len(tranMatColumns) > 0 and not (isinstance(tranMatProbs, list) and isinstance(tranMatColumns, list)):
+            tranMatProbs = _asInput("tranMatProbs", tranMatProbs, toArray=True)
+            tranMatColumns = _asInput("tranMatColumns", tranMatColumns, integer=True, toArray=True)
+            if tranMatProbs.shape != tranMatColumns.shape:
+                raise ValueError("tranMatProbs and tranMatColumns as NumPy arrays need the same shape (states x actions x next states per pair), but they have the shapes %s and %s." % (tranMatProbs.shape, tranMatColumns.shape))
         
         # The formats given. A file name other than the default counts as
         # given; the default file is read only when no list is given.

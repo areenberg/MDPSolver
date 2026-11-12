@@ -31,24 +31,30 @@ The following shows how to get quickly started with `mdpsolver`.
 
 ## Usage
 
-Start by specifying the reward function and transition probabilities as lists. The following is an example of a simple MDP containing **three states** and **two actions in each state**.
+Start by specifying the reward function and transition probabilities as NumPy arrays. The following is an example of a simple MDP containing **three states** and **two actions in each state**.
 
 ```python
 #Import packages
+import numpy as np
 import mdpsolver
 
-#Rewards (3 states x 2 actions)
+#Rewards (3 states x 2 actions), one row per state and action: [state,action,reward]
 #e.g. choosing second action in first state gives reward=-1
-rewards = [[5,-1],
-           [1,-2],
-           [50,0]]
+rewardsElementwise = np.array([[0,0,5],
+                               [0,1,-1],
+                               [1,0,1],
+                               [1,1,-2],
+                               [2,0,50],
+                               [2,1,0]])
 
 #Transition probabilities (3 from_states x 2 actions x 3 to_states)
 #e.g. choosing first action in third state gives a probability of 0.6 of staying in third state
-tranMatWithZeros = [[[0.9,0.1,0.0],[0.1,0.9,0.0]],
-                    [[0.4,0.5,0.1],[0.3,0.5,0.2]],
-                    [[0.2,0.2,0.6],[0.5,0.5,0.0]]]
+tranMatWithZeros = np.array([[[0.9,0.1,0.0],[0.1,0.9,0.0]],
+                             [[0.4,0.5,0.1],[0.3,0.5,0.2]],
+                             [[0.2,0.2,0.6],[0.5,0.5,0.0]]])
 ```
+
+The rewards can also be given as a matrix (states x actions), e.g. `rewards = np.array([[5,-1],[1,-2],[50,0]])`, and every format also accepts Python lists. In the elementwise format, and as lists, states may have different numbers of actions.
 
 Now, create the model object and insert the problem parameters.
 
@@ -58,7 +64,7 @@ mdl = mdpsolver.model()
 
 #Insert the problem parameters
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatWithZeros=tranMatWithZeros)
 ```
 
@@ -83,46 +89,49 @@ print(mdl.getPolicy())
 
 ```python
 #[from_state,action,to_state,probability]
-tranMatElementwise = [[0,0,0,0.9],
-                      [0,0,1,0.1],
-                      [0,1,0,0.1],
-                      [0,1,1,0.9],
-                      [1,0,0,0.4],
-                      [1,0,1,0.5],
-                      [1,0,2,0.1],
-                      [1,1,0,0.3],
-                      [1,1,1,0.5],
-                      [1,1,2,0.2],
-                      [2,0,0,0.2],
-                      [2,0,1,0.2],
-                      [2,0,2,0.6],
-                      [2,1,0,0.5],
-                      [2,1,1,0.5]]
+tranMatElementwise = np.array([[0,0,0,0.9],
+                               [0,0,1,0.1],
+                               [0,1,0,0.1],
+                               [0,1,1,0.9],
+                               [1,0,0,0.4],
+                               [1,0,1,0.5],
+                               [1,0,2,0.1],
+                               [1,1,0,0.3],
+                               [1,1,1,0.5],
+                               [1,1,2,0.2],
+                               [2,0,0,0.2],
+                               [2,0,1,0.2],
+                               [2,0,2,0.6],
+                               [2,1,0,0.5],
+                               [2,1,1,0.5]])
 
 mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatElementwise=tranMatElementwise)
 ```
 
-**(2) Probabilities and column (to_state) indices in separate lists:**
+**(2) Probabilities and column (to_state) indices in separate arrays:**
 
 ```python
-tranMatProbs = [[[0.9,0.1],[0.1,0.9]],
-                [[0.4,0.5,0.1],[0.3,0.5,0.2]],
-                [[0.2,0.2,0.6],[0.5,0.5]]]
+#As arrays, every state-action pair needs the same number of entries,
+#so pairs with fewer are padded with the probability 0 (and the column 0)
+tranMatProbs = np.array([[[0.9,0.1,0.0],[0.1,0.9,0.0]],
+                         [[0.4,0.5,0.1],[0.3,0.5,0.2]],
+                         [[0.2,0.2,0.6],[0.5,0.5,0.0]]])
 
-tranMatColumns = [[[0,1],[0,1]],
-                [[0,1,2],[0,1,2]],
-                [[0,1,2],[0,1]]]
+tranMatColumns = np.array([[[0,1,0],[0,1,0]],
+                           [[0,1,2],[0,1,2]],
+                           [[0,1,2],[0,1,0]]])
 
 mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatProbs=tranMatProbs,
         tranMatColumns=tranMatColumns)
-
 ```
+
+As lists, the pairs may have different numbers of entries, without padding, e.g. `tranMatProbs = [[[0.9,0.1],[0.1,0.9]], ...]` and `tranMatColumns = [[[0,1],[0,1]], ...]`.
 
 **(3) Load the elementwise representation from a file:**
 
@@ -149,7 +158,7 @@ stateFrom,action,stateTo,probability
 ```python
 mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatFromFile="transitions.csv")
 ```
 

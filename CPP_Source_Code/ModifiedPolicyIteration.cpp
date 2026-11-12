@@ -620,7 +620,10 @@ inline double actionValue(const CSRTables& t, int s, int a, const double* v, dou
 //the SOR value of state-action pair i of state s under the values v, which leaves out the
 //probability p(s|s) of staying in s and corrects for it:
 //(1-w) v(s) + w/(1 - discount p(s|s)) * (r(i) + discount * sum_{j != s} p(j) v(j));
-//w = 1 gives the Gauss-Seidel update
+//w = 1 gives the Gauss-Seidel update. Entries for the same next state add up, as in the
+//standard updates, also on the diagonal (until 2026-11-13 the last diagonal entry replaced
+//the others, which lost their probability; that mattered only for repeated entries, e.g.
+//arrays padded with zeros whose padding next state is s itself)
 inline double pairValueSOR(const CSRTables& t, int64_t i, int s, const double* v, double discount, double w){
 	double valSum = 0;
 	double probSame = 0;
@@ -629,7 +632,7 @@ inline double pairValueSOR(const CSRTables& t, int64_t i, int s, const double* v
 		if (j != s) { //skip diagonal element
 			valSum += t.prob[k] * v[j];
 		}else{
-			probSame = t.prob[k];
+			probSame += t.prob[k];
 		}
 	}
 	return (1 - w) * v[s] + w / (1 - discount * probSame) * (t.reward[i] + discount * valSum);
