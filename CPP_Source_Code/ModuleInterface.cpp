@@ -28,6 +28,8 @@
 #include <limits>
 #include <cmath>
 #include <climits>
+#include <cfloat>
+#include <type_traits>
 
 #include "ModuleInterface.h"
 
@@ -67,6 +69,11 @@ py::array_t<T, py::array::c_style | py::array::forcecast> asArray(const py::obje
         throw invalid_argument(name + " as an array needs " + to_string(ndim) + " dimensions, not " + to_string(array.ndim()) + ".");
     }
     return array;
+}
+
+//whether an argument is a NumPy array of float32, whose probabilities are kept as float32
+bool isFloat32(const py::object& argument){
+    return py::isinstance<py::array>(argument) && py::reinterpret_borrow<py::array>(argument).dtype().is(py::dtype::of<float>());
 }
 
 //the length of dimension k of an array, as a number of states, actions or entries
@@ -117,30 +124,47 @@ void ModuleInterface::mdp(double discount,
         if (py::isinstance<py::list>(tranMatWithZeros)){
             loadTranMatWithZeros(tranMatWithZeros.cast<py::list>());
         }else{
-            auto array = asArray<double>(tranMatWithZeros,"tranMatWithZeros",3);
-            loadTranMatWithZerosArray(array.data(), arrayExtent(array,0,"tranMatWithZeros"),
-                arrayExtent(array,1,"tranMatWithZeros"), arrayExtent(array,2,"tranMatWithZeros"));
+            if (isFloat32(tranMatWithZeros)){
+                auto array = asArray<float>(tranMatWithZeros,"tranMatWithZeros",3);
+                loadTranMatWithZerosArray(array.data(), arrayExtent(array,0,"tranMatWithZeros"),
+                    arrayExtent(array,1,"tranMatWithZeros"), arrayExtent(array,2,"tranMatWithZeros"));
+            }else{
+                auto array = asArray<double>(tranMatWithZeros,"tranMatWithZeros",3);
+                loadTranMatWithZerosArray(array.data(), arrayExtent(array,0,"tranMatWithZeros"),
+                    arrayExtent(array,1,"tranMatWithZeros"), arrayExtent(array,2,"tranMatWithZeros"));
+            }
         }
     }else if(given(tranMatElementwise)){
         if (py::isinstance<py::list>(tranMatElementwise)){
             loadTranMatElementwise(tranMatElementwise.cast<py::list>());
         }else{
-            auto array = asArray<double>(tranMatElementwise,"tranMatElementwise",2);
-            loadTranMatElementwiseArray(array.data(), array.shape(0), array.shape(1));
+            if (isFloat32(tranMatElementwise)){
+                auto array = asArray<float>(tranMatElementwise,"tranMatElementwise",2);
+                loadTranMatElementwiseArray(array.data(), array.shape(0), array.shape(1));
+            }else{
+                auto array = asArray<double>(tranMatElementwise,"tranMatElementwise",2);
+                loadTranMatElementwiseArray(array.data(), array.shape(0), array.shape(1));
+            }
         }
     }else if(given(tranMatProbs) && given(tranMatColumns)){
         if (py::isinstance<py::list>(tranMatProbs) && py::isinstance<py::list>(tranMatColumns)){
             loadTranMatFromLists(tranMatProbs.cast<py::list>(),tranMatColumns.cast<py::list>());
         }else{
-            auto probs = asArray<double>(tranMatProbs,"tranMatProbs",3);
             auto columns = asArray<int64_t>(tranMatColumns,"tranMatColumns",3);
-            for (int k=0; k<3; k++){
-                if (probs.shape(k) != columns.shape(k)){
-                    throw invalid_argument("tranMatProbs and tranMatColumns as arrays need the same shape.");
+            auto load = [&](auto probs){
+                for (int k=0; k<3; k++){
+                    if (probs.shape(k) != columns.shape(k)){
+                        throw invalid_argument("tranMatProbs and tranMatColumns as arrays need the same shape.");
+                    }
                 }
+                loadTranMatFromArrays(probs.data(), columns.data(), arrayExtent(probs,0,"tranMatProbs"),
+                    arrayExtent(probs,1,"tranMatProbs"), arrayExtent(probs,2,"tranMatProbs"));
+            };
+            if (isFloat32(tranMatProbs)){
+                load(asArray<float>(tranMatProbs,"tranMatProbs",3));
+            }else{
+                load(asArray<double>(tranMatProbs,"tranMatProbs",3));
             }
-            loadTranMatFromArrays(probs.data(), columns.data(), arrayExtent(probs,0,"tranMatProbs"),
-                arrayExtent(probs,1,"tranMatProbs"), arrayExtent(probs,2,"tranMatProbs"));
         }
     }else{
         loadTranMatFromFile(tranMatFromFile,',',true);
@@ -607,7 +631,7 @@ static int listIndex(const py::list& row, int k, int i, const string& name, cons
 }
 
 //splits a line of a file into its fields; false for a blank line, an error for too few fields
-static bool fileRow(const string& line, char sep, size_t n, const string& fileName, int lineNumber, const string& columns, vector<string>& fields){
+static bool fileRow(const string& line, char sep, size_t n, const string& fileName, int64_t lineNumber, const string& columns, vector<string>& fields){
     fields.clear();
     if (line.find_first_not_of(" \t\r") == string::npos){
         return false;
@@ -624,7 +648,7 @@ static bool fileRow(const string& line, char sep, size_t n, const string& fileNa
 }
 
 //an index in a field of a file, which must be a non-negative integer
-static int fileIndex(const string& field, const string& fileName, int lineNumber, const string& what){
+static int fileIndex(const string& field, const string& fileName, int64_t lineNumber, const string& what){
     int index;
     try{
         index = stoi(field);
@@ -638,7 +662,7 @@ static int fileIndex(const string& field, const string& fileName, int lineNumber
 }
 
 //a number in a field of a file
-static double fileNumber(const string& field, const string& fileName, int lineNumber, const string& what){
+static double fileNumber(const string& field, const string& fileName, int64_t lineNumber, const string& what){
     try{
         return stod(field);
     }catch(const exception&){
@@ -693,7 +717,8 @@ void ModuleInterface::loadRewardsFromFile(string rewardsFromFile, char sep, bool
     string line;
     vector<string> fields;
     vector<int> nAct;
-    int i,k0,k1;
+    int64_t i; //line counter: files may have more than 2^31 lines
+    int k0,k1;
     double r;
     int numberOfStates=0;
 
@@ -810,7 +835,8 @@ void ModuleInterface::loadTranMatFromFile(string tranMatFromFile, char sep, bool
     string line;
     vector<string> fields;
     vector<int> nAct;
-    int i,k0,k1,k2;
+    int64_t i; //line counter: files may have more than 2^31 lines
+    int k0,k1,k2;
     double prob;
     int numberOfStates=0;
 
@@ -961,11 +987,13 @@ void ModuleInterface::loadRewardsElementwiseArray(const double* rows, int64_t nR
     }
 }
 
-void ModuleInterface::loadTranMatWithZerosArray(const double* probs, int nStates, int nActions, int nColumns){
+template <typename T>
+void ModuleInterface::loadTranMatWithZerosArray(const T* probs, int nStates, int nActions, int nColumns){
     //the probabilities above zero of probs[s][a][j] = probs[(s*nActions + a)*nColumns + j],
     //with their column indices j as next states
     TransitionMatrix& tranMat = problem.tranMat;
     tranMat.clear();
+    tranMat.setSinglePrecision(std::is_same<T,float>::value);
     int64_t nEntries = 0, nElements = (int64_t)nStates * nActions * nColumns;
     for (int64_t k=0; k<nElements; k++){
         if (probs[k] > 0.0){
@@ -975,7 +1003,7 @@ void ModuleInterface::loadTranMatWithZerosArray(const double* probs, int nStates
     tranMat.reserve((int64_t)nStates * nActions, nEntries);
     for (int sidx=0; sidx<nStates; sidx++){
         for (int aidx=0; aidx<nActions; aidx++){
-            const double* row = probs + ((int64_t)sidx*nActions + aidx) * nColumns;
+            const T* row = probs + ((int64_t)sidx*nActions + aidx) * nColumns;
             for (int jidx=0; jidx<nColumns; jidx++){
                 if (row[jidx] > 0.0){
                     tranMat.addEntry(jidx, row[jidx]);
@@ -987,7 +1015,8 @@ void ModuleInterface::loadTranMatWithZerosArray(const double* probs, int nStates
     }
 }
 
-void ModuleInterface::loadTranMatElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength){
+template <typename T>
+void ModuleInterface::loadTranMatElementwiseArray(const T* rows, int64_t nRows, int64_t rowLength){
     //row i: state, action, next state, probability; each entry goes to the next free place
     //of its pair, in the order of the rows
     const string name = "tranMatElementwise";
@@ -1003,22 +1032,25 @@ void ModuleInterface::loadTranMatElementwiseArray(const double* rows, int64_t nR
     }
     TransitionMatrix& tranMat = problem.tranMat;
     tranMat.setActions(nAct);
+    tranMat.setSinglePrecision(std::is_same<T,float>::value);
     for (int64_t i=0; i<nRows; i++){
         tranMat.countEntry((int)rows[i*rowLength], (int)rows[i*rowLength+1]);
     }
     tranMat.allocateEntries();
     for (int64_t i=0; i<nRows; i++){
-        const double* row = rows + i*rowLength;
+        const T* row = rows + i*rowLength;
         tranMat.fillEntry((int)row[0], (int)row[1], arrayIndex(row[2],i,name,"next-state"), row[3]);
     }
     tranMat.finishEntries();
 }
 
-void ModuleInterface::loadTranMatFromArrays(const double* probs, const int64_t* columns, int nStates, int nActions, int nEntries){
+template <typename T>
+void ModuleInterface::loadTranMatFromArrays(const T* probs, const int64_t* columns, int nStates, int nActions, int nEntries){
     //nEntries probabilities and next states per pair, all kept (a padding probability of 0
     //adds nothing to a value)
     TransitionMatrix& tranMat = problem.tranMat;
     tranMat.clear();
+    tranMat.setSinglePrecision(std::is_same<T,float>::value);
     tranMat.reserve((int64_t)nStates * nActions, (int64_t)nStates * nActions * nEntries);
     int64_t k = 0;
     for (int sidx=0; sidx<nStates; sidx++){
@@ -1118,6 +1150,12 @@ py::list ModuleInterface::checkModel(double tolerance){
 
     ProblemKind noActions, actionMismatch, shapeMismatch, noTransitions, nextStateOutside, badProbability, badSum, badReward;
 
+    //probabilities kept in single precision (float32) carry its rounding, up to about
+    //FLT_EPSILON per entry when they were computed in float32 (e.g. normalised there), so the
+    //sum of a pair's n entries is allowed n*FLT_EPSILON beyond the tolerance
+    const bool single = tranMat.singlePrecision();
+    const string sumAllowance = number(tolerance) + (single ? " plus the float32 rounding of their entries" : "");
+
     //where tranMatProbs and tranMatColumns differ in shape, as recorded while loading them
     //(in the order of the loop below); a pair kept as many entries as both lists have
     const vector<TransitionMatrix::ShapeMismatch>& mismatches = tranMat.shapeMismatches;
@@ -1164,7 +1202,7 @@ py::list ModuleInterface::checkModel(double tolerance){
                 }
                 sum += prob;
             }
-            if (std::isfinite(sum) && fabs(sum - 1.0) > tolerance){
+            if (std::isfinite(sum) && fabs(sum - 1.0) > tolerance + (single ? nJumps * FLT_EPSILON : 0.0)){
                 badSum.add(stateAction(sidx,aidx) + " (sum " + number(sum) + ")");
             }
         }
@@ -1188,8 +1226,8 @@ py::list ModuleInterface::checkModel(double tolerance){
     nextStateOutside.report(problems, "transition goes to a next state outside the model, whose states are 0 to " + to_string(nStates-1),
         "transitions go to a next state outside the model, whose states are 0 to " + to_string(nStates-1));
     badProbability.report(problems, "transition probability is not a number between 0 and 1", "transition probabilities are not numbers between 0 and 1");
-    badSum.report(problems, "state-action pair has transition probabilities that do not sum to 1 (within " + number(tolerance) + ")",
-        "state-action pairs have transition probabilities that do not sum to 1 (within " + number(tolerance) + ")");
+    badSum.report(problems, "state-action pair has transition probabilities that do not sum to 1 (within " + sumAllowance + ")",
+        "state-action pairs have transition probabilities that do not sum to 1 (within " + sumAllowance + ")");
     badReward.report(problems, "state-action pair has a reward that is missing or not a finite number",
         "state-action pairs have a reward that is missing or not a finite number");
 

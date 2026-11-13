@@ -53,6 +53,19 @@ Sub-tests:
             given, as an empty list does.
     Case 5: initPolicy and initValueVector given as arrays give exactly the
             results of the same vectors given as lists.
+    Case 6: Transition probabilities given as float32 arrays, which the
+            compiled module keeps in single precision, give exactly the results
+            of the same numbers given as float64 arrays, in each of the three
+            formats that hold probabilities, under the discounted settings of
+            case 2. (Rounded to float32, the probabilities of a state-action
+            pair sum to 1 only to within about 1e-7. Under the average reward
+            criterion, whose iterates grow with every iteration, that keeps the
+            solver from reaching the tolerance of 1e-8, with the numbers in
+            float64 as well as in float32.)
+            checkModel() finds no problem in such a model although its sums
+            carry the rounding of float32, while it finds the sums of the same
+            numbers given in float64 (so the float32 numbers are kept as such),
+            and it still finds a sum of 0.9.
 
 (getPolicy() and getValueVector() return NumPy arrays, which test_output.py
 checks.)
@@ -171,8 +184,8 @@ def describe(arguments):
                      for name, value in arguments.items())
 
 
-def same(case, label, arrays, lists, settings=SETTINGS):
-    '''Exits unless the arguments with arrays give exactly the results of the arguments with lists under every setting, in serial and in parallel.'''
+def same(case, label, arrays, lists, settings=SETTINGS, reference="the lists"):
+    '''Exits unless the arguments with arrays give exactly the results of the arguments with lists (the reference) under every setting, in serial and in parallel.'''
     for setting in settings:
         for parallel in (False, True):
             fromarrays, output = run(arrays, parallel, **setting)
@@ -181,7 +194,7 @@ def same(case, label, arrays, lists, settings=SETTINGS):
             fromlists, _ = run(lists, parallel, **setting)
             if fromarrays != fromlists:
                 what = [name for name, x, y in zip(("policy", "values", "iterations"), fromarrays, fromlists) if x != y]
-                sys.exit("Validation test failed at case %d: %s (%s) under %s, parallel=%s, gives other %s than the lists." % (case, label, describe(arrays), setting, parallel, " and ".join(what)))
+                sys.exit("Validation test failed at case %d: %s (%s) under %s, parallel=%s, gives other %s than %s." % (case, label, describe(arrays), setting, parallel, " and ".join(what), reference))
 
 
 def rejected(case, label, expected, words, arguments):
@@ -301,6 +314,40 @@ for algorithm in ("pi", "mpi"):
     fromlists, _ = run(ARRAYS["rewards"] | ARRAYS["tranMatProbs and tranMatColumns"], algorithm=algorithm, initPolicy=INITPOLICY.tolist(), initValueVector=INITVALUES.tolist())
     if fromarrays != fromlists:
         sys.exit("Validation test failed at case 5: %s with initPolicy and initValueVector as arrays does not give the results of the same lists." % algorithm)
+
+
+# ------------------------------------------------------------------
+# CASE 6: float32 transition probabilities
+# ------------------------------------------------------------------
+
+# The probabilities rounded to float32, and the same numbers in float64
+SINGLE = {
+    "tranMatWithZeros": dict(tranMatWithZeros=DENSE.astype(np.float32)),
+    "tranMatElementwise": dict(tranMatElementwise=ROWS.astype(np.float32)),
+    "tranMatProbs and tranMatColumns": dict(tranMatProbs=PROBS.astype(np.float32), tranMatColumns=COLUMNS),
+}
+if np.any(ROWS[:, :3].astype(np.float32) != ROWS[:, :3]):
+    sys.exit("Validation test failed at initialization: the indices of the elementwise rows are not exact in float32.")
+for transitionformat, arguments in SINGLE.items():
+    double = {name: value.astype(np.float64) if value.dtype == np.float32 else value for name, value in arguments.items()}
+    same(6, "%s as float32" % transitionformat, {**ARRAYS["rewards"], **arguments}, {**ARRAYS["rewards"], **double},
+         DISCOUNTEDSETTINGS, reference="the same numbers in float64")
+
+def problems(arguments):
+    mdl = mdpsolver.model()
+    mdl.mdp(discount=DISCOUNT, **ARRAYS["rewards"], **arguments)
+    found, output = quietly(lambda: mdl.checkModel())
+    return found
+FLOAT32 = SINGLE["tranMatProbs and tranMatColumns"]
+if problems(FLOAT32):
+    sys.exit("Validation test failed at case 6: checkModel() finds %r in a well-formed model with float32 probabilities." % problems(FLOAT32))
+if not any("do not sum to 1" in problem for problem in problems(dict(tranMatProbs=FLOAT32["tranMatProbs"].astype(np.float64), tranMatColumns=COLUMNS))):
+    sys.exit("Validation test failed at case 6: checkModel() finds no sums off by the float32 rounding when the same numbers are given in float64, so the test cannot tell whether float32 probabilities are kept as such.")
+WRONGSUM = FLOAT32["tranMatProbs"].copy()
+WRONGSUM[0, 0] *= np.float32(0.9)
+found = problems(dict(tranMatProbs=WRONGSUM, tranMatColumns=COLUMNS))
+if len(found) != 1 or "do not sum to 1" not in found[0] or "state 0, action 0" not in found[0]:
+    sys.exit("Validation test failed at case 6: checkModel() on float32 probabilities with one sum of 0.9 found %r, where it should report that sum alone." % found)
 
 
 # ------------------------------------------------------------------

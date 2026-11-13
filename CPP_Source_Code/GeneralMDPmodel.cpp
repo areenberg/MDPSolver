@@ -77,7 +77,7 @@ double GeneralMDPmodel::transProb(int &sidx, int &aidx, int &jidx){
     //returns the jidx-th non-zero transition probability of taking
     //action aidx in state sidx (jidx counts the non-zero probabilities)
 
-    return csr.prob[entry(sidx,aidx,jidx)];
+    return probability(entry(sidx,aidx,jidx));
 }
 
 int GeneralMDPmodel::getNumberOfJumps(int &sidx, int &aidx){
@@ -100,7 +100,7 @@ void GeneralMDPmodel::updateNextState(int &sidx, int &aidx, int &jidx){
         cidx=0;
     }
     nextState = csr.column[entry(sidx,aidx,cidx)];
-    psj = csr.prob[entry(sidx,aidx,cidx)];
+    psj = probability(entry(sidx,aidx,cidx));
 }
 
 int GeneralMDPmodel::getColumnIdx(int &sidx, int &aidx, int &cidx){

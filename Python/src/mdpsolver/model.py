@@ -43,11 +43,13 @@ _ARRAYSHAPES = {
 }
 
 
-def _asInput(name, value, integer=False, toArray=False):
+def _asInput(name, value, integer=False, toArray=False, keepFloat32=False):
     """
     An input format of mdp(): a list as it is (unless toArray), anything else as a
     C-contiguous NumPy array of float64 (int64 for integer) with the format's number of
-    dimensions. An empty array is returned as an empty list, i.e. as not given.
+    dimensions; with keepFloat32, an array of float32 stays float32 (the compiled module
+    keeps such transition probabilities in single precision). An empty array is returned
+    as an empty list, i.e. as not given.
     """
     if isinstance(value, list) and not toArray:
         return value
@@ -66,6 +68,8 @@ def _asInput(name, value, integer=False, toArray=False):
     if array.ndim != ndim:
         raise ValueError("%s as a NumPy array needs %d dimensions (%s), but the array has %d." % (name, ndim, shape, array.ndim))
     if not integer:
+        if keepFloat32 and array.dtype == np.float32:
+            return np.ascontiguousarray(array)
         return np.ascontiguousarray(array, dtype=np.float64)
     if array.dtype.kind == "f":
         whole = np.isfinite(array) & (np.floor(array) == array)
@@ -423,6 +427,14 @@ class model:
         from the file named by rewardsFromFile or tranMatFromFile, by default
         rewards.csv or transitions.csv in the working directory.
 
+        Transition probabilities given as a float32 array (tranMatWithZeros,
+        tranMatElementwise or tranMatProbs) are kept in single precision, which
+        takes 8 instead of 12 bytes per non-zero probability; the results are
+        those of the same numbers in float64. Rounded to float32, the
+        probabilities of a state and action sum to 1 only to within about 1e-7,
+        which can take the solver more iterations, and limits the tolerance it
+        can reach under the average reward criterion.
+
         As arrays, the formats need the same number of actions in every state,
         and tranMatProbs and tranMatColumns the same number of next states for
         every state and action: pad with the probability 0 and any state of the
@@ -446,13 +458,13 @@ class model:
         # C-contiguous float64 (int64 for the column indices)
         rewards = _asInput("rewards", rewards)
         rewardsElementwise = _asInput("rewardsElementwise", rewardsElementwise)
-        tranMatWithZeros = _asInput("tranMatWithZeros", tranMatWithZeros)
-        tranMatElementwise = _asInput("tranMatElementwise", tranMatElementwise)
-        tranMatProbs = _asInput("tranMatProbs", tranMatProbs)
+        tranMatWithZeros = _asInput("tranMatWithZeros", tranMatWithZeros, keepFloat32=True)
+        tranMatElementwise = _asInput("tranMatElementwise", tranMatElementwise, keepFloat32=True)
+        tranMatProbs = _asInput("tranMatProbs", tranMatProbs, keepFloat32=True)
         tranMatColumns = _asInput("tranMatColumns", tranMatColumns, integer=True)
         # tranMatProbs and tranMatColumns go together, so an array makes both arrays
         if len(tranMatProbs) > 0 and len(tranMatColumns) > 0 and not (isinstance(tranMatProbs, list) and isinstance(tranMatColumns, list)):
-            tranMatProbs = _asInput("tranMatProbs", tranMatProbs, toArray=True)
+            tranMatProbs = _asInput("tranMatProbs", tranMatProbs, toArray=True, keepFloat32=True)
             tranMatColumns = _asInput("tranMatColumns", tranMatColumns, integer=True, toArray=True)
             if tranMatProbs.shape != tranMatColumns.shape:
                 raise ValueError("tranMatProbs and tranMatColumns as NumPy arrays need the same shape (states x actions x next states per pair), but they have the shapes %s and %s." % (tranMatProbs.shape, tranMatColumns.shape))

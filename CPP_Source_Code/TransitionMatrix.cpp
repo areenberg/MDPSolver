@@ -40,6 +40,8 @@ void TransitionMatrix::clear(){
     pairStart.assign(1,0);
     column.clear();
     prob.clear();
+    prob32.clear();
+    single = false;
     fillPosition.clear();
     shapeMismatches.clear();
     columnRows = -1;
@@ -50,18 +52,24 @@ void TransitionMatrix::fillTables(CSRTables& tables) const{
     tables.stateStart = stateStart.data();
     tables.pairStart = pairStart.data();
     tables.column = column.data();
-    tables.prob = prob.data();
+    tables.prob = single ? nullptr : prob.data();
+    tables.prob32 = single ? prob32.data() : nullptr;
 }
 
 void TransitionMatrix::reserve(int64_t nPairs, int64_t nEntries){
     pairStart.reserve(nPairs + 1);
     column.reserve(nEntries);
-    prob.reserve(nEntries);
+    if (single){
+        prob32.reserve(nEntries);
+    }else{
+        prob.reserve(nEntries);
+    }
 }
 
 void TransitionMatrix::shrink(){
     column.shrink_to_fit();
     prob.shrink_to_fit();
+    prob32.shrink_to_fit();
     pairStart.shrink_to_fit();
     stateStart.shrink_to_fit();
 }
@@ -81,6 +89,10 @@ void TransitionMatrix::allocateEntries(){
         pairStart[i] += pairStart[i-1];
     }
     column.assign(pairStart.back(), -1);
-    prob.assign(pairStart.back(), 0.0);
+    if (single){
+        prob32.assign(pairStart.back(), 0.0f);
+    }else{
+        prob.assign(pairStart.back(), 0.0);
+    }
     fillPosition.assign(pairStart.begin(), pairStart.end() - 1);
 }

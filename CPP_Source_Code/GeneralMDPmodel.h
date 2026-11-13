@@ -92,6 +92,7 @@ private:
     //METHODS
     int64_t pair(int sidx, int aidx) const { return csr.stateStart[sidx] + aidx; }
     int64_t entry(int sidx, int aidx, int cidx) const { return csr.pairStart[pair(sidx,aidx)] + cidx; }
+    double probability(int64_t k) const { return csr.prob32 ? (double)csr.prob32[k] : csr.prob[k]; }
 
 };
 

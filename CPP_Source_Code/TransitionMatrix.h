@@ -36,7 +36,10 @@ using namespace std;
 //them directly (see CSRTables in ModelType.h). The state-action pairs are numbered state by
 //state, and within a state in the order of its actions; the non-zero probabilities of each
 //pair are kept in the order the input gave them, so that sums over them come out the same
-//as before the change to CSR.
+//as before the change to CSR. The probabilities are kept in double precision, or in single
+//precision (float32) when the input gave them so: 8 instead of 12 bytes per non-zero, and
+//since a float32 number converts to double exactly, the same results as the same numbers
+//in double precision.
 class TransitionMatrix {
 public:
 
@@ -55,7 +58,10 @@ public:
     }
 
     //read values (cidx counts the non-zero probabilities of the pair)
-    double getProb(int sidx, int aidx, int cidx) const { return prob[pairStart[stateStart[sidx] + aidx] + cidx]; }
+    double getProb(int sidx, int aidx, int cidx) const {
+        int64_t k = pairStart[stateStart[sidx] + aidx] + cidx;
+        return single ? (double)prob32[k] : prob[k];
+    }
     int getColumn(int sidx, int aidx, int cidx) const { return column[pairStart[stateStart[sidx] + aidx] + cidx]; }
 
     //points the arrays of the tables at this matrix (the rewards are the model's)
@@ -65,9 +71,21 @@ public:
 
     void clear(); //no states
 
+    //whether the probabilities are kept in single precision (float32); set it after clear()
+    //or setActions() and before the entries
+    void setSinglePrecision(bool singlePrecision) { single = singlePrecision; }
+    bool singlePrecision() const { return single; }
+
     //in order: the entries of each pair, the pairs of each state, the states
     void reserve(int64_t nPairs, int64_t nEntries);
-    void addEntry(int col, double p) { column.push_back(col); prob.push_back(p); }
+    void addEntry(int col, double p) {
+        column.push_back(col);
+        if (single){
+            prob32.push_back((float)p);
+        }else{
+            prob.push_back(p);
+        }
+    }
     void endPair() { pairStart.push_back((int64_t)column.size()); }
     void endState() { stateStart.push_back((int64_t)pairStart.size() - 1); }
     void shrink(); //frees the capacity that addEntry() left unused
@@ -80,7 +98,11 @@ public:
     void fillEntry(int sidx, int aidx, int col, double p) {
         int64_t k = fillPosition[stateStart[sidx] + aidx]++;
         column[k] = col;
-        prob[k] = p;
+        if (single){
+            prob32[k] = (float)p;
+        }else{
+            prob[k] = p;
+        }
     }
     void finishEntries() { vector<int64_t>().swap(fillPosition); }
 
@@ -104,7 +126,9 @@ private:
     vector<int64_t> stateStart; //numberOfRows()+1 entries: the pairs of state s are stateStart[s], ..., stateStart[s+1]-1
     vector<int64_t> pairStart; //one entry more than there are pairs: the non-zero probabilities of pair i are pairStart[i], ..., pairStart[i+1]-1
     vector<int> column; //the next state (column of the transition matrix) of each non-zero probability
-    vector<double> prob; //and the probability
+    vector<double> prob; //and the probability, in double precision,
+    vector<float> prob32; //or in single precision (only one of the two is used)
+    bool single = false; //whether prob32 is the one
     vector<int64_t> fillPosition; //while filling in any order: the next free entry of each pair
 
 };

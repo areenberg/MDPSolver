@@ -86,12 +86,13 @@ private:
     void mainLoopValueIteration();
     
     //models with CSR tables (e.g. the general MDP model): the loops read the tables directly
-    void modifiedPolicyIterationCSR(); //MPI/PI, standard updates (serial computation)
-    void parModifiedPolicyIterationCSR(); //MPI/PI, standard updates (parallel computation)
-    void modifiedPolicyIterationSORCSR(); //MPI/PI with GS/SOR updates (serial computation)
-    void valueIterationCSR(); //VI, standard or Gauss-Seidel updates (serial computation)
-    void parValueIterationCSR(); //VI, standard updates (parallel computation)
-    void valueIterationSORCSR(); //VI with SOR updates (serial computation)
+    //(templates on the type of the probabilities, double or float)
+    template <typename Prob> void modifiedPolicyIterationCSR(const Prob* prob); //MPI/PI, standard updates (serial computation)
+    template <typename Prob> void parModifiedPolicyIterationCSR(const Prob* prob); //MPI/PI, standard updates (parallel computation)
+    template <typename Prob> void modifiedPolicyIterationSORCSR(const Prob* prob); //MPI/PI with GS/SOR updates (serial computation)
+    template <typename Prob> void valueIterationCSR(const Prob* prob); //VI, standard or Gauss-Seidel updates (serial computation)
+    template <typename Prob> void parValueIterationCSR(const Prob* prob); //VI, standard updates (parallel computation)
+    template <typename Prob> void valueIterationSORCSR(const Prob* prob); //VI with SOR updates (serial computation)
 
     //models that compute their transitions on the fly (the built-in TBM and CBM models)
     void modifiedPolicyIteration(); //MPI/PI (serial computation)

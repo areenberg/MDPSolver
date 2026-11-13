@@ -11,7 +11,8 @@ struct CSRTables {
     const int64_t* stateStart = nullptr; //numberOfStates+1 entries: the pairs of state s are stateStart[s], ..., stateStart[s+1]-1
     const int64_t* pairStart = nullptr;  //one entry more than there are pairs: the non-zero transition probabilities of pair i are pairStart[i], ..., pairStart[i+1]-1
     const int* column = nullptr;         //the next state of each non-zero transition probability
-    const double* prob = nullptr;        //and the probability itself
+    const double* prob = nullptr;        //and the probability itself, in double precision,
+    const float* prob32 = nullptr;       //or in single precision (float32): exactly one of the two is set
     const double* reward = nullptr;      //the reward of each pair
 };
 

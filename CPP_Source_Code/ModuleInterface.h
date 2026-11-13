@@ -216,9 +216,10 @@ private:
     //doubles (int64 for the column indices), and these loaders use no Python
     void loadRewardsFromArray(const double* rewards, int nStates, int nActions);
     void loadRewardsElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength);
-    void loadTranMatWithZerosArray(const double* probs, int nStates, int nActions, int nColumns);
-    void loadTranMatElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength);
-    void loadTranMatFromArrays(const double* probs, const int64_t* columns, int nStates, int nActions, int nEntries);
+    //(the loaders of probabilities read double or float32 arrays, and keep float32 as float32)
+    template <typename T> void loadTranMatWithZerosArray(const T* probs, int nStates, int nActions, int nColumns);
+    template <typename T> void loadTranMatElementwiseArray(const T* rows, int64_t nRows, int64_t rowLength);
+    template <typename T> void loadTranMatFromArrays(const T* probs, const int64_t* columns, int nStates, int nActions, int nEntries);
     void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
     void savePolicyToFile(string fileName, char sep);
     void saveValueVectorToFile(string fileName, char sep);

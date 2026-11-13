@@ -263,11 +263,11 @@ void ModifiedPolicyIteration::mainLoopModifiedPolicyIteration(){
 
 	if (tables != nullptr){
 		if (useStd && parallel){
-			parModifiedPolicyIterationCSR();
+			if (tables->prob32 != nullptr){ parModifiedPolicyIterationCSR(tables->prob32); }else{ parModifiedPolicyIterationCSR(tables->prob); }
 		}else if (useStd){
-			modifiedPolicyIterationCSR();
+			if (tables->prob32 != nullptr){ modifiedPolicyIterationCSR(tables->prob32); }else{ modifiedPolicyIterationCSR(tables->prob); }
 		}else{ //Gauss-Seidel or SOR
-			modifiedPolicyIterationSORCSR();
+			if (tables->prob32 != nullptr){ modifiedPolicyIterationSORCSR(tables->prob32); }else{ modifiedPolicyIterationSORCSR(tables->prob); }
 		}
 	}else{
 		if (useStd){
@@ -286,11 +286,11 @@ void ModifiedPolicyIteration::mainLoopValueIteration(){
 
 	if (tables != nullptr){
 		if (useSOR){
-			valueIterationSORCSR();
+			if (tables->prob32 != nullptr){ valueIterationSORCSR(tables->prob32); }else{ valueIterationSORCSR(tables->prob); }
 		}else if (useStd && parallel){
-			parValueIterationCSR();
+			if (tables->prob32 != nullptr){ parValueIterationCSR(tables->prob32); }else{ parValueIterationCSR(tables->prob); }
 		}else{ //standard updates, or Gauss-Seidel in place
-			valueIterationCSR();
+			if (tables->prob32 != nullptr){ valueIterationCSR(tables->prob32); }else{ valueIterationCSR(tables->prob); }
 		}
 	}else{
 		if (useSOR){
@@ -598,10 +598,11 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 namespace {
 
 //the value of state-action pair i under the values v: r(i) + discount * sum_k p(k) v(j(k))
-inline double pairValue(const CSRTables& t, int64_t i, const double* v, double discount){
+template <typename Prob>
+inline double pairValue(const CSRTables& t, const Prob* prob, int64_t i, const double* v, double discount){
 	double valSum = 0;
 	for (int64_t k = t.pairStart[i]; k < t.pairStart[i+1]; k++){
-		valSum += t.prob[k] * v[t.column[k]];
+		valSum += prob[k] * v[t.column[k]];
 	}
 	return t.reward[i] + discount * valSum;
 }
@@ -609,12 +610,13 @@ inline double pairValue(const CSRTables& t, int64_t i, const double* v, double d
 //the value of action a in state s; an action the state does not have (possible only in a
 //malformed model, e.g. a state without actions) has the value -infinity, as an empty
 //maximum, rather than reading outside the tables
-inline double actionValue(const CSRTables& t, int s, int a, const double* v, double discount){
+template <typename Prob>
+inline double actionValue(const CSRTables& t, const Prob* prob, int s, int a, const double* v, double discount){
 	int64_t i = t.stateStart[s] + a;
 	if (a < 0 || i >= t.stateStart[s+1]){
 		return -numeric_limits<double>::infinity();
 	}
-	return pairValue(t, i, v, discount);
+	return pairValue(t, prob, i, v, discount);
 }
 
 //the SOR value of state-action pair i of state s under the values v, which leaves out the
@@ -624,32 +626,35 @@ inline double actionValue(const CSRTables& t, int s, int a, const double* v, dou
 //standard updates, also on the diagonal (until 2026-11-13 the last diagonal entry replaced
 //the others, which lost their probability; that mattered only for repeated entries, e.g.
 //arrays padded with zeros whose padding next state is s itself)
-inline double pairValueSOR(const CSRTables& t, int64_t i, int s, const double* v, double discount, double w){
+template <typename Prob>
+inline double pairValueSOR(const CSRTables& t, const Prob* prob, int64_t i, int s, const double* v, double discount, double w){
 	double valSum = 0;
 	double probSame = 0;
 	for (int64_t k = t.pairStart[i]; k < t.pairStart[i+1]; k++){
 		int j = t.column[k];
 		if (j != s) { //skip diagonal element
-			valSum += t.prob[k] * v[j];
+			valSum += prob[k] * v[j];
 		}else{
-			probSame += t.prob[k];
+			probSame += prob[k];
 		}
 	}
 	return (1 - w) * v[s] + w / (1 - discount * probSame) * (t.reward[i] + discount * valSum);
 }
 
 //as actionValue(), with the SOR value
-inline double actionValueSOR(const CSRTables& t, int s, int a, const double* v, double discount, double w){
+template <typename Prob>
+inline double actionValueSOR(const CSRTables& t, const Prob* prob, int s, int a, const double* v, double discount, double w){
 	int64_t i = t.stateStart[s] + a;
 	if (a < 0 || i >= t.stateStart[s+1]){
 		return -numeric_limits<double>::infinity();
 	}
-	return pairValueSOR(t, i, s, v, discount, w);
+	return pairValueSOR(t, prob, i, s, v, discount, w);
 }
 
 }
 
-void ModifiedPolicyIteration::valueIterationCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::valueIterationCSR(const Prob* prob){
 	//value iteration with standard updates, or with Gauss-Seidel updates, which are the
 	//same loop run in place (then vp and vpOld point to the same vector)
 	const CSRTables& t = *tables;
@@ -663,7 +668,7 @@ void ModifiedPolicyIteration::valueIterationCSR(){
 		for (int s = 0; s < nStates; s++) {
 			double best = -numeric_limits<double>::infinity();
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValue(t, i, vOld, discount);
+				double val = pairValue(t, prob, i, vOld, discount);
 				if (val > best) {
 					best = val;
 				}
@@ -687,7 +692,7 @@ void ModifiedPolicyIteration::valueIterationCSR(){
 		double best = -numeric_limits<double>::infinity();
 		int aBest = 0;
 		for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-			double val = pairValue(t, i, vOld, discount);
+			double val = pairValue(t, prob, i, vOld, discount);
 			if (val > best) {
 				best = val;
 				aBest = (int)(i - t.stateStart[s]);
@@ -700,7 +705,8 @@ void ModifiedPolicyIteration::valueIterationCSR(){
 	swapPointers();
 }
 
-void ModifiedPolicyIteration::parValueIterationCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::parValueIterationCSR(const Prob* prob){
 	//value iteration with standard updates, each sweep in parallel
 	const CSRTables& t = *tables;
 	const int n = nStates;
@@ -715,7 +721,7 @@ void ModifiedPolicyIteration::parValueIterationCSR(){
 		for (int s = 0; s < n; s++) {
 			double best = -numeric_limits<double>::infinity();
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValue(t, i, vOld, disc);
+				double val = pairValue(t, prob, i, vOld, disc);
 				if (val > best) {
 					best = val;
 				}
@@ -746,7 +752,7 @@ void ModifiedPolicyIteration::parValueIterationCSR(){
 		double best = -numeric_limits<double>::infinity();
 		int aBest = 0;
 		for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-			double val = pairValue(t, i, vOld, disc);
+			double val = pairValue(t, prob, i, vOld, disc);
 			if (val > best) {
 				best = val;
 				aBest = (int)(i - t.stateStart[s]);
@@ -766,7 +772,8 @@ void ModifiedPolicyIteration::parValueIterationCSR(){
 	swapPointers();
 }
 
-void ModifiedPolicyIteration::modifiedPolicyIterationCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::modifiedPolicyIterationCSR(const Prob* prob){
 	//modified (and common) policy iteration with standard updates
 	const CSRTables& t = *tables;
 	int* pol = policy->policy.data();
@@ -780,7 +787,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationCSR(){
 				const double* vOld = vpOld->data();
 				double* vNew = vp->data();
 				for (int s = 0; s < nStates; s++) {
-					double val = actionValue(t, s, pol[s], vOld, discount);
+					double val = actionValue(t, prob, s, pol[s], vOld, discount);
 					updateNorm(val, vOld[s]);
 					vNew[s] = val;
 				}
@@ -802,7 +809,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationCSR(){
 			double best = -numeric_limits<double>::infinity();
 			int aBest = 0;
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValue(t, i, vOld, discount);
+				double val = pairValue(t, prob, i, vOld, discount);
 				if (val > best) {
 					best = val;
 					aBest = (int)(i - t.stateStart[s]);
@@ -822,7 +829,8 @@ void ModifiedPolicyIteration::modifiedPolicyIterationCSR(){
 	}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );
 }
 
-void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(const Prob* prob){
 	//modified (and common) policy iteration with standard updates, each sweep in parallel
 	const CSRTables& t = *tables;
 	const int n = nStates;
@@ -838,7 +846,7 @@ void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(){
 				double dMin = numeric_limits<double>::infinity();
 				#pragma omp parallel for reduction(max:dMax) reduction(min:dMin)
 				for (int s = 0; s < n; s++) {
-					double val = actionValue(t, s, pol[s], vOld, disc);
+					double val = actionValue(t, prob, s, pol[s], vOld, disc);
 					double d = val - vOld[s];
 					if (d > dMax) {
 						dMax = d;
@@ -867,7 +875,7 @@ void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(){
 			double best = -numeric_limits<double>::infinity();
 			int aBest = 0;
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValue(t, i, vOld, disc);
+				double val = pairValue(t, prob, i, vOld, disc);
 				if (val > best) {
 					best = val;
 					aBest = (int)(i - t.stateStart[s]);
@@ -895,7 +903,8 @@ void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(){
 	}while( (!usePI && norm >= tolerance && iter < iterLim) || (usePI && polChanges>0) );
 }
 
-void ModifiedPolicyIteration::valueIterationSORCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::valueIterationSORCSR(const Prob* prob){
 	//value iteration with SOR updates, in place
 	//(Gauss-Seidel updates for value iteration run in valueIterationCSR())
 	const CSRTables& t = *tables;
@@ -908,7 +917,7 @@ void ModifiedPolicyIteration::valueIterationSORCSR(){
 		for (int s = 0; s < nStates; s++) {
 			double best = -numeric_limits<double>::infinity();
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValueSOR(t, i, s, v, discount, SORrelaxation);
+				double val = pairValueSOR(t, prob, i, s, v, discount, SORrelaxation);
 				if (val > best) {
 					best = val;
 				}
@@ -929,7 +938,7 @@ void ModifiedPolicyIteration::valueIterationSORCSR(){
 		double best = -numeric_limits<double>::infinity();
 		int aBest = 0;
 		for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-			double val = pairValueSOR(t, i, s, v, discount, SORrelaxation);
+			double val = pairValueSOR(t, prob, i, s, v, discount, SORrelaxation);
 			if (val > best) {
 				best = val;
 				aBest = (int)(i - t.stateStart[s]);
@@ -941,7 +950,8 @@ void ModifiedPolicyIteration::valueIterationSORCSR(){
 	}
 }
 
-void ModifiedPolicyIteration::modifiedPolicyIterationSORCSR(){
+template <typename Prob>
+void ModifiedPolicyIteration::modifiedPolicyIterationSORCSR(const Prob* prob){
 	//modified (and common) policy iteration with Gauss-Seidel or SOR updates, in place
 	const CSRTables& t = *tables;
 	double* v = vp->data(); //vp and vpOld point to the same vector
@@ -954,7 +964,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSORCSR(){
 				diffMax = -numeric_limits<double>::infinity();
 				diffMin = numeric_limits<double>::infinity();
 				for (int s = 0; s < nStates; s++) {
-					double val = actionValueSOR(t, s, pol[s], v, discount, SORrelaxation);
+					double val = actionValueSOR(t, prob, s, pol[s], v, discount, SORrelaxation);
 					updateNorm(val, v[s]);
 					v[s] = val;
 				}
@@ -973,7 +983,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSORCSR(){
 			double best = -numeric_limits<double>::infinity();
 			int aBest = 0;
 			for (int64_t i = t.stateStart[s]; i < t.stateStart[s+1]; i++) {
-				double val = pairValueSOR(t, i, s, v, discount, SORrelaxation);
+				double val = pairValueSOR(t, prob, i, s, v, discount, SORrelaxation);
 				if (val > best) {
 					best = val;
 					aBest = (int)(i - t.stateStart[s]);
