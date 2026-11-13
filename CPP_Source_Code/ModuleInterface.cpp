@@ -30,6 +30,11 @@
 #include <climits>
 #include <cfloat>
 #include <type_traits>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <memory>
+#include <algorithm>
 
 #include "ModuleInterface.h"
 
@@ -85,6 +90,29 @@ int arrayExtent(const A& array, int k, const string& name){
     return (int)array.shape(k);
 }
 
+//whether a file name ends in the extension (e.g. ".npy"), in any case: rewardsFromFile and
+//tranMatFromFile are read as NumPy .npy files when they end in .npy (see "LOADING: NumPy .npy
+//files"), and as comma-separated files otherwise
+bool hasExtension(const string& fileName, const string& extension){
+    if (fileName.size() < extension.size()){
+        return false;
+    }
+    for (size_t k=0; k<extension.size(); k++){
+        if (tolower((unsigned char)fileName[fileName.size()-extension.size()+k]) != extension[k]){
+            return false;
+        }
+    }
+    return true;
+}
+
+//a NumPy .npz archive (np.savez) would be read as a comma-separated file, and fail on its
+//first line with a message about fields; it is named for what it is instead
+void refuseNpz(const string& fileName){
+    if (hasExtension(fileName,".npz")){
+        throw invalid_argument(fileName + " is a NumPy .npz archive, which MDPSolver does not read. Save the array as an .npy file of its own (np.save) and give that file.");
+    }
+}
+
 }
 
 void ModuleInterface::mdp(double discount,
@@ -115,7 +143,10 @@ void ModuleInterface::mdp(double discount,
             auto array = asArray<double>(rewardsElementwise,"rewardsElementwise",2);
             loadRewardsElementwiseArray(array.data(), array.shape(0), array.shape(1));
         }
+    }else if (hasExtension(rewardsFromFile,".npy")){
+        loadRewardsFromNpy(rewardsFromFile);
     }else{
+        refuseNpz(rewardsFromFile);
         loadRewardsFromFile(rewardsFromFile,',',true);
     }
 
@@ -166,7 +197,10 @@ void ModuleInterface::mdp(double discount,
                 load(asArray<double>(tranMatProbs,"tranMatProbs",3));
             }
         }
+    }else if (hasExtension(tranMatFromFile,".npy")){
+        loadTranMatFromNpy(tranMatFromFile);
     }else{
+        refuseNpz(tranMatFromFile);
         loadTranMatFromFile(tranMatFromFile,',',true);
     }
 
@@ -1064,6 +1098,251 @@ void ModuleInterface::loadTranMatFromArrays(const T* probs, const int64_t* colum
             tranMat.endPair();
         }
         tranMat.endState();
+    }
+}
+
+
+//---------------------------------------
+//  LOADING: NumPy .npy files
+//---------------------------------------
+//rewardsFromFile and tranMatFromFile ending in .npy are NumPy .npy files (np.save) of the
+//elementwise formats: a 2D array with a row per entry, as for rewardsElementwise (state,
+//action, reward) and tranMatElementwise (state, action, next state, probability), of float64,
+//float32, int64 or int32 (as np.save writes an array of whole numbers). The rows are read from the file in blocks straight into the model's tables, so
+//that the model is held only once, as with the comma-separated files: Python never sees it,
+//and the file is not read into memory as a whole. Like the other elementwise loaders, these
+//read the rows several times (the numbers of actions, the entries of each pair, then the
+//entries), place each row by its indices rather than by its position, keep float32
+//probabilities as float32, and guard only against what would make them crash; columns
+//beyond those needed are ignored. Index errors name the row as NumPy does, e.g.
+//"transitions.npy[3]".
+//
+//The format (numpy.lib.format): the magic string "\x93NUMPY", the version (major, minor),
+//the length of the header (2 bytes in version 1, 4 in versions 2 and 3, little-endian), and
+//the header, a Python dict literal such as
+//    {'descr': '<f8', 'fortran_order': False, 'shape': (15, 4), }
+//padded with spaces and a newline; then the numbers, row by row unless fortran_order.
+
+namespace {
+
+//what the header of an .npy file says about its array
+struct NpyArray{
+    string fileName;
+    char type = 'd'; //the numbers: 'd' float64, 'f' float32, 'q' int64, 'i' int32
+    int64_t rows = 0, columns = 0;
+    int64_t dataStart = 0; //the position of the first number in the file
+};
+
+//moves to a position in a file, also beyond 2 GB (where fseek's long ends on Windows)
+bool seekTo(FILE* file, int64_t position){
+#ifdef _WIN32
+    return _fseeki64(file, position, SEEK_SET) == 0;
+#else
+    return fseeko(file, (off_t)position, SEEK_SET) == 0;
+#endif
+}
+
+//the value of a key in the header's dict, from the first character after the colon
+string npyValue(const string& header, const string& key, const string& fileName){
+    size_t k = header.find("'" + key + "'");
+    if (k == string::npos){
+        k = header.find("\"" + key + "\"");
+    }
+    if (k == string::npos || (k = header.find(':', k)) == string::npos){
+        throw invalid_argument(fileName + " is not a valid .npy file: its header has no '" + key + "'.");
+    }
+    k = header.find_first_not_of(" ", k + 1);
+    return (k == string::npos) ? string() : header.substr(k);
+}
+
+//opens a file for reading, unbuffered (the loaders read large blocks), or throws
+unique_ptr<FILE, int(*)(FILE*)> openFile(const string& fileName, const string& what){
+    unique_ptr<FILE, int(*)(FILE*)> file(fopen(fileName.c_str(), "rb"), fclose);
+    if (!file){
+        throw runtime_error("Unable to open the " + what + " file " + fileName + ".");
+    }
+    setvbuf(file.get(), nullptr, _IONBF, 0);
+    return file;
+}
+
+//reads the header of an .npy file and checks that it holds a 2D array of float64, float32,
+//int64 or int32 in row order with at least nColumns columns (named by columnNames)
+NpyArray readNpyHeader(const string& fileName, const string& what, int64_t nColumns, const string& columnNames){
+    const uint16_t one = 1;
+    if (*(const unsigned char*)&one != 1){
+        throw runtime_error("MDPSolver reads .npy files only on little-endian computers.");
+    }
+    auto file = openFile(fileName, what);
+    unsigned char start[12];
+    if (fread(start, 1, 10, file.get()) != 10 || memcmp(start, "\x93NUMPY", 6) != 0){
+        throw invalid_argument(fileName + " is not a NumPy .npy file (it does not begin as one), although its name ends in .npy.");
+    }
+    int major = start[6];
+    int64_t headerLength, dataStart;
+    if (major == 1){
+        headerLength = start[8] | (start[9] << 8);
+        dataStart = 10;
+    }else if (major == 2 || major == 3){
+        if (fread(start + 10, 1, 2, file.get()) != 2){
+            throw invalid_argument(fileName + " is not a valid .npy file: it ends inside its header.");
+        }
+        headerLength = (int64_t)start[8] | ((int64_t)start[9] << 8) | ((int64_t)start[10] << 16) | ((int64_t)start[11] << 24);
+        dataStart = 12;
+    }else{
+        throw invalid_argument(fileName + " is an .npy file of version " + to_string(major) + ", which MDPSolver does not read (it reads versions 1 to 3).");
+    }
+    string header((size_t)headerLength, ' ');
+    if (headerLength > 0 && fread(&header[0], 1, (size_t)headerLength, file.get()) != (size_t)headerLength){
+        throw invalid_argument(fileName + " is not a valid .npy file: it ends inside its header.");
+    }
+
+    NpyArray npy;
+    npy.fileName = fileName;
+    npy.dataStart = dataStart + headerLength;
+
+    //the type of the numbers: little-endian float64, float32, int64 or int32
+    const string types = "float64, float32, int64 or int32 ('<f8', '<f4', '<i8', '<i4')";
+    string descr = npyValue(header, "descr", fileName);
+    if (descr.empty() || (descr[0] != '\'' && descr[0] != '"')){
+        throw invalid_argument(fileName + " holds a structured array (records with named fields), where MDPSolver reads a 2D array of numbers with " + columnNames + " in its columns.");
+    }
+    descr = descr.substr(1, descr.find(descr[0], 1) - 1);
+    const string kinds = "f8f4i8i4", codes = "dfqi";
+    size_t kind = (descr.size() == 3) ? kinds.find(descr.substr(1)) : string::npos;
+    if (kind == string::npos || kind % 2 != 0){
+        throw invalid_argument(fileName + " holds numbers of the NumPy type '" + descr + "', where MDPSolver reads " + types + ". Save the array as float64, e.g. array.astype(float).");
+    }
+    if (descr[0] == '>'){
+        throw invalid_argument(fileName + " holds big-endian numbers ('" + descr + "'), where MDPSolver reads little-endian " + types + ". Save the array as array.astype('<" + descr.substr(1) + "').");
+    }
+    if (descr[0] != '<' && descr[0] != '='){
+        throw invalid_argument(fileName + " holds numbers of the NumPy type '" + descr + "', where MDPSolver reads " + types + ".");
+    }
+    npy.type = codes[kind / 2];
+
+    //the order of the numbers: row by row
+    if (npyValue(header, "fortran_order", fileName).compare(0, 4, "True") == 0){
+        throw invalid_argument(fileName + " holds its array in Fortran (column) order, where MDPSolver reads the rows one after the other. Save the array as np.ascontiguousarray(array).");
+    }
+
+    //the shape: rows x columns
+    string shape = npyValue(header, "shape", fileName);
+    size_t close = shape.find(')');
+    if (shape.empty() || shape[0] != '(' || close == string::npos){
+        throw invalid_argument(fileName + " is not a valid .npy file: its header has no shape.");
+    }
+    vector<int64_t> extents;
+    stringstream extentStream(shape.substr(1, close - 1));
+    string extent;
+    while (getline(extentStream, extent, ',')){
+        if (extent.find_first_not_of(" L") != string::npos){
+            extents.push_back(stoll(extent));
+        }
+    }
+    if (extents.size() != 2){
+        throw invalid_argument(fileName + " holds an array of " + to_string(extents.size()) + (extents.size() == 1 ? " dimension" : " dimensions") + ", where MDPSolver reads a 2D array with a row per entry (" + columnNames + ").");
+    }
+    npy.rows = extents[0];
+    npy.columns = extents[1];
+    checkRowLength(npy.columns, nColumns, fileName, columnNames);
+    return npy;
+}
+
+//calls visit(row, i) for each row of the array, read from the file in blocks of 1 MB (an SSD
+//reads such blocks as fast as larger ones, and the block adds little to the memory used)
+template <typename T, typename Visit>
+void forEachRow(const NpyArray& npy, const string& what, Visit visit){
+    auto file = openFile(npy.fileName, what);
+    if (!seekTo(file.get(), npy.dataStart)){
+        throw runtime_error("Unable to read the " + what + " file " + npy.fileName + ".");
+    }
+    const int64_t blockRows = max<int64_t>(1, ((int64_t)1 << 20) / (npy.columns * (int64_t)sizeof(T)));
+    vector<T> block((size_t)(min(blockRows, max<int64_t>(npy.rows, 1)) * npy.columns));
+    for (int64_t first=0; first<npy.rows; first+=blockRows){
+        const int64_t n = min(blockRows, npy.rows - first);
+        const size_t count = (size_t)(n * npy.columns);
+        if (fread(block.data(), sizeof(T), count, file.get()) != count){
+            throw invalid_argument(npy.fileName + " ends before its last row: it holds fewer numbers than its shape (" + to_string(npy.rows) + " x " + to_string(npy.columns) + ") says.");
+        }
+        for (int64_t r=0; r<n; r++){
+            visit(block.data() + r*npy.columns, first + r);
+        }
+    }
+}
+
+//the number of actions of each state: one more than its largest action index
+template <typename T>
+vector<int> npyActions(const NpyArray& npy, const string& what){
+    vector<int> nAct;
+    //The vector is sized for the state of the last row, which in a file sorted by state is
+    //the number of states, so that it is allocated once. Grown step by step instead, it would
+    //leave its earlier buffers with the memory allocator, which on macOS counts them as used
+    //for the rest of the process (64 MB more peak memory for ten million states).
+    if (npy.rows > 0){
+        auto file = openFile(npy.fileName, what);
+        T last;
+        if (seekTo(file.get(), npy.dataStart + (npy.rows - 1) * npy.columns * (int64_t)sizeof(T)) &&
+                fread(&last, sizeof(T), 1, file.get()) == 1 && last >= 0 && (double)last < INT_MAX){
+            nAct.reserve((size_t)last + 1);
+        }
+    }
+    forEachRow<T>(npy, what, [&](const T* row, int64_t i){
+        size_t k0 = (size_t)arrayIndex(row[0], i, npy.fileName, "state");
+        int k1 = arrayIndex(row[1], i, npy.fileName, "action");
+        if (k0 >= nAct.size()){
+            nAct.resize(k0 + 1, 1);
+        }
+        nAct[k0] = max(nAct[k0], k1 + 1);
+    });
+    return nAct;
+}
+
+template <typename T>
+void loadRewardsNpy(const NpyArray& npy, Rewards& rewards){
+    const string what = "rewards";
+    rewards.setActions(npyActions<T>(npy, what));
+    forEachRow<T>(npy, what, [&](const T* row, int64_t i){
+        rewards.assignReward((double)row[2], (int)row[0], (int)row[1]);
+    });
+}
+
+template <typename T>
+void loadTranMatNpy(const NpyArray& npy, TransitionMatrix& tranMat){
+    const string what = "transition probabilities";
+    tranMat.setActions(npyActions<T>(npy, what));
+    tranMat.setSinglePrecision(std::is_same<T,float>::value);
+    forEachRow<T>(npy, what, [&](const T* row, int64_t i){
+        tranMat.countEntry((int)row[0], (int)row[1]);
+    });
+    tranMat.allocateEntries();
+    //each entry goes to the next free place of its pair, in the order of the rows
+    forEachRow<T>(npy, what, [&](const T* row, int64_t i){
+        tranMat.fillEntry((int)row[0], (int)row[1], arrayIndex(row[2], i, npy.fileName, "next-state"), row[3]);
+    });
+    tranMat.finishEntries();
+}
+
+}
+
+void ModuleInterface::loadRewardsFromNpy(string rewardsFromFile){
+    NpyArray npy = readNpyHeader(rewardsFromFile, "rewards", 3, "state, action, reward");
+    //rewards are kept as float64 whatever the file holds
+    switch (npy.type){
+        case 'f': loadRewardsNpy<float>(npy, problem.rewards); break;
+        case 'q': loadRewardsNpy<int64_t>(npy, problem.rewards); break;
+        case 'i': loadRewardsNpy<int32_t>(npy, problem.rewards); break;
+        default: loadRewardsNpy<double>(npy, problem.rewards);
+    }
+}
+
+void ModuleInterface::loadTranMatFromNpy(string tranMatFromFile){
+    NpyArray npy = readNpyHeader(tranMatFromFile, "transition probabilities", 4, "state, action, next state, probability");
+    //probabilities are kept as float32 from a float32 file, and as float64 otherwise
+    switch (npy.type){
+        case 'f': loadTranMatNpy<float>(npy, problem.tranMat); break;
+        case 'q': loadTranMatNpy<int64_t>(npy, problem.tranMat); break;
+        case 'i': loadTranMatNpy<int32_t>(npy, problem.tranMat); break;
+        default: loadTranMatNpy<double>(npy, problem.tranMat);
     }
 }
 

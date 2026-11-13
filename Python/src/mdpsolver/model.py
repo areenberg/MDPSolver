@@ -415,20 +415,23 @@ class model:
             discount (float): Discount factor.
             rewards (NumPy array or list): The reward of each action in each state, of the shape states x actions.
             rewardsElementwise (NumPy array or list): Alternative reward format. One row per state and action: state, action, reward (n x 3).
-            rewardsFromFile (str): Load the rewards from a comma-separated (,) file.
+            rewardsFromFile (str): Load the rewards from a file: a NumPy .npy file (a name ending in .npy) holding rewardsElementwise as a 2D array (of float64, float32, int64 or int32), or a comma-separated (,) file with a header line and rows state,action,reward.
             tranMatWithZeros (NumPy array or list): The transition probabilities, zeros included, of the shape states x actions x states.
             tranMatElementwise (NumPy array or list): Sparse transition probabilities (option 1). One row per non-zero probability: state, action, next state, probability (n x 4).
             tranMatProbs (NumPy array or list): Sparse transition probabilities (option 2, part 1). The non-zero transition probabilities of each state and action, of the shape states x actions x next states per pair.
             tranMatColumns (NumPy array or list): Sparse transition probabilities (option 2, part 2). The next states (columns) of the probabilities in tranMatProbs, of the same shape.
-            tranMatFromFile (str): Load the transition probabilities from a comma-separated (,) file.
+            tranMatFromFile (str): Load the transition probabilities from a file: a NumPy .npy file (a name ending in .npy) holding tranMatElementwise as a 2D array (of float64, float32, int64 or int32), or a comma-separated (,) file with a header line and rows stateFrom,action,stateTo,probability.
 
         Give the rewards in one format and the transition probabilities in one
         format. When neither an array nor a list is given for either, it is read
         from the file named by rewardsFromFile or tranMatFromFile, by default
-        rewards.csv or transitions.csv in the working directory.
+        rewards.csv or transitions.csv in the working directory. The files are
+        read straight into the solver's tables, so the model is not held in
+        Python; .npy files are written with np.save (or, row block by row block,
+        with np.lib.format.open_memmap).
 
         Transition probabilities given as a float32 array (tranMatWithZeros,
-        tranMatElementwise or tranMatProbs) are kept in single precision, which
+        tranMatElementwise or tranMatProbs), or in a float32 .npy file, are kept in single precision, which
         takes 8 instead of 12 bytes per non-zero probability; the results are
         those of the same numbers in float64. Rounded to float32, the
         probabilities of a state and action sum to 1 only to within about 1e-7,

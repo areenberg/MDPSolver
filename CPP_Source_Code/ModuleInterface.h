@@ -221,6 +221,9 @@ private:
     template <typename T> void loadTranMatElementwiseArray(const T* rows, int64_t nRows, int64_t rowLength);
     template <typename T> void loadTranMatFromArrays(const T* probs, const int64_t* columns, int nStates, int nActions, int nEntries);
     void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
+    //the elementwise formats from NumPy .npy files, read in blocks straight into the tables
+    void loadRewardsFromNpy(string rewardsFromFile);
+    void loadTranMatFromNpy(string tranMatFromFile);
     void savePolicyToFile(string fileName, char sep);
     void saveValueVectorToFile(string fileName, char sep);
 

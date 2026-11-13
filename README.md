@@ -21,13 +21,13 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 | States | Non-zero transitions | RAM | Solution time |
 |---:|---:|---:|---:|
-| 100,000 | 10,000,000 | 153 MB | 0.034 s |
-| 1,000,000 | 100,000,000 | 1.3 GB | 0.413 s |
-| 3,000,000 | 300,000,000 | 3.8 GB | 2.42 s |
-| 5,000,000 | 500,000,000 | 6.3 GB | 4.95 s |
-| 10,000,000 | 1,000,000,000 | 12.7 GB | 12.9 s |
+| 100,000 | 10,000,000 | 153 MB | 0.035 s |
+| 1,000,000 | 100,000,000 | 1.3 GB | 0.419 s |
+| 3,000,000 | 300,000,000 | 3.8 GB | 2.56 s |
+| 5,000,000 | 500,000,000 | 6.3 GB | 5.03 s |
+| 10,000,000 | 1,000,000,000 | 12.7 GB | 13.0 s |
 
-Mean of 10 random models with 5 actions per state and 20 possible next states per state and action, loaded from CSV-files and solved by modified policy iteration under the discounted reward criterion with discount 0.9. Measured on an Apple M5 with 10 cores.
+Mean of 10 random models with 5 actions per state and 20 possible next states per state and action, loaded from NPY-files and solved by modified policy iteration under the discounted reward criterion with discount 0.9. Measured on an Apple M5 with 10 cores.
 
 # Installation
 
@@ -145,34 +145,9 @@ mdl.mdp(discount=0.8,
 
 As lists, the pairs may have different numbers of entries, without padding, e.g. `tranMatProbs = [[[0.9,0.1],[0.1,0.9]], ...]` and `tranMatColumns = [[[0,1],[0,1]], ...]`.
 
-**(3) Load the elementwise representation from a file:**
+**(3) Load the elementwise representation from NPY files:**
 
-**transitions.csv**
-```
-stateFrom,action,stateTo,probability
-0,0,0,0.9
-0,0,1,0.1
-0,1,0,0.1
-0,1,1,0.9
-1,0,0,0.4
-1,0,1,0.5
-1,0,2,0.1
-1,1,0,0.3
-1,1,1,0.5
-1,1,2,0.2
-2,0,0,0.2
-2,0,1,0.2
-2,0,2,0.6
-2,1,0,0.5
-2,1,1,0.5
-```
-
-```python
-mdl = mdpsolver.model()
-mdl.mdp(discount=0.8,
-        rewardsElementwise=rewardsElementwise,
-        tranMatFromFile="transitions.csv")
-```
+The rows of `rewardsElementwise` and `tranMatElementwise` can be saved as NumPy `.npy` files and given to `rewardsFromFile` and `tranMatFromFile`, which read them straight into MDPSolver's C++ core. See [Loading models from NPY files](https://github.com/areenberg/MDPSolver/wiki/Loading-models-from-NPY-files) in the wiki.
 
 # Documentation
 
