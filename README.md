@@ -19,15 +19,15 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 ## Performance examples
 
-| Non-zero transitions | RAM | Solution time |
-|---:|---:|---:|
-| 10,000,000 | 153 MB | 0.038 s |
-| 100,000,000 | 1.3 GB | 0.436 s |
-| 300,000,000 | 3.8 GB | 2.38 s |
-| 500,000,000 | 6.3 GB | 4.98 s |
-| 1,000,000,000 | 12.7 GB | 13.6 s |
+| States | Non-zero transitions | RAM | Solution time |
+|---:|---:|---:|---:|
+| 100,000 | 10,000,000 | 153 MB | 0.034 s |
+| 1,000,000 | 100,000,000 | 1.3 GB | 0.413 s |
+| 3,000,000 | 300,000,000 | 3.8 GB | 2.42 s |
+| 5,000,000 | 500,000,000 | 6.3 GB | 4.95 s |
+| 10,000,000 | 1,000,000,000 | 12.7 GB | 12.9 s |
 
-Mean of 10 random models with 100,000 to 10,000,000 states, 5 actions per state and 20 possible next states per state and action, loaded from CSV-files and solved by modified policy iteration under the discounted reward criterion with discount 0.9. Measured on an Apple M5 with 10 cores.
+Mean of 10 random models with 5 actions per state and 20 possible next states per state and action, loaded from CSV-files and solved by modified policy iteration under the discounted reward criterion with discount 0.9. Measured on an Apple M5 with 10 cores.
 
 # Installation
 
