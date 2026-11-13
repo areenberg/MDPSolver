@@ -1,6 +1,9 @@
 # MDPSolver
 
-<img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_4_dark.png">
+  <img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_4.png" alt="Logo" width="150">
+</picture>
 
 [![PyPI](https://img.shields.io/pypi/v/mdpsolver)](https://pypi.org/project/mdpsolver/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/areenberg/MDPSolver/blob/master/LICENSE)
