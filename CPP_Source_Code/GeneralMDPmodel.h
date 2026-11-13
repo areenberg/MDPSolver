@@ -34,9 +34,12 @@
 
 using namespace std;
 
+//The general MDP model: the transition probabilities and rewards the user gave to mdp(),
+//held as CSR tables (ModelType.h), which the solver reads directly. The methods of
+//ModelType read the same tables, for the code that goes through them.
 class GeneralMDPmodel : public ModelType{
 public:
-    
+
     //CONSTRUCTOR AND DESCTRUCTOR
     GeneralMDPmodel() {}; //dummy-constructor
     GeneralMDPmodel(Rewards * rw, TransitionMatrix * tm, double discount);
@@ -48,15 +51,18 @@ public:
 
     double discount;
 	int numberOfStates, numberOfActions;
-    
+
     //auxiliary variables
     int nextState; //a new state that the current state can jump to
     double psj; //transition probability from the current state to nextState
-	
+
     //METHODS
     void initialize();
-        
-    //GENERIC METHODS    
+
+    //the tables, which the solver's fast loops read
+    const CSRTables* tables() override { return &csr; }
+
+    //GENERIC METHODS
     double reward(int &sidx, int &aidx) override;
     double transProb(int &sidx, int &aidx, int &jidx) override;
     void updateNextState(int &sidx, int &aidx, int &jidx) override;
@@ -76,9 +82,19 @@ private:
     //VARIABLES
     Rewards * rewards;
     TransitionMatrix * tranMat;
+    CSRTables csr;
+    //the rewards numbered like the pairs of the transition probabilities, made only when the
+    //rewards have other numbers of actions or states (a malformed model); rewards the input
+    //lacks are NaN here, and those it has beyond the transition probabilities are left out
+    vector<double> alignedRewards;
     int cidx;
-    
+
+    //METHODS
+    int64_t pair(int sidx, int aidx) const { return csr.stateStart[sidx] + aidx; }
+    int64_t entry(int sidx, int aidx, int cidx) const { return csr.pairStart[pair(sidx,aidx)] + cidx; }
+    double probability(int64_t k) const { return csr.prob32 ? (double)csr.prob32[k] : csr.prob[k]; }
 
 };
 
-#endif /* TBMMODEL_H */
+#endif /* GENERALMDPMODEL_H */
+

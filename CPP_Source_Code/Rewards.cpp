@@ -26,42 +26,27 @@
 #include <limits>
 
 Rewards::Rewards() {
+    clear();
 }
 
 Rewards::Rewards(const Rewards& orig) {
+    clear();
 }
 
 Rewards::~Rewards() {
 }
 
-double Rewards::getReward(int& sidx, int& aidx){
-    return rewards[sidx][aidx];
+void Rewards::clear(){
+    stateStart.assign(1,0);
+    values.clear();
 }
 
-void Rewards::assignReward(double reward, int& sidx, int& aidx){
-    //assign single probability
-    rewards[sidx][aidx]=reward;
-} 
-
-void Rewards::assignRewardsFromList(py::list pyRewards){
-    //cast rewards directly from Python list
-    rewards=pyRewards.cast<vector<vector<double>>>();
-} 
-    
-void Rewards::setNumberOfRows(int numberOfStates){
-    rewards.resize(numberOfStates);
-}
-
-void Rewards::setNumberOfActions(int nActions, int& sidx){
+void Rewards::setActions(const vector<int>& nActions){
+    stateStart.resize(nActions.size() + 1);
+    stateStart[0] = 0;
+    for (size_t sidx=0; sidx<nActions.size(); sidx++){
+        stateStart[sidx+1] = stateStart[sidx] + nActions[sidx];
+    }
     //rewards that the input leaves out stay NaN, which checkModel() reports
-    rewards[sidx].resize(nActions,numeric_limits<double>::quiet_NaN());
+    values.assign(stateStart.back(), numeric_limits<double>::quiet_NaN());
 }
-    
-int Rewards::numberOfActions(int& sidx){
-    return rewards[sidx].size();
-}
-
-int Rewards::numberOfRows(){
-    return rewards.size();
-}
-

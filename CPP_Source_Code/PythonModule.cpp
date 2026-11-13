@@ -66,8 +66,8 @@ PYBIND11_MODULE(solvermodule, m) {
         .def("printValueVector", &ModuleInterface::printValueVector,"Prints the entire value vector.")
         .def("getAction", &ModuleInterface::getAction,"Returns an action index from the optimized policy.",py::arg("stateIndex")=0)
         .def("getValue", &ModuleInterface::getValue,"Returns a value from the optimized policy.",py::arg("stateIndex")=0)
-        .def("getPolicy", &ModuleInterface::getPolicy,"Returns the optimized policy.")
-        .def("getValueVector", &ModuleInterface::getValueVector,"Returns the optimized value vector.")
+        .def("getPolicy", &ModuleInterface::getPolicy,"Returns the optimized policy as a NumPy array.")
+        .def("getValueVector", &ModuleInterface::getValueVector,"Returns the optimized value vector as a NumPy array.")
         .def("saveToFile", &ModuleInterface::saveToFile,"Saves the optimized policy or value vector to a file.",py::arg("fileName")="result.csv",py::arg("type")="policy")
         .def("getConvergence", &ModuleInterface::getConvergence,"Returns whether the last solve converged, and if not, why.")
         .def("checkModel", &ModuleInterface::checkModel,"Checks the general MDP model for malformed input; returns a description of each kind of problem found. Never called by mdp() or solve().",py::arg("tolerance")=1e-9);

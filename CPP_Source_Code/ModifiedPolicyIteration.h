@@ -41,7 +41,7 @@ public:
     ModifiedPolicyIteration() {};
     ModifiedPolicyIteration(double eps=1e-3, string algorithm = "mpi", string update = "standard", string criterion = "discounted",
             int parIterLim = 100, double SORrelaxation = 1.0, bool verbose=true, bool postProcessing=true,
-             bool makeFinalCheck=true, bool parallel=true, bool genMDP=true);
+             bool makeFinalCheck=true, bool parallel=true);
     
     ModifiedPolicyIteration(const ModifiedPolicyIteration& orig);
     virtual ~ModifiedPolicyIteration();
@@ -67,10 +67,11 @@ private:
     //parameters
     double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame, discount;
     int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps, nStates, nActions;
-    bool useMPI, usePI, useVI, useStd, useGS, useSOR, useDis, useAvg, initPol, initVal, printStuff, postProcessing, makeFinalCheck, genMDP, parallel;
+    bool useMPI, usePI, useVI, useStd, useGS, useSOR, useDis, useAvg, initPol, initVal, printStuff, postProcessing, makeFinalCheck, parallel;
 
     //pointer to model, policy, and value vector
     ModelType * model;
+    const CSRTables * tables; //the model's CSR tables, or nullptr for a model that computes its transitions on the fly
     Policy * policy;
     ValueVector * valueVector;
     
@@ -84,17 +85,20 @@ private:
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
     
-    void modifiedPolicyIterationGenMDP(); //MPI/PI for general MDP models (serial computation)
-    void parModifiedPolicyIterationGenMDP(); //MPI/PI for general MDP models (parallel computation)
-    void modifiedPolicyIterationSORGenMDP(); //MPI/PI with GS/SOR updates for general MDP models (serial computation)   
-    void modifiedPolicyIteration(); //MPI/PI for built-in MDP models (serial computation)
-    void modifiedPolicyIterationSOR(); //MPI/PI with GS/SOR updates for built-in MDP models (serial computation)   
+    //models with CSR tables (e.g. the general MDP model): the loops read the tables directly
+    //(templates on the type of the probabilities, double or float)
+    template <typename Prob> void modifiedPolicyIterationCSR(const Prob* prob); //MPI/PI, standard updates (serial computation)
+    template <typename Prob> void parModifiedPolicyIterationCSR(const Prob* prob); //MPI/PI, standard updates (parallel computation)
+    template <typename Prob> void modifiedPolicyIterationSORCSR(const Prob* prob); //MPI/PI with GS/SOR updates (serial computation)
+    template <typename Prob> void valueIterationCSR(const Prob* prob); //VI, standard or Gauss-Seidel updates (serial computation)
+    template <typename Prob> void parValueIterationCSR(const Prob* prob); //VI, standard updates (parallel computation)
+    template <typename Prob> void valueIterationSORCSR(const Prob* prob); //VI with SOR updates (serial computation)
 
-    void valueIterationGenMDP(); //VI for general MDP models (serial computation)
-    void parValueIterationGenMDP(); //VI for general MDP models (parallel computation)
-    void valueIterationSORGenMDP(); //VI with GS/SOR updates for general MDP models (serial computation)
-    void valueIteration(); //VI for built-in MDP models (serial computation)    
-    void valueIterationSOR(); //VI with GS/SOR updates for built-in MDP models (serial computation)
+    //models that compute their transitions on the fly (the built-in TBM and CBM models)
+    void modifiedPolicyIteration(); //MPI/PI (serial computation)
+    void modifiedPolicyIterationSOR(); //MPI/PI with GS/SOR updates (serial computation)
+    void valueIteration(); //VI (serial computation)
+    void valueIterationSOR(); //VI with GS/SOR updates (serial computation)
     
     void initValue(); //initializes policy, v, and span
     void checkFinalValue();
@@ -103,7 +107,8 @@ private:
     //other methods
     void swapPointers(); //swaps vp and vpOld.
     void updateNorm(double &valBest); //updates diffMax, diffMin, and span/supNorm
-    void computeNorm();
+    void updateNorm(double val, double oldVal); //the same, with the old value of the state given
+    void setNorm(double newDiffMax, double newDiffMin); //sets diffMax, diffMin, and span/supNorm
     
 };
 

@@ -51,6 +51,10 @@ small problems, when the values have settled, just as those of policy iteration
 do. The two algorithms then do the same work, and the order in which they run
 decides which looks slower.
 
+The models are given to mdp() as NumPy arrays, in the elementwise formats
+(rewardsElementwise and tranMatElementwise). test_arrays.py checks that every
+format gives the same results as an array and as a list.
+
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
 
@@ -65,7 +69,7 @@ import sys
 import numpy as np
 
 from loadmdpsolver import mdpsolver, finalline, quietly
-from knownsolutions import (checkoptimality, elementwisetranmat, exactaverage, exactdiscounted,
+from knownsolutions import (arrayinput, checkoptimality, exactaverage, exactdiscounted,
                             smallestgap)
 
 
@@ -149,7 +153,7 @@ def solve(rewards, transitions, discount, algorithm, setting, criterion="discoun
     '''One algorithm under one setting; returns the policy, the value vector and anything printed.'''
     def run():
         mdl = mdpsolver.model()
-        mdl.mdp(discount=discount, rewards=rewards, tranMatElementwise=elementwisetranmat(transitions))
+        mdl.mdp(discount=discount, **arrayinput(rewards, transitions))
         mdl.solve(algorithm=algorithm, tolerance=TOLERANCE, criterion=criterion, **setting)
         return list(mdl.getPolicy()), np.array(mdl.getValueVector(), dtype=float)
 
@@ -162,7 +166,7 @@ def timeperiteration(rewards, transitions, discount, algorithm, setting, criteri
     runtimes, iterations = [], set()
     for _ in range(TIMINGREPEATS):
         mdl = mdpsolver.model()
-        mdl.mdp(discount=discount, rewards=rewards, tranMatElementwise=elementwisetranmat(transitions))
+        mdl.mdp(discount=discount, **arrayinput(rewards, transitions))
         mdl.solve(algorithm=algorithm, tolerance=TOLERANCE, criterion=criterion, **setting)
         runtimes.append(mdl.getRuntime())
         iterations.add(mdl.getIterations())

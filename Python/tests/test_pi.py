@@ -69,6 +69,13 @@ distribution), so the policy they end with need not be gain-optimal.
 Nothing may be printed by any of the runs (the final check of the value vector
 prints a message if it finds the values outside their possible range).
 
+The models are given to mdp() as NumPy arrays, in the elementwise formats
+(rewardsElementwise and tranMatElementwise), since their states have different
+numbers of actions; the rows of each state-action pair are in the order of
+tranMatWithZeros, so that the results are those of the dense lists exactly.
+test_arrays.py checks that every format gives the same results as an array and
+as a list.
+
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
 
@@ -82,7 +89,7 @@ import sys
 import numpy as np
 
 from loadmdpsolver import mdpsolver, finalline, quietly
-from knownsolutions import (WINPROBABILITY, checkoptimality, densetranmat, hubaverage,
+from knownsolutions import (WINPROBABILITY, arrayinput, checkoptimality, hubaverage,
                             hubdiscounted, hubproblem, secretaryproblem, secretarysolution,
                             unichainaperiodic)
 
@@ -217,7 +224,7 @@ def solve(rewards, transitions, discount, setting, criterion="discounted"):
     '''The algorithm under one setting; returns the policy, the value vector and anything printed.'''
     def run():
         mdl = mdpsolver.model()
-        mdl.mdp(discount=discount, rewards=rewards, tranMatWithZeros=densetranmat(transitions))
+        mdl.mdp(discount=discount, **arrayinput(rewards, transitions, bycolumn=True))
         mdl.solve(algorithm=ALGORITHM, tolerance=TOLERANCE, criterion=criterion, **arguments(setting, rewards))
         return list(mdl.getPolicy()), np.array(mdl.getValueVector(), dtype=float)
 
@@ -314,7 +321,7 @@ for label, setting, word in INFEASIBLE:
     given.update(arguments(setting, HUBREWARDS))
 
     mdl = mdpsolver.model()
-    mdl.mdp(discount=0.9, rewards=HUBREWARDS, tranMatWithZeros=densetranmat(HUBTRANSITIONS))
+    mdl.mdp(discount=0.9, **arrayinput(HUBREWARDS, HUBTRANSITIONS, bycolumn=True))
     # an entry of the wrong type in an initial vector is a TypeError, every other infeasible argument a ValueError
     expected = TypeError if setting.get("initPolicy") == "fractional" or setting.get("initValueVector") == "text" else ValueError
     try:

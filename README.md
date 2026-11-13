@@ -1,6 +1,9 @@
 # MDPSolver
 
-<img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_3.png" alt="Logo" width="180">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_4_dark.png">
+  <img src="https://raw.githubusercontent.com/areenberg/MDPSolver/master/Images/MDPSolver_logo_4.png" alt="Logo" width="150">
+</picture>
 
 [![PyPI](https://img.shields.io/pypi/v/mdpsolver)](https://pypi.org/project/mdpsolver/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/areenberg/MDPSolver/blob/master/LICENSE)
@@ -10,12 +13,24 @@ MDPSolver is a Python package for large Markov Decision Processes (MDPs) with in
 
 ## Features
 
-* Fast solver: Our C++-based solver is substantially faster than other CPU-based MDP packages available for Python. See details in the documentation.
+* Our C++ solver is **fast**. See the examples below or details in the documentation.
 * Two optimality criteria: *Discounted* and *Average* reward.
 * Three optimization algorithms: *Value iteration*, *Policy iteration*, and *Modified policy iteration*.
 * Three value-update methods: *Standard*, *Gauss–Seidel*, and *Successive over-relaxation*.
-* Supports sparse matrices.
-* Employs parallel computing.
+* Supports sparse matrices and parallel computing.
+* Easy installation and OS independence (Linux, Windows and macOS).
+
+## Performance examples
+
+| States | Non-zero transitions | RAM | Solution time |
+|---:|---:|---:|---:|
+| 100,000 | 10,000,000 | 153 MB | 0.035 s |
+| 1,000,000 | 100,000,000 | 1.3 GB | 0.419 s |
+| 3,000,000 | 300,000,000 | 3.8 GB | 2.56 s |
+| 5,000,000 | 500,000,000 | 6.3 GB | 5.03 s |
+| 10,000,000 | 1,000,000,000 | 12.7 GB | 13.0 s |
+
+Mean of 10 random models with 5 actions per state and 20 possible next states per state and action, loaded from NPY-files and solved by modified policy iteration under the discounted reward criterion with discount 0.9. Measured on an Apple M5 with 10 cores.
 
 # Installation
 
@@ -31,24 +46,30 @@ The following shows how to get quickly started with `mdpsolver`.
 
 ## Usage
 
-Start by specifying the reward function and transition probabilities as lists. The following is an example of a simple MDP containing **three states** and **two actions in each state**.
+Start by specifying the reward function and transition probabilities as NumPy arrays. The following is an example of a simple MDP containing **three states** and **two actions in each state**.
 
 ```python
 #Import packages
+import numpy as np
 import mdpsolver
 
-#Rewards (3 states x 2 actions)
+#Rewards (3 states x 2 actions), one row per state and action: [state,action,reward]
 #e.g. choosing second action in first state gives reward=-1
-rewards = [[5,-1],
-           [1,-2],
-           [50,0]]
+rewardsElementwise = np.array([[0,0,5],
+                               [0,1,-1],
+                               [1,0,1],
+                               [1,1,-2],
+                               [2,0,50],
+                               [2,1,0]])
 
 #Transition probabilities (3 from_states x 2 actions x 3 to_states)
 #e.g. choosing first action in third state gives a probability of 0.6 of staying in third state
-tranMatWithZeros = [[[0.9,0.1,0.0],[0.1,0.9,0.0]],
-                    [[0.4,0.5,0.1],[0.3,0.5,0.2]],
-                    [[0.2,0.2,0.6],[0.5,0.5,0.0]]]
+tranMatWithZeros = np.array([[[0.9,0.1,0.0],[0.1,0.9,0.0]],
+                             [[0.4,0.5,0.1],[0.3,0.5,0.2]],
+                             [[0.2,0.2,0.6],[0.5,0.5,0.0]]])
 ```
+
+The rewards can also be given as a matrix (states x actions), e.g. `rewards = np.array([[5,-1],[1,-2],[50,0]])`, and every format also accepts Python lists. In the elementwise format, and as lists, states may have different numbers of actions.
 
 Now, create the model object and insert the problem parameters.
 
@@ -58,7 +79,7 @@ mdl = mdpsolver.model()
 
 #Insert the problem parameters
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatWithZeros=tranMatWithZeros)
 ```
 
@@ -68,11 +89,11 @@ We can now optimize the policy.
 mdl.solve()
 ```
 
-The optimized policy can be returned in a variety of ways. Here, we return the policy as a list and print directly in the terminal. 
+The optimized policy can be returned in a variety of ways. Here, we return the policy as a NumPy array and print it directly in the terminal.
 
 ```python
 print(mdl.getPolicy())
-#[1, 1, 0]
+#[1 1 0]
 ```
 
 ## Sparse transition matrix?
@@ -83,75 +104,53 @@ print(mdl.getPolicy())
 
 ```python
 #[from_state,action,to_state,probability]
-tranMatElementwise = [[0,0,0,0.9],
-                      [0,0,1,0.1],
-                      [0,1,0,0.1],
-                      [0,1,1,0.9],
-                      [1,0,0,0.4],
-                      [1,0,1,0.5],
-                      [1,0,2,0.1],
-                      [1,1,0,0.3],
-                      [1,1,1,0.5],
-                      [1,1,2,0.2],
-                      [2,0,0,0.2],
-                      [2,0,1,0.2],
-                      [2,0,2,0.6],
-                      [2,1,0,0.5],
-                      [2,1,1,0.5]]
+tranMatElementwise = np.array([[0,0,0,0.9],
+                               [0,0,1,0.1],
+                               [0,1,0,0.1],
+                               [0,1,1,0.9],
+                               [1,0,0,0.4],
+                               [1,0,1,0.5],
+                               [1,0,2,0.1],
+                               [1,1,0,0.3],
+                               [1,1,1,0.5],
+                               [1,1,2,0.2],
+                               [2,0,0,0.2],
+                               [2,0,1,0.2],
+                               [2,0,2,0.6],
+                               [2,1,0,0.5],
+                               [2,1,1,0.5]])
 
 mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatElementwise=tranMatElementwise)
 ```
 
-**(2) Probabilities and column (to_state) indices in separate lists:**
+**(2) Probabilities and column (to_state) indices in separate arrays:**
 
 ```python
-tranMatProbs = [[[0.9,0.1],[0.1,0.9]],
-                [[0.4,0.5,0.1],[0.3,0.5,0.2]],
-                [[0.2,0.2,0.6],[0.5,0.5]]]
+#As arrays, every state-action pair needs the same number of entries,
+#so pairs with fewer are padded with the probability 0 (and the column 0)
+tranMatProbs = np.array([[[0.9,0.1,0.0],[0.1,0.9,0.0]],
+                         [[0.4,0.5,0.1],[0.3,0.5,0.2]],
+                         [[0.2,0.2,0.6],[0.5,0.5,0.0]]])
 
-tranMatColumns = [[[0,1],[0,1]],
-                [[0,1,2],[0,1,2]],
-                [[0,1,2],[0,1]]]
+tranMatColumns = np.array([[[0,1,0],[0,1,0]],
+                           [[0,1,2],[0,1,2]],
+                           [[0,1,2],[0,1,0]]])
 
 mdl = mdpsolver.model()
 mdl.mdp(discount=0.8,
-        rewards=rewards,
+        rewardsElementwise=rewardsElementwise,
         tranMatProbs=tranMatProbs,
         tranMatColumns=tranMatColumns)
-
 ```
 
-**(3) Load the elementwise representation from a file:**
+As lists, the pairs may have different numbers of entries, without padding, e.g. `tranMatProbs = [[[0.9,0.1],[0.1,0.9]], ...]` and `tranMatColumns = [[[0,1],[0,1]], ...]`.
 
-**transitions.csv**
-```
-stateFrom,action,stateTo,probability
-0,0,0,0.9
-0,0,1,0.1
-0,1,0,0.1
-0,1,1,0.9
-1,0,0,0.4
-1,0,1,0.5
-1,0,2,0.1
-1,1,0,0.3
-1,1,1,0.5
-1,1,2,0.2
-2,0,0,0.2
-2,0,1,0.2
-2,0,2,0.6
-2,1,0,0.5
-2,1,1,0.5
-```
+**(3) Load the elementwise representation from NPY files:**
 
-```python
-mdl = mdpsolver.model()
-mdl.mdp(discount=0.8,
-        rewards=rewards,
-        tranMatFromFile="transitions.csv")
-```
+The rows of `rewardsElementwise` and `tranMatElementwise` can be saved as NumPy `.npy` files and given to `rewardsFromFile` and `tranMatFromFile`, which read them straight into MDPSolver's C++ core. See [Loading models from NPY files](https://github.com/areenberg/MDPSolver/wiki/Loading-models-from-NPY-files) in the wiki.
 
 # Documentation
 

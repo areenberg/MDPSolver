@@ -183,6 +183,27 @@ def elementwisetranmat(transitions):
             for a, probs in enumerate(state) for j, p in probs.items()]
 
 
+def arrayinput(rewards, transitions, bycolumn=False):
+    '''
+    The model as NumPy arrays, as arguments of mdp(): rewardsElementwise (rows
+    [s, a, reward]) and tranMatElementwise (rows [s, a, j, probability]), which,
+    unlike the other array formats, hold models whose states have different
+    numbers of actions. The rows of a state-action pair keep the order of its
+    dictionary, as in elementwisetranmat(). With bycolumn, they are sorted by next
+    state and the zeros are left out, which is what tranMatWithZeros stores, so
+    that the solver adds up the same numbers in the same order as with
+    densetranmat(), and gives exactly its results.
+    '''
+    rewardrows = [[s, a, reward] for s, state in enumerate(rewards) for a, reward in enumerate(state)]
+    if bycolumn:
+        rows = [[s, a, j, p] for s, state in enumerate(transitions)
+                for a, probs in enumerate(state) for j, p in sorted(probs.items()) if p > 0.0]
+    else:
+        rows = elementwisetranmat(transitions)
+    return dict(rewardsElementwise=np.array(rewardrows, dtype=float).reshape(-1, 3),
+                tranMatElementwise=np.array(rows, dtype=float).reshape(-1, 4))
+
+
 def matrices(rewards, transitions):
     '''Per state, the rewards of its actions and the rows of their transition probabilities.'''
     n = len(rewards)

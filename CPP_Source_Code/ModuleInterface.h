@@ -24,7 +24,9 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 #include <vector>
+#include <cstdint>
 #include <string>
 #include <iostream>
 
@@ -101,7 +103,6 @@ public:
         bool postProcessing;
         bool makeFinalCheck;
         bool parallel;
-        bool genMDP;
     } settings;
 
 
@@ -130,14 +131,15 @@ public:
     //------ problem selection ------
 
     //the general MDP problem
+    //(each format but the files is a list or a NumPy array; see mdp() in ModuleInterface.cpp)
     void mdp(double discount,
-    py::list rewards, //option1: complete reward list 
-    py::list rewardsElementwise, //option2: rewards where each row is an element and columns specify sidx,aidx,reward
+    py::object rewards, //option1: complete reward list 
+    py::object rewardsElementwise, //option2: rewards where each row is an element and columns specify sidx,aidx,reward
     string rewardsFromFile, //option3: rewards are loaded from a file
-    py::list tranMatWithZeros, //option1: complete transition mat incl. zeros
-    py::list tranMatElementwise, //option2: tran mat where each row is a non-zero element and columns specify sidx,aidx,jidx,prob
-    py::list tranMatProbs, //option3a: transition mat non-zero probabilities
-    py::list tranMatColumns, //option3b: transition mat column indices 
+    py::object tranMatWithZeros, //option1: complete transition mat incl. zeros
+    py::object tranMatElementwise, //option2: tran mat where each row is a non-zero element and columns specify sidx,aidx,jidx,prob
+    py::object tranMatProbs, //option3a: transition mat non-zero probabilities
+    py::object tranMatColumns, //option3b: transition mat column indices 
     string tranMatFromFile); //option4: transition mat is loaded from a file
 
     // ------ pre-defined MDP problems ------  
@@ -188,8 +190,8 @@ public:
     int getIterations(); //returns the number of iterations (policy improvement steps)
     int getNumberOfStates(); //returns the number of states of the general MDP model (-1 for the built-in models)
     int getNumberOfActions(int sidx); //returns the number of actions of a state of the general MDP model (-1 for the built-in models or a state outside the model)
-    py::list getPolicy(); //returns the entire policy
-    py::list getValueVector(); //returns the entire value vector
+    py::array_t<int64_t> getPolicy(); //returns the entire policy, as a NumPy array (a copy)
+    py::array_t<double> getValueVector(); //returns the entire value vector, as a NumPy array (a copy)
     void saveToFile(string fileName, string type); //save the policy or value vector to a file 
     py::dict getConvergence(); //whether the last solve converged, and if not, why
 
@@ -204,11 +206,24 @@ private:
     //METHODS
     void setInitPolicy(py::list initPolicy);
     void setInitValueVector(py::list initValueVector);
+    void loadRewardsFromList(py::list rewards);
+    void loadTranMatFromLists(py::list tranMatProbs, py::list tranMatColumns);
     void loadTranMatWithZeros(py::list tranMatWithZeros);
     void loadRewardsElementwise(py::list rewardsElementwise);
     void loadTranMatElementwise(py::list tranMatElementwise);
     void loadRewardsFromFile(string rewardsFromFile, char sep, bool header);
+    //the same formats as NumPy arrays: mdp() hands over the arrays' data as C-contiguous
+    //doubles (int64 for the column indices), and these loaders use no Python
+    void loadRewardsFromArray(const double* rewards, int nStates, int nActions);
+    void loadRewardsElementwiseArray(const double* rows, int64_t nRows, int64_t rowLength);
+    //(the loaders of probabilities read double or float32 arrays, and keep float32 as float32)
+    template <typename T> void loadTranMatWithZerosArray(const T* probs, int nStates, int nActions, int nColumns);
+    template <typename T> void loadTranMatElementwiseArray(const T* rows, int64_t nRows, int64_t rowLength);
+    template <typename T> void loadTranMatFromArrays(const T* probs, const int64_t* columns, int nStates, int nActions, int nEntries);
     void loadTranMatFromFile(string tranMatFromFile, char sep, bool header);
+    //the elementwise formats from NumPy .npy files, read in blocks straight into the tables
+    void loadRewardsFromNpy(string rewardsFromFile);
+    void loadTranMatFromNpy(string tranMatFromFile);
     void savePolicyToFile(string fileName, char sep);
     void saveValueVectorToFile(string fileName, char sep);
 

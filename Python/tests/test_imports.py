@@ -7,18 +7,23 @@ four:
 
     rewards              2D list, rewards[s][a]
     rewardsElementwise   rows [s, a, reward]
-    rewardsFromFile      CSV file with a header line and rows s,a,reward
+    rewardsFromFile      CSV file with a header line and rows s,a,reward, or
+                         a NumPy .npy file of the rows [s, a, reward]
     tranMatWithZeros     dense 3D list, tranMatWithZeros[s][a][j], zeros included
     tranMatElementwise   sparse rows [s, a, j, probability]
     tranMatProbs and     sparse 3D lists of the non-zero probabilities and of
     tranMatColumns       their next-state (column) indices
-    tranMatFromFile      CSV file with a header line and rows s,a,j,probability
+    tranMatFromFile      CSV file with a header line and rows s,a,j,probability,
+                         or a NumPy .npy file of the rows [s, a, j, probability]
+
+The files are read as .npy files when their names end in .npy, and as CSV
+files otherwise, so the two file arguments each carry two formats.
 
 Each format is a separate route into the same internal representation (for
 every state-action pair, the non-zero probabilities and their columns), so one
 MDP given in any combination of the formats must give the same policy and the
 same value vector. The test writes a single MDP in every format and requires
-every one of the 3 x 4 combinations to reproduce the solution obtained from the
+every one of the 4 x 5 combinations to reproduce the solution obtained from the
 dense formats (rewards and tranMatWithZeros), which serve as the reference. The
 list of formats is checked against the arguments of mdp(), so that a format
 added later cannot go untested unnoticed.
@@ -44,7 +49,7 @@ Sub-tests:
     Case 2: Every combination of a reward format and a transition format gives
             the policy and the value vector of the reference.
     Case 3: The order of the rows does not matter: The elementwise lists and
-            the files with their rows shuffled, and tranMatProbs and
+            the files (CSV and .npy) with their rows shuffled, and tranMatProbs and
             tranMatColumns with the entries of each state-action pair permuted
             alike, give the results of the reference.
     Case 4: Files with Windows line endings (CR LF), and files without a line
@@ -55,9 +60,10 @@ Sub-tests:
             opened, ValueError otherwise): rewards or transition probabilities
             that are not given while the default file (rewards.csv,
             transitions.csv) is missing from the working directory, a file that
-            cannot be opened, tranMatProbs without tranMatColumns and the other
-            way round, and every pair of formats for the rewards or for the
-            transition probabilities. (Missing rewards made Python crash in
+            cannot be opened (CSV or .npy), tranMatProbs without tranMatColumns
+            and the other way round, and every pair of formats for the rewards
+            or for the transition probabilities (but for the two formats of one
+            file argument, which cannot both be given). (Missing rewards made Python crash in
             solve(), and the rest was ignored, the default file read in place
             of what was given.) A rejected call leaves the model object free
             for a valid one. With neither given, the default files in the
@@ -65,12 +71,24 @@ Sub-tests:
     Case 6: The loaders guard only against rows that would make them crash: a
             negative state, action or next-state index, a row with too few
             entries, and in files an index or a number that cannot be read
-            raise a ValueError naming the list and row, or the file and line,
-            and print nothing besides. (A negative index and a blank line in a
-            file made Python crash, and a short row in a file read past its
-            end.) Blank lines in files are skipped, and give the results of the
+            raise a ValueError naming the list and row, or the file and line
+            (for .npy files the file and row, as file.npy[row]), and print
+            nothing besides. (A negative index and a blank line in a file made
+            Python crash, and a short row in a file read past its end.) Blank
+            lines in CSV files are skipped, and give the results of the
             reference. Nothing else about the model is checked when it is
             loaded; that is left to checkModel() (test_checkmodel.py).
+    Case 7: The .npy files: float32 files give the results of the same float32
+            numbers given as arrays (the probabilities kept in single
+            precision), and int64 and int32 files those of the same whole
+            numbers as float64 arrays; the extension is recognised in any case (.NPY); columns
+            beyond those needed are ignored; a model of more rows than the
+            loader reads at a time (1 MB) gives the results of the same model
+            given as arrays; and a file that is not an .npy file, an array of
+            another type than float64, float32, int64 or int32 (float16,
+            records, big-endian numbers), in Fortran order, of one dimension or too few
+            columns, a file that ends before its last row, and an .npz archive
+            raise a ValueError naming the file, and print nothing besides.
 
 mdpsolver is loaded by loadmdpsolver.py, which explains where the compiled
 solvermodule is taken from.
@@ -275,18 +293,36 @@ def writefile(path, header, rows, newline="\n", lastnewline=True):
     return path
 
 
+def writenpy(path, rows, dtype=np.float64):
+    '''
+    Writes rows to a NumPy .npy file as a 2D array (np.save), of float64 by
+    default. The file is opened here, since np.save given a name would add .npy
+    to one that does not end in it (in lower case).
+    '''
+    with open(path, "wb") as file:
+        np.save(file, np.asarray(rows, dtype=dtype))
+    return path
+
+
 def solve(arguments, setting):
     '''Solves the MDP given by the mdp() arguments; returns the policy and the value vector.'''
     mdl = mdpsolver.model()
     mdl.mdp(discount=DISCOUNT, **arguments)
     mdl.solve(tolerance=TOLERANCE, **setting)
-    return list(mdl.getPolicy()), np.array(mdl.getValueVector(), dtype=float)
+    return np.asarray(mdl.getPolicy()).tolist(), np.array(mdl.getValueVector(), dtype=float)
 
 
 def compare(case, label, settinglabel, result, reference):
     '''Ends the test if a result differs from the reference.'''
     policy, values = result
     refpolicy, refvalues = reference
+
+    if policy != refpolicy and len(refpolicy) > 20:
+        # a long policy is named by its first difference
+        differ = [s for s in range(min(len(policy), len(refpolicy))) if policy[s] != refpolicy[s]]
+        first = ("action %d in state %d, where the reference gives action %d" % (policy[differ[0]], differ[0], refpolicy[differ[0]])
+                 if differ else "a policy of %d states, where the reference has %d" % (len(policy), len(refpolicy)))
+        sys.exit("Validation test failed at case %d: %s gives %s under %s (%d states differ)." % (case, label, first, settinglabel, len(differ)))
 
     if policy != refpolicy:
         sys.exit("Validation test failed at case %d: %s gives the policy %s under %s, where the reference gives %s." % (case, label, policy, settinglabel, refpolicy))
@@ -347,6 +383,8 @@ REWARDFORMATS = {
     "rewardsElementwise": {"rewardsElementwise": elementwiserewards(MODEL)},
     "rewardsFromFile": {"rewardsFromFile": writefile(
         os.path.join(TMPDIR.name, "rewards.csv"), REWARDHEADER, elementwiserewards(MODEL))},
+    "rewardsFromFile (.npy)": {"rewardsFromFile": writenpy(
+        os.path.join(TMPDIR.name, "rewards.npy"), elementwiserewards(MODEL))},
 }
 
 TRANMATFORMATS = {
@@ -356,6 +394,8 @@ TRANMATFORMATS = {
                                         "tranMatColumns": tranmatcolumns},
     "tranMatFromFile": {"tranMatFromFile": writefile(
         os.path.join(TMPDIR.name, "transitions.csv"), TRANMATHEADER, elementwisetranmat(MODEL))},
+    "tranMatFromFile (.npy)": {"tranMatFromFile": writenpy(
+        os.path.join(TMPDIR.name, "transitions.npy"), elementwisetranmat(MODEL))},
 }
 
 REFERENCEARGUMENTS = {**REWARDFORMATS["rewards"], **TRANMATFORMATS["tranMatWithZeros"]}
@@ -455,6 +495,8 @@ SHUFFLEDREWARDFORMATS = {
     "rewardsElementwise (shuffled)": {"rewardsElementwise": shuffledrewards},
     "rewardsFromFile (shuffled)": {"rewardsFromFile": writefile(
         os.path.join(TMPDIR.name, "rewards_shuffled.csv"), REWARDHEADER, shuffledrewards)},
+    "rewardsFromFile (.npy, shuffled)": {"rewardsFromFile": writenpy(
+        os.path.join(TMPDIR.name, "rewards_shuffled.npy"), shuffledrewards)},
 }
 
 SHUFFLEDTRANMATFORMATS = {
@@ -464,6 +506,8 @@ SHUFFLEDTRANMATFORMATS = {
                                                    "tranMatColumns": permutedcolumns},
     "tranMatFromFile (shuffled)": {"tranMatFromFile": writefile(
         os.path.join(TMPDIR.name, "transitions_shuffled.csv"), TRANMATHEADER, shuffledtranmat)},
+    "tranMatFromFile (.npy, shuffled)": {"tranMatFromFile": writenpy(
+        os.path.join(TMPDIR.name, "transitions_shuffled.npy"), shuffledtranmat)},
 }
 
 for settinglabel, setting in SOLVERSETTINGS:
@@ -513,6 +557,7 @@ for variantlabel, suffix, newline, lastnewline in FILEVARIANTS:
 WORKDIR = os.path.join(TMPDIR.name, "workdir")
 os.mkdir(WORKDIR)
 MISSINGFILE = os.path.join(TMPDIR.name, "missing.csv")
+MISSINGNPY = os.path.join(TMPDIR.name, "missing.npy")
 TESTDIR = os.getcwd()
 
 # Each rejected call, with the words its message must contain and the error it
@@ -524,14 +569,22 @@ REJECTED = [
     ("nothing given, with neither default file", {}, ("rewards", "rewards.csv"), OSError),
     ("rewardsFromFile naming a file that does not exist", {"rewardsFromFile": MISSINGFILE, **TRANMATFORMATS["tranMatWithZeros"]}, (MISSINGFILE,), FileNotFoundError),
     ("tranMatFromFile naming a file that does not exist", {**REWARDFORMATS["rewards"], "tranMatFromFile": MISSINGFILE}, (MISSINGFILE,), FileNotFoundError),
+    ("rewardsFromFile naming an .npy file that does not exist", {"rewardsFromFile": MISSINGNPY, **TRANMATFORMATS["tranMatWithZeros"]}, (MISSINGNPY,), FileNotFoundError),
+    ("tranMatFromFile naming an .npy file that does not exist", {**REWARDFORMATS["rewards"], "tranMatFromFile": MISSINGNPY}, (MISSINGNPY,), FileNotFoundError),
     ("rewardsFromFile naming a directory", {"rewardsFromFile": WORKDIR, **TRANMATFORMATS["tranMatWithZeros"]}, (WORKDIR,), OSError),
     ("tranMatProbs without tranMatColumns", {**REWARDFORMATS["rewards"], "tranMatProbs": tranmatprobs}, ("tranMatProbs", "tranMatColumns"), ValueError),
     ("tranMatColumns without tranMatProbs", {**REWARDFORMATS["rewards"], "tranMatColumns": tranmatcolumns}, ("tranMatProbs", "tranMatColumns"), ValueError),
 ]
+# (the CSV and the .npy format of a file argument cannot both be given, since they
+# share the argument)
 for (label1, arguments1), (label2, arguments2) in itertools.combinations(REWARDFORMATS.items(), 2):
+    if set(arguments1) & set(arguments2):
+        continue
     REJECTED.append(("the rewards as %s and %s" % (label1, label2),
                      {**arguments1, **arguments2, **TRANMATFORMATS["tranMatWithZeros"]}, tuple(arguments1) + tuple(arguments2), ValueError))
 for (label1, arguments1), (label2, arguments2) in itertools.combinations(TRANMATFORMATS.items(), 2):
+    if set(arguments1) & set(arguments2):
+        continue
     REJECTED.append(("the transition probabilities as %s and %s" % (label1, label2),
                      {**REWARDFORMATS["rewards"], **arguments1, **arguments2}, tuple(arguments1) + tuple(arguments2), ValueError))
 
@@ -561,7 +614,7 @@ for label, arguments, words, expected in REJECTED:
     settinglabel, setting = SOLVERSETTINGS[0]
     mdl.mdp(discount=DISCOUNT, **REFERENCEARGUMENTS)
     mdl.solve(tolerance=TOLERANCE, **setting)
-    result = list(mdl.getPolicy()), np.array(mdl.getValueVector(), dtype=float)
+    result = np.asarray(mdl.getPolicy()).tolist(), np.array(mdl.getValueVector(), dtype=float)
     compare(5, "the model defined after mdp() with %s" % label, settinglabel, result, reference[settinglabel])
 
 # With nothing given, the default files in the working directory are read
@@ -613,19 +666,41 @@ FILEROWS = [
     ("tranMatFromFile", [s, a, j, "p"], ("probability 'p'", "not a number")),
 ]
 
-def checkguard(label, arguments, words):
+# For the .npy files: the argument, the spoiled row, and the words (a row of a 2D
+# array cannot be short, so too few entries are a matter of columns, in case 7)
+NPYROWS = [
+    ("rewardsFromFile", [-1, a, r], ("negative state",)),
+    ("rewardsFromFile", [s, -2, r], ("negative action",)),
+    ("rewardsFromFile", [s + 0.5, a, r], ("state index", "not an integer")),
+    ("tranMatFromFile", [-1, a, j, p], ("negative state",)),
+    ("tranMatFromFile", [s, -1, j, p], ("negative action",)),
+    ("tranMatFromFile", [s, a, -1, p], ("negative next-state",)),
+    ("tranMatFromFile", [s, a, j + 0.5, p], ("next-state index", "not an integer")),
+]
+
+def checkguard(case, label, arguments, words):
     '''Exits unless mdp() raises a ValueError containing every word, printing nothing besides.'''
     error, output = attempt(mdpsolver.model(), arguments)
     if type(error) is not ValueError or any(word not in str(error) for word in words):
-        sys.exit("Validation test failed at case 6: mdp() with %s gave %r, where it should raise a ValueError naming %s." % (label, error, " and ".join(words)))
+        sys.exit("Validation test failed at case %d: mdp() with %s gave %r, where it should raise a ValueError naming %s." % (case, label, error, " and ".join(words)))
     if output:
-        sys.exit("Validation test failed at case 6: mdp() with %s printed %r besides raising an error." % (label, output.strip()))
+        sys.exit("Validation test failed at case %d: mdp() with %s printed %r besides raising an error." % (case, label, output.strip()))
 
-for name, row, words in LISTROWS:
+def replaced(name, value):
+    '''The reference arguments with the rewards or the transition probabilities given as name=value.'''
     arguments = {**REFERENCEARGUMENTS}
     arguments.pop("rewards" if name.startswith("rewards") else "tranMatWithZeros")
-    arguments[name] = spoiled(rewardrows if name.startswith("rewards") else tranmatrows, row)
-    checkguard("%s[%d] = %s" % (name, ROW, row), arguments, ("%s[%d]" % (name, ROW),) + words)
+    arguments[name] = value
+    return arguments
+
+for name, row, words in LISTROWS:
+    arguments = replaced(name, spoiled(rewardrows if name.startswith("rewards") else tranmatrows, row))
+    checkguard(6, "%s[%d] = %s" % (name, ROW, row), arguments, ("%s[%d]" % (name, ROW),) + words)
+
+for name, row, words in NPYROWS:
+    path = writenpy(os.path.join(TMPDIR.name, "spoiled.npy"), spoiled(rewardrows if name.startswith("rewards") else tranmatrows, row))
+    # a row of an .npy file is named as NumPy indexes it, file.npy[row]
+    checkguard(6, "%s holding the row %s in an .npy file" % (name, row), replaced(name, path), ("%s[%d]" % (path, ROW),) + words)
 
 for name, row, words in FILEROWS:
     rewards = name.startswith("rewards")
@@ -633,11 +708,8 @@ for name, row, words in FILEROWS:
     rows = [",".join(str(x) for x in line) for line in spoiled(rewardrows if rewards else tranmatrows, row)]
     with open(path, "w", newline="") as file:
         file.write("\n".join([REWARDHEADER if rewards else TRANMATHEADER] + rows) + "\n")
-    arguments = {**REFERENCEARGUMENTS}
-    arguments.pop("rewards" if rewards else "tranMatWithZeros")
-    arguments[name] = path
     # the header is line 1, so row ROW is on line ROW + 2
-    checkguard("%s holding the row %s" % (name, ",".join(str(x) for x in row)), arguments, ("Line %d of %s" % (ROW + 2, path),) + words)
+    checkguard(6, "%s holding the row %s" % (name, ",".join(str(x) for x in row)), replaced(name, path), ("Line %d of %s" % (ROW + 2, path),) + words)
 
 # Blank lines, also with spaces or a carriage return, are skipped
 for label, blank in (("empty lines", ""), ("lines of spaces", "   "), ("lines holding a carriage return", "\r")):
@@ -651,6 +723,133 @@ for label, blank in (("empty lines", ""), ("lines of spaces", "   "), ("lines ho
     for settinglabel, setting in SOLVERSETTINGS:
         result = solve({"rewardsFromFile": files[0], "tranMatFromFile": files[1]}, setting)
         compare(6, "rewardsFromFile with tranMatFromFile, with %s," % label, settinglabel, result, reference[settinglabel])
+
+
+# ------------------------------------------------------------------
+# CASE 7: The .npy files
+# ------------------------------------------------------------------
+
+def checkmodel(arguments):
+    '''The problems checkModel() finds with tolerance 0 in the model given by the mdp() arguments.'''
+    mdl = mdpsolver.model()
+    mdl.mdp(discount=DISCOUNT, **arguments)
+    return mdl.checkModel(tolerance=0.0)
+
+# float32 files: compared with the same float32 numbers given as arrays, whose
+# probabilities are kept in single precision. That the files keep them so too
+# shows in checkModel() with tolerance 0: it allows the sums of a pair the float32
+# rounding of its entries only when the probabilities are kept in float32, and the
+# rounded probabilities kept as float64 fail it. (Under the average reward
+# criterion, float32 probabilities limit the tolerance that solve() can reach, so
+# only the discounted settings are compared.)
+FLOAT32ARRAYS = {"rewardsElementwise": np.array(rewardrows, dtype=np.float32),
+                 "tranMatElementwise": np.array(tranmatrows, dtype=np.float32)}
+FLOAT32FILES = {"rewardsFromFile": writenpy(os.path.join(TMPDIR.name, "rewards32.npy"), rewardrows, np.float32),
+                "tranMatFromFile": writenpy(os.path.join(TMPDIR.name, "transitions32.npy"), tranmatrows, np.float32)}
+
+if not checkmodel({**REWARDFORMATS["rewards"], "tranMatElementwise": FLOAT32ARRAYS["tranMatElementwise"].astype(np.float64)}):
+    sys.exit("Validation test failed at case 7: the probabilities rounded to float32 still sum to 1 in every state-action pair, so single precision cannot be told from double precision here.")
+
+if checkmodel(FLOAT32FILES):
+    sys.exit("Validation test failed at case 7: float32 .npy files were not kept in single precision: checkModel() with tolerance 0 reports %s." % checkmodel(FLOAT32FILES))
+
+for settinglabel, setting in SOLVERSETTINGS:
+    if setting["criterion"] == "discounted":
+        compare(7, "float32 .npy files", settinglabel, solve(FLOAT32FILES, setting), solve(FLOAT32ARRAYS, setting))
+
+# Integer files (as np.save writes an array of whole numbers): the rewards rounded,
+# in int64, and a deterministic model, each pair moving to its most likely next
+# state with probability 1, in int32; compared with the same numbers given as
+# float64 arrays. (A deterministic model may be periodic, which the average
+# reward criterion does not cover, so only the discounted settings are compared.)
+intrewards = [[s, a, round(reward)] for s, a, reward in rewardrows]
+inttranmat = [[s, a, max(probs, key=probs.get), 1] for s, state in enumerate(MODEL) for a, (_, probs) in enumerate(state)]
+INTFILES = {"rewardsFromFile": writenpy(os.path.join(TMPDIR.name, "rewards_int64.npy"), intrewards, np.int64),
+            "tranMatFromFile": writenpy(os.path.join(TMPDIR.name, "transitions_int32.npy"), inttranmat, np.int32)}
+INTARRAYS = {"rewardsElementwise": np.array(intrewards, dtype=np.float64),
+             "tranMatElementwise": np.array(inttranmat, dtype=np.float64)}
+
+for settinglabel, setting in SOLVERSETTINGS:
+    if setting["criterion"] == "discounted":
+        compare(7, "int64 and int32 .npy files", settinglabel, solve(INTFILES, setting), solve(INTARRAYS, setting))
+
+# The extension in any case, and columns beyond those needed (ignored, as in the
+# CSV files and the arrays). The names differ from the files above also in more
+# than case, since the file system may not tell case apart.
+NPYVARIANTS = (
+    ("files whose names end in .NPY and .Npy",
+     {"rewardsFromFile": writenpy(os.path.join(TMPDIR.name, "rewards_upper.NPY"), rewardrows),
+      "tranMatFromFile": writenpy(os.path.join(TMPDIR.name, "transitions_upper.Npy"), tranmatrows)}),
+    ("files with columns beyond those needed",
+     {"rewardsFromFile": writenpy(os.path.join(TMPDIR.name, "rewards_extra.npy"), [row + [7.0] for row in rewardrows]),
+      "tranMatFromFile": writenpy(os.path.join(TMPDIR.name, "transitions_extra.npy"), [row + [-1.0, 3.5] for row in tranmatrows])}),
+)
+for variantlabel, arguments in NPYVARIANTS:
+    for settinglabel, setting in SOLVERSETTINGS:
+        compare(7, "rewardsFromFile with tranMatFromFile, as .npy %s," % variantlabel, settinglabel, solve(arguments, setting), reference[settinglabel])
+
+# A model of more rows than the loader reads at a time: 1 MB holds 32,768 rows of
+# four float64 numbers, so 100,000 rows take four reads, the last one partial.
+# The rows are shuffled, so that the entries of a pair fall into different reads.
+# The same rows given as arrays go through the same steps, so the results must
+# agree to the last digit.
+nprng = np.random.default_rng(SEED)
+BIGSTATES, BIGACTIONS, BIGNEXT = 1000, 5, 20
+pairs = np.arange(BIGSTATES * BIGACTIONS)
+bigprobs = nprng.exponential(size=(pairs.size, BIGNEXT))
+bigprobs /= bigprobs.sum(axis=1, keepdims=True)
+bigtranmat = np.column_stack([np.repeat(pairs // BIGACTIONS, BIGNEXT), np.repeat(pairs % BIGACTIONS, BIGNEXT),
+                              nprng.integers(0, BIGSTATES, size=bigprobs.size), bigprobs.ravel()]).astype(np.float64)
+bigtranmat = bigtranmat[nprng.permutation(len(bigtranmat))]
+bigrewards = np.column_stack([pairs // BIGACTIONS, pairs % BIGACTIONS, nprng.normal(size=pairs.size)]).astype(np.float64)
+BIGFILES = {"rewardsFromFile": writenpy(os.path.join(TMPDIR.name, "rewards_big.npy"), bigrewards),
+            "tranMatFromFile": writenpy(os.path.join(TMPDIR.name, "transitions_big.npy"), bigtranmat)}
+
+if os.path.getsize(BIGFILES["tranMatFromFile"]) < 3 * 2**20 + 1:
+    sys.exit("Validation test failed at case 7: the large .npy file is not larger than three reads of the loader, so its reads in blocks are not tested.")
+
+settinglabel, setting = SOLVERSETTINGS[0]
+compare(7, "a model of %d rows in .npy files" % len(bigtranmat), settinglabel, solve(BIGFILES, setting),
+        solve({"rewardsElementwise": bigrewards, "tranMatElementwise": bigtranmat}, setting))
+
+# Files that cannot be read as an elementwise array: the argument, what the file
+# holds, the file, and the words the message must contain besides the file's name
+NOTNPY = os.path.join(TMPDIR.name, "notnpy.npy")
+with open(NOTNPY, "w", newline="") as file:
+    file.write(TRANMATHEADER + "\n" + "\n".join(",".join(repr(x) for x in row) for row in tranmatrows) + "\n")
+
+TRUNCATED = writenpy(os.path.join(TMPDIR.name, "truncated.npy"), tranmatrows)
+with open(TRUNCATED, "r+b") as file:
+    file.truncate(os.path.getsize(TRUNCATED) - 8)
+
+RECORDS = os.path.join(TMPDIR.name, "records.npy")
+records = np.zeros(len(tranmatrows), dtype=[("stateFrom", "f8"), ("action", "f8"), ("stateTo", "f8"), ("probability", "f8")])
+with open(RECORDS, "wb") as file:
+    np.save(file, records)
+
+FORTRAN = os.path.join(TMPDIR.name, "fortran.npy")
+with open(FORTRAN, "wb") as file:
+    np.save(file, np.asfortranarray(np.array(tranmatrows)))
+
+NPZ = os.path.join(TMPDIR.name, "transitions.npz")
+np.savez(NPZ, transitions=np.array(tranmatrows))
+
+BADNPY = [
+    ("tranMatFromFile", "a CSV file", NOTNPY, ("not a NumPy .npy file",)),
+    ("tranMatFromFile", "an array of float16", writenpy(os.path.join(TMPDIR.name, "float16.npy"), tranmatrows, np.float16), ("'<f2'", "float64")),
+    ("tranMatFromFile", "records", RECORDS, ("structured array",)),
+    ("tranMatFromFile", "big-endian numbers", writenpy(os.path.join(TMPDIR.name, "bigendian.npy"), tranmatrows, ">f8"), ("big-endian",)),
+    ("tranMatFromFile", "an array in Fortran order", FORTRAN, ("Fortran",)),
+    ("tranMatFromFile", "an array of one dimension", writenpy(os.path.join(TMPDIR.name, "flat.npy"), np.ravel(tranmatrows)), ("1 dimension",)),
+    ("tranMatFromFile", "three columns", writenpy(os.path.join(TMPDIR.name, "short.npy"), [row[:3] for row in tranmatrows]), ("3 columns", "4 are needed")),
+    ("rewardsFromFile", "two columns", writenpy(os.path.join(TMPDIR.name, "short_rewards.npy"), [row[:2] for row in rewardrows]), ("2 columns", "3 are needed")),
+    ("tranMatFromFile", "fewer numbers than its shape says", TRUNCATED, ("ends before its last row",)),
+    ("tranMatFromFile", "an .npz archive", NPZ, (".npz",)),
+    ("rewardsFromFile", "an .npz archive", NPZ, (".npz",)),
+]
+
+for name, content, path, words in BADNPY:
+    checkguard(7, "%s naming a file of %s" % (name, content), replaced(name, path), (path,) + words)
 
 
 # ------------------------------------------------------------------
