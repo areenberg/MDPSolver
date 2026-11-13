@@ -590,21 +590,43 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 //  LOOPS FOR MODELS WITH CSR TABLES
 //---------------------------------------
 //These loops read the model's CSR tables (ModelType.h) directly, rather than calling the
-//model's methods for every transition probability. They do the same arithmetic in the same
-//order as the loops through the methods did, so that the values, policies and iteration
-//counts come out the same. The parallel ones compute the norm in the same sweep, with
-//OpenMP reductions, rather than in a second parallel region.
+//model's methods for every transition probability. The parallel ones compute the norm in the
+//same sweep, with OpenMP reductions, rather than in a second parallel region. The sums of the
+//standard updates are split over four partial sums (pairValue()), so their values can differ
+//from those of the loops through the methods in the last digits; the SOR sums keep the order
+//of those loops.
 
 namespace {
 
-//the value of state-action pair i under the values v: r(i) + discount * sum_k p(k) v(j(k))
+//the value of state-action pair i under the values v: r(i) + discount * sum_k p(k) v(j(k)).
+//The sum is split over four partial sums, entry k of the pair going to the partial sum of
+//its position modulo 4, and added up as (s0 + s1) + (s2 + s3). A single sum is a chain of
+//additions that each wait for the one before, which limits a long sum to one addition per
+//few clock cycles; four chains run side by side. On models with long sums (hundreds of
+//entries per pair) a sweep on one thread takes a third of the time. Since every entry has
+//its fixed partial sum, entries of probability 0 after the others (e.g. the padding of
+//arrays) add only zeros, and leave the value exactly as without them.
 template <typename Prob>
 inline double pairValue(const CSRTables& t, const Prob* prob, int64_t i, const double* v, double discount){
-	double valSum = 0;
-	for (int64_t k = t.pairStart[i]; k < t.pairStart[i+1]; k++){
-		valSum += prob[k] * v[t.column[k]];
+	int64_t k = t.pairStart[i];
+	const int64_t end = t.pairStart[i+1];
+	double s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+	for (; k + 4 <= end; k += 4){
+		s0 += prob[k] * v[t.column[k]];
+		s1 += prob[k+1] * v[t.column[k+1]];
+		s2 += prob[k+2] * v[t.column[k+2]];
+		s3 += prob[k+3] * v[t.column[k+3]];
 	}
-	return t.reward[i] + discount * valSum;
+	if (k < end){ //the last one to three entries
+		s0 += prob[k] * v[t.column[k]];
+		if (k + 1 < end){
+			s1 += prob[k+1] * v[t.column[k+1]];
+			if (k + 2 < end){
+				s2 += prob[k+2] * v[t.column[k+2]];
+			}
+		}
+	}
+	return t.reward[i] + discount * ((s0 + s1) + (s2 + s3));
 }
 
 //the value of action a in state s; an action the state does not have (possible only in a
