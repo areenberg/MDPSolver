@@ -380,7 +380,7 @@ class model:
         Args:
             fileName (str): Name of the output file. By default result.npy, or result.csv when filetype is 'csv'.
             type (str): Type of result to save ('policy' or 'value').
-            filetype (str): Type of file to save ('npy' or 'csv'). 'npy' saves a NumPy .npy file of a 1D array with an entry per state, which np.load reads as the array getPolicy() (int64) or getValueVector() (float64) returns. 'csv' saves a comma-separated file with a header line and a row per state: the state index, then the action index or the value.
+            filetype (str): Type of file to save ('npy' or 'csv', in any case). 'npy' saves a NumPy .npy file of a 1D array with an entry per state, which np.load reads as the array getPolicy() (int64) or getValueVector() (float64) returns. 'csv' saves a comma-separated file with a header line and a row per state: the state index, then the action index or the value.
 
         A file name ending in .csv with filetype 'npy', or in .npy with
         filetype 'csv', raises a ValueError.
@@ -392,8 +392,10 @@ class model:
         self._requireSolution("saveToFile")
         if not (type == "policy" or type == "value"):
             raise ValueError("Type not recognized. Select either: 'policy' or 'value'.")
-        if not (filetype == "npy" or filetype == "csv"):
+        # (in any case, e.g. "NPY")
+        if not (isinstance(filetype, str) and filetype.lower() in ("npy", "csv")):
             raise ValueError("Filetype not recognized. Select either: 'npy' or 'csv'.")
+        filetype = filetype.lower()
         if fileName is None:
             fileName = "result." + filetype
         # (mdp() reads a file by its extension)

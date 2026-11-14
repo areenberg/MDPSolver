@@ -467,8 +467,11 @@ void ModuleInterface::saveToFile(string fileName, string type, string filetype){
     }else{
         throw invalid_argument("saveToFile(): the type '" + type + "' is not recognized. Select either 'policy' or 'value'.");
     }
+    //the filetype in any case, e.g. "NPY"
+    const string given = filetype;
+    transform(filetype.begin(), filetype.end(), filetype.begin(), [](unsigned char c){ return (char)tolower(c); });
     if (filetype.compare("npy")!=0 && filetype.compare("csv")!=0){
-        throw invalid_argument("saveToFile(): the filetype '" + filetype + "' is not recognized. Select either 'npy' or 'csv'.");
+        throw invalid_argument("saveToFile(): the filetype '" + given + "' is not recognized. Select either 'npy' or 'csv'.");
     }
     const bool npy = (filetype.compare("npy")==0);
 

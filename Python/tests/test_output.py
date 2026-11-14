@@ -25,7 +25,9 @@ Sub-tests:
             filetype="csv" a header and one row per state, equal to them (to
             the six significant digits written); both replace a file that is
             there. Without a file name, it writes result.npy, or result.csv
-            with filetype="csv", in the working directory. An unknown type or
+            with filetype="csv", in the working directory. The filetype may be
+            in any case, e.g. "NPY" or "Csv", also in the compiled module,
+            and a default name is then in lower case. An unknown type or
             filetype, and a name ending in .csv with filetype="npy" or in .npy
             with filetype="csv" (in any case), raise a ValueError, also in the
             compiled module, whose message for a name names the filetype to
@@ -191,16 +193,17 @@ for kind, header, column, dtype in (("policy", "State_Index,Action_Index", POLIC
         if int(index) != s or not np.isclose(float(entry), column[s], rtol=1e-5, atol=0.0):
             sys.exit("Validation test failed at case 1: saveToFile(type=%r, filetype='csv') wrote the row %r for state %d, where its %s is %r." % (kind, row, s, kind, column[s]))
 
-# Without a file name: result.npy or result.csv in the working directory
+# Without a file name: result.npy or result.csv in the working directory (in
+# lower case also for a filetype in upper case)
 folder = os.path.join(tmpdir.name, "defaults")
 os.mkdir(folder)
 here = os.getcwd()
 os.chdir(folder)
 try:
-    results = [raises(lambda: mdl.saveToFile(type="value")), raises(lambda: mdl.saveToFile(type="value", filetype="csv"))]
+    results = [raises(lambda: mdl.saveToFile(type="value")), raises(lambda: mdl.saveToFile(type="value", filetype="CSV"))]
 finally:
     os.chdir(here)
-for (error, output), given in zip(results, ("", ", filetype='csv'")):
+for (error, output), given in zip(results, ("", ", filetype='CSV'")):
     if error is not None or output:
         sys.exit("Validation test failed at case 1: saveToFile(type='value'%s) without a file name raised %r and printed %r." % (given, error, output.strip()))
 if sorted(os.listdir(folder)) != ["result.csv", "result.npy"]:
@@ -208,6 +211,20 @@ if sorted(os.listdir(folder)) != ["result.csv", "result.npy"]:
 array, rows = loadednpy(os.path.join(folder, "result.npy")), readrows(os.path.join(folder, "result.csv"))
 if not isinstance(array, np.ndarray) or not np.array_equal(array, VALUES) or rows[0] != "State_Index,Value" or len(rows) != NSTATES + 1:
     sys.exit("Validation test failed at case 1: saveToFile(type='value') without a file name wrote %r to result.npy and %r to result.csv, where they should hold the value vector." % (array, rows))
+
+# The filetype in any case, also in the compiled module
+for filetype in ("NPY", "Csv"):
+    for name, method in (("saveToFile()", mdl.saveToFile), ("The compiled module's saveToFile()", mdl.mdl.saveToFile)):
+        path = os.path.join(tmpdir.name, "anycase.%s" % filetype.lower())
+        if os.path.exists(path):
+            os.remove(path)
+        error, output = raises(lambda: method(fileName=path, type="value", filetype=filetype))
+        if error is not None or output:
+            sys.exit("Validation test failed at case 1: %s with filetype=%r raised %r and printed %r." % (name, filetype, error, output.strip()))
+        saved = loadednpy(path) if filetype.lower() == "npy" else readrows(path)
+        if (filetype.lower() == "npy" and not (isinstance(saved, np.ndarray) and np.array_equal(saved, VALUES))) \
+                or (filetype.lower() == "csv" and (saved[0] != "State_Index,Value" or len(saved) != NSTATES + 1)):
+            sys.exit("Validation test failed at case 1: %s with filetype=%r wrote %r, where it should write the value vector as a %s file." % (name, filetype, saved, filetype.lower()))
 
 # Arguments that are not used, and a file that cannot be opened (the compiled
 # module makes the same checks of the arguments)
@@ -217,6 +234,7 @@ for label, given, expected, words in (
         ("a name ending in .csv and the default filetype", dict(fileName="result.csv"), ValueError, "filetype='csv'"),
         ("a name ending in .CSV and filetype='npy'", dict(fileName="result.CSV", filetype="npy"), ValueError, "filetype='csv'"),
         ("a name ending in .npy and filetype='csv'", dict(fileName="result.npy", filetype="csv"), ValueError, "filetype='npy'"),
+        ("a name ending in .npy and filetype='CSV'", dict(fileName="result.npy", filetype="CSV"), ValueError, "filetype='npy'"),
         ("a file in a folder that does not exist", dict(fileName=os.path.join("missing", "result.npy")), FileNotFoundError, "missing")):
     path = os.path.join(tmpdir.name, given["fileName"])
     methods = [("saveToFile()", mdl.saveToFile)] + ([("The compiled module's saveToFile()", mdl.mdl.saveToFile)] if expected is ValueError else [])
