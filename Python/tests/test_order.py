@@ -3,8 +3,8 @@ UNIT TEST FOR CALLING THE METHODS OF A MODEL OBJECT IN THE WRONG ORDER.
 
 A model object is used in three steps: mdp() defines the model, solve() solves
 it, and the output methods (getPolicy(), getValueVector(), getAction(),
-getValue(), getRuntime(), getIterations(), hasConverged(), printPolicy(),
-printValueVector() and saveToFile()) report the solution. checkModel() needs
+getValue(), getGain(), getRuntime(), getIterations(), hasConverged(),
+printPolicy(), printValueVector() and saveToFile()) report the solution. checkModel() needs
 only mdp(). Before a solution exists, the solver
 holds a placeholder policy and value vector, a single -1 each, which the output
 methods used to return as if it were a solution: getPolicy() gave [-1] and
@@ -42,7 +42,9 @@ Sub-tests:
             getValueVector(), which are the known solution; printPolicy(),
             printValueVector() and the file of saveToFile() with them; and
             getIterations() and getRuntime() are a positive count and a time,
-            and hasConverged() is True.
+            and hasConverged() is True. The run is under the discounted
+            criterion, where getGain() raises a RuntimeError naming the average
+            reward criterion (test_gain.py tests it under that criterion).
             A later run of solve() rejected by its own checks leaves the
             solution in place.
 
@@ -90,6 +92,7 @@ OUTPUTMETHODS = {
     "printValueVector": dict(),
     "getAction": dict(stateIndex=1),
     "getValue": dict(stateIndex=1),
+    "getGain": dict(),
     "getPolicy": dict(),
     "getValueVector": dict(),
     "saveToFile": dict(fileName=OUTPUTFILE, type="policy"),
@@ -231,6 +234,12 @@ for rejected in (False, True):
     results, printed = {}, {}
     for method in OUTPUTMETHODS:
         removeoutputfile()
+        if method == "getGain":
+            # (the gain exists under the average reward criterion only)
+            error, output = attempt(lambda: call(mdl, method))
+            if type(error) is not RuntimeError or "average" not in str(error) or output:
+                sys.exit("Validation test failed at case 3: getGain() %s under the discounted criterion gave %r and printed %r, where it should raise a RuntimeError naming the average reward criterion and print nothing else." % (after, error, output.strip()))
+            continue
         try:
             results[method], printed[method] = quietly(lambda: call(mdl, method))
         except Exception as error:
