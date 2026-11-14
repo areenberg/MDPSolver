@@ -70,6 +70,7 @@ PYBIND11_MODULE(solvermodule, m) {
         .def("getValueVector", &ModuleInterface::getValueVector,"Returns the optimized value vector as a NumPy array.")
         .def("saveToFile", &ModuleInterface::saveToFile,"Saves the optimized policy or value vector to a NumPy .npy file (filetype='npy') or a comma-separated file (filetype='csv'), in any case; an empty fileName saves to result.npy or result.csv.",py::arg("fileName")="",py::arg("type")="policy",py::arg("filetype")="npy")
         .def("getConvergence", &ModuleInterface::getConvergence,"Returns whether the last solve converged, and if not, why.")
+        .def("getGainBounds", &ModuleInterface::getGainBounds,"Returns the lower and upper bound on the gain from the last solve under the average reward criterion (NaN after a solve under the discounted criterion).")
         .def("checkModel", &ModuleInterface::checkModel,"Checks the general MDP model for malformed input; returns a description of each kind of problem found. Never called by mdp() or solve().",py::arg("tolerance")=1e-9);
 
 }

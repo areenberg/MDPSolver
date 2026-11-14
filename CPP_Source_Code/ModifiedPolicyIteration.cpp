@@ -73,6 +73,8 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	diverged(false),
 	outOfRangeState(-1),
 	outOfRangeValue(0.0),
+	gainLower(numeric_limits<double>::quiet_NaN()),
+	gainUpper(numeric_limits<double>::quiet_NaN()),
 	parIter(0)
 {
 	//check valid string input
@@ -193,6 +195,19 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
     auto t2 = chrono::high_resolution_clock::now(); //stop time
 	duration = (double) chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count() / 1e6;
+
+	//BOUNDS ON THE GAIN
+
+	//every loop ends with an improvement step, v' = Lv, whose smallest and largest change
+	//(diffMin and diffMax) bound the gain under the average reward criterion. The policy
+	//found chose its actions in that step, so its gain is an average of v'-v, weighted by
+	//its limiting distribution, and lies between them; the optimal gain is at least the
+	//policy's, and at most the same average for an optimal policy, which is at most diffMax.
+	//They hold for any v, so also when a limit stopped the loops.
+	if (useAvg) {
+		gainLower = diffMin;
+		gainUpper = diffMax;
+	}
 
 	//POST PROCESSING
 

@@ -57,6 +57,8 @@ public:
     bool diverged; //the values became infinite or NaN, which ends the loops (a NaN norm passes their test)
     int outOfRangeState; //the first state with such a value (-1 if none)
     double outOfRangeValue; //and its value
+    double gainLower; //under the average reward criterion, a lower bound on the gain (NaN otherwise)
+    double gainUpper; //and an upper bound
     int getIterationLimit() { return iterLim; }
 
     //methods

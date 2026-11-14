@@ -342,7 +342,10 @@ void ModuleInterface::solve(string algorithm,
     results.outOfRangeState=solver.outOfRangeState;
     results.outOfRangeValue=solver.outOfRangeValue;
     results.iterationLimit=solver.getIterationLimit();
-        
+    //save the bounds on the gain (NaN under the discounted criterion)
+    results.gainLower=solver.gainLower;
+    results.gainUpper=solver.gainUpper;
+
 }
 
 void ModuleInterface::setInitPolicy(py::list initPolicy){
@@ -571,6 +574,10 @@ py::dict ModuleInterface::getConvergence(){
     convergence["outOfRangeValue"]=results.outOfRangeValue;
     convergence["iterationLimit"]=results.iterationLimit;
     return(convergence);
+}
+
+py::tuple ModuleInterface::getGainBounds(){
+    return(py::make_tuple(results.gainLower, results.gainUpper));
 }
 
 int ModuleInterface::getNumberOfStates(){

@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include <limits>
 
 #include "ModelType.h" //Generic model class
 #include "ModifiedPolicyIteration.h" //The solver
@@ -121,6 +122,9 @@ public:
         int outOfRangeState=-1;
         double outOfRangeValue=0.0;
         int iterationLimit=0;
+        //bounds on the gain under the average reward criterion (NaN after a solve under the discounted criterion)
+        double gainLower=numeric_limits<double>::quiet_NaN();
+        double gainUpper=numeric_limits<double>::quiet_NaN();
     } results;
 
     
@@ -194,6 +198,7 @@ public:
     py::array_t<double> getValueVector(); //returns the entire value vector, as a NumPy array (a copy)
     void saveToFile(string fileName, string type, string filetype); //save the policy or value vector to a NumPy .npy file or a comma-separated file (by default result.npy or result.csv when fileName is empty)
     py::dict getConvergence(); //whether the last solve converged, and if not, why
+    py::tuple getGainBounds(); //the lower and upper bound on the gain from the last solve under the average reward criterion
 
     //------ model check ------
 
