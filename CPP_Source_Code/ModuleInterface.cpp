@@ -418,14 +418,114 @@ void ModuleInterface::printValueVector(){
     }
 }
 
-void ModuleInterface::saveToFile(string fileName, string type){
+//---------------------------------------
+//  SAVING: the policy or the value vector
+//---------------------------------------
+//saveToFile() writes the policy or the value vector to a NumPy .npy file (filetype "npy", the
+//default) or to a comma-separated file (filetype "csv"). The .npy file holds a 1D array with an
+//entry per state, as np.save writes it, so that np.load gives what getPolicy() (int64) and
+//getValueVector() (float64) return. The comma-separated file has a header line and a row per
+//state: the state index, then the action index or the value.
+
+namespace {
+
+//the start of an .npy file (version 1.0) of a 1D array of n numbers of the NumPy type (e.g.
+//"i8"), in the computer's byte order: the magic string, the version, the length of the
+//header, and the header, padded with spaces so that the numbers start at a multiple of 64
+//bytes, as np.save aligns them (see "LOADING: NumPy .npy files" for the format)
+string npyStart(const string& type, size_t n){
+    const uint16_t one = 1;
+    const char order = (*(const unsigned char*)&one == 1) ? '<' : '>';
+    string header = "{'descr': '" + string(1, order) + type + "', 'fortran_order': False, 'shape': (" + to_string(n) + ",), }";
+    header.append((64 - (10 + header.size() + 1) % 64) % 64, ' ');
+    header += '\n';
+    string start = "\x93NUMPY";
+    start += (char)1;
+    start += (char)0;
+    start += (char)(header.size() & 0xff);
+    start += (char)(header.size() >> 8);
+    return start + header;
+}
+
+//closes a file that has been written, and throws if any of it could not be written (e.g. on a
+//full disk)
+void closeWritten(ofstream& outFile, const string& fileName){
+    outFile.close();
+    if (outFile.fail()){
+        throw runtime_error("saveToFile(): failed to write the file " + fileName + ".");
+    }
+}
+
+}
+
+void ModuleInterface::saveToFile(string fileName, string type, string filetype){
+    bool policy;
     if (type.compare("policy")==0 || type.compare("p")==0){
-        savePolicyToFile(fileName,',');    
+        policy = true;
     }else if(type.compare("value")==0 || type.compare("values")==0 || type.compare("v")==0){
-        saveValueVectorToFile(fileName,',');
+        policy = false;
     }else{
         throw invalid_argument("saveToFile(): the type '" + type + "' is not recognized. Select either 'policy' or 'value'.");
     }
+    //the filetype in any case, e.g. "NPY"
+    const string given = filetype;
+    transform(filetype.begin(), filetype.end(), filetype.begin(), [](unsigned char c){ return (char)tolower(c); });
+    if (filetype.compare("npy")!=0 && filetype.compare("csv")!=0){
+        throw invalid_argument("saveToFile(): the filetype '" + given + "' is not recognized. Select either 'npy' or 'csv'.");
+    }
+    const bool npy = (filetype.compare("npy")==0);
+
+    //the file name, by default result.npy or result.csv. A name ending in .csv or .npy must
+    //agree with the filetype, as mdp() reads a file by its extension.
+    if (fileName.empty()){
+        fileName = "result." + filetype;
+    }
+    const string other = npy ? ".csv" : ".npy";
+    if (hasExtension(fileName, other)){
+        throw invalid_argument("saveToFile(): the file name " + fileName + " ends in " + other + ", but the filetype is '" + filetype + "'. Use filetype='" + other.substr(1) + "' to save a " + (npy ? "comma-separated" : "NumPy .npy") + " file.");
+    }
+
+    if (npy && policy){
+        savePolicyToNpy(fileName);
+    }else if (npy){
+        saveValueVectorToNpy(fileName);
+    }else if (policy){
+        savePolicyToFile(fileName,',');
+    }else{
+        saveValueVectorToFile(fileName,',');
+    }
+}
+
+void ModuleInterface::savePolicyToNpy(string fileName){
+    ofstream outFile(fileName, ios::binary);
+    if (!outFile.is_open()) {
+        throw runtime_error("saveToFile(): failed to open the file " + fileName + " for writing.");
+    }
+    //as int64, as getPolicy() returns it, converted a block of states at a time
+    const vector<int>& policy = problem.policy.policy;
+    const string start = npyStart("i8", policy.size());
+    outFile.write(start.data(), (streamsize)start.size());
+    vector<int64_t> block(min(policy.size(), (size_t)65536));
+    for (size_t first = 0; first < policy.size(); first += block.size()) {
+        size_t n = min(block.size(), policy.size() - first);
+        for (size_t k = 0; k < n; k++) {
+            block[k] = policy[first + k];
+        }
+        outFile.write((const char*)block.data(), (streamsize)(n * sizeof(int64_t)));
+    }
+    closeWritten(outFile, fileName);
+}
+
+void ModuleInterface::saveValueVectorToNpy(string fileName){
+    ofstream outFile(fileName, ios::binary);
+    if (!outFile.is_open()) {
+        throw runtime_error("saveToFile(): failed to open the file " + fileName + " for writing.");
+    }
+    const vector<double>& values = problem.valueVector.valueVector;
+    const string start = npyStart("f8", values.size());
+    outFile.write(start.data(), (streamsize)start.size());
+    outFile.write((const char*)values.data(), (streamsize)(values.size() * sizeof(double)));
+    closeWritten(outFile, fileName);
 }
 
 void ModuleInterface::savePolicyToFile(string fileName, char sep){
@@ -437,7 +537,7 @@ void ModuleInterface::savePolicyToFile(string fileName, char sep){
     for (int sidx = 0; sidx < problem.policy.policy.size(); sidx++) {
         outFile << sidx << sep << problem.policy.policy[sidx] << endl;
     }
-    outFile.close();
+    closeWritten(outFile, fileName);
 }
 
 void ModuleInterface::saveValueVectorToFile(string fileName, char sep){
@@ -449,7 +549,7 @@ void ModuleInterface::saveValueVectorToFile(string fileName, char sep){
     for (int sidx = 0; sidx < problem.valueVector.valueVector.size(); sidx++) {
         outFile << sidx << sep << problem.valueVector.valueVector[sidx] << endl;
     }
-    outFile.close();
+    closeWritten(outFile, fileName);
 }
 
 double ModuleInterface::getRuntime(){
