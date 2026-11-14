@@ -396,15 +396,49 @@ class model:
         Raises RuntimeError if the last run of solve() used the discounted
         reward criterion.
         """
-        self._requireSolution("getGain")
-        if self._criterion != "average":
-            raise RuntimeError("The gain is defined under the average reward criterion, but the last run of solve() used criterion='%s'. Call solve(criterion='average') first." % self._criterion)
+        self._requireAverage("getGain", "gain")
         if not (bound is None or (isinstance(bound, str) and bound.lower() in ("lower", "upper"))):
             raise ValueError("Bound not recognized. Select either: None, 'lower', or 'upper'.")
         lower, upper = self.mdl.getGainBounds()
         if bound is None:
             return (lower + upper) / 2.0
         return lower if bound.lower() == "lower" else upper
+
+    @_oneAtATime
+    def getBias(self, stateIndex: int, referenceIndex: int = 0) -> float:
+        """
+        Get the bias (the relative value) of a state from the last run of
+        solve() under the average reward criterion, with the bias of a
+        reference state set to 0. Thus, the bias of a state is its value
+        minus the value of the reference state.
+
+        Args:
+            stateIndex (int): Index of the state.
+            referenceIndex (int): Index of the reference state, whose bias is 0.
+
+        Returns:
+            float: Bias of the given state.
+
+        Raises RuntimeError if the last run of solve() used the discounted
+        reward criterion, and IndexError for a state outside the model.
+        """
+        self._requireAverage("getBias", "bias")
+        numberOfStates = self.mdl.getNumberOfStates()
+        for name, index in (("state", stateIndex), ("reference state", referenceIndex)):
+            if not isinstance(index, numbers.Integral) or isinstance(index, bool):
+                raise TypeError("The %s needs to be an integer state index (got %r)." % (name, index))
+            if not 0 <= index < numberOfStates:
+                raise IndexError("The %s %d is outside the model, which has %d states (indices 0 to %d)." % (name, index, numberOfStates, numberOfStates - 1))
+        return self.mdl.getValue(stateIndex=int(stateIndex)) - self.mdl.getValue(stateIndex=int(referenceIndex))
+
+    def _requireAverage(self, method, quantity):
+        """
+        Raise RuntimeError unless the last run of solve() used the average
+        reward criterion.
+        """
+        self._requireSolution(method)
+        if self._criterion != "average":
+            raise RuntimeError("The %s is defined under the average reward criterion, but the last run of solve() used criterion='%s'. Call solve(criterion='average') first." % (quantity, self._criterion))
 
     @_oneAtATime
     def saveToFile(self, fileName: str | None = None, type: str = "policy", filetype: str = "npy") -> None:

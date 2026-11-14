@@ -74,7 +74,7 @@ jobs:
             python Python/tests/test_checkmodel.py &&
             python Python/tests/test_arrays.py &&
             python Python/tests/test_threads.py &&
-            python Python/tests/test_gain.py
+            python Python/tests/test_average.py
 
       - uses: actions/upload-artifact@v4
         with:
