@@ -192,7 +192,7 @@ public:
     int getNumberOfActions(int sidx); //returns the number of actions of a state of the general MDP model (-1 for the built-in models or a state outside the model)
     py::array_t<int64_t> getPolicy(); //returns the entire policy, as a NumPy array (a copy)
     py::array_t<double> getValueVector(); //returns the entire value vector, as a NumPy array (a copy)
-    void saveToFile(string fileName, string type); //save the policy or value vector to a file 
+    void saveToFile(string fileName, string type, string filetype); //save the policy or value vector to a NumPy .npy file or a comma-separated file (by default result.npy or result.csv when fileName is empty)
     py::dict getConvergence(); //whether the last solve converged, and if not, why
 
     //------ model check ------
@@ -224,6 +224,9 @@ private:
     //the elementwise formats from NumPy .npy files, read in blocks straight into the tables
     void loadRewardsFromNpy(string rewardsFromFile);
     void loadTranMatFromNpy(string tranMatFromFile);
+    //the policy or the value vector to a NumPy .npy file (a 1D array) or a comma-separated file
+    void savePolicyToNpy(string fileName);
+    void saveValueVectorToNpy(string fileName);
     void savePolicyToFile(string fileName, char sep);
     void saveValueVectorToFile(string fileName, char sep);
 

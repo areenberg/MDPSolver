@@ -373,27 +373,39 @@ class model:
         return self.mdl.getValueVector()
 
     @_oneAtATime
-    def saveToFile(self, fileName: str = "result.csv", type: str = "policy") -> None:
+    def saveToFile(self, fileName: str | None = None, type: str = "policy", filetype: str = "npy") -> None:
         """
         Save the optimized policy or value vector to a file.
 
         Args:
-            fileName (str): Name of the output file.
+            fileName (str): Name of the output file. By default result.npy, or result.csv when filetype is 'csv'.
             type (str): Type of result to save ('policy' or 'value').
+            filetype (str): Type of file to save ('npy' or 'csv'). 'npy' saves a NumPy .npy file of a 1D array with an entry per state, which np.load reads as the array getPolicy() (int64) or getValueVector() (float64) returns. 'csv' saves a comma-separated file with a header line and a row per state: the state index, then the action index or the value.
+
+        A file name ending in .csv with filetype 'npy', or in .npy with
+        filetype 'csv', raises a ValueError.
 
         Returns:
             None
         """
-        
+
         self._requireSolution("saveToFile")
         if not (type == "policy" or type == "value"):
             raise ValueError("Type not recognized. Select either: 'policy' or 'value'.")
+        if not (filetype == "npy" or filetype == "csv"):
+            raise ValueError("Filetype not recognized. Select either: 'npy' or 'csv'.")
+        if fileName is None:
+            fileName = "result." + filetype
+        # (mdp() reads a file by its extension)
+        other = ".csv" if filetype == "npy" else ".npy"
+        if str(fileName).lower().endswith(other):
+            raise ValueError("The file name %s ends in %s, but filetype is '%s'. Use filetype='%s' to save a %s file." % (fileName, other, filetype, other[1:], "comma-separated" if filetype == "npy" else "NumPy .npy"))
         error = _openError(fileName, "w")
         if error is not None:
             # (the argument type hides the built-in type())
             raise error.__class__("The file %s could not be opened for writing (%s)." % (fileName, error.strerror or error))
 
-        return self.mdl.saveToFile(fileName=fileName, type=type)
+        return self.mdl.saveToFile(fileName=fileName, type=type, filetype=filetype)
 
     @_oneAtATime
     def mdp(

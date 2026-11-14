@@ -81,7 +81,7 @@ if NSTATES < 2 or -1 in HUBPOLICY or np.any(HUBVALUES == -1.0):
 tmpdir = tempfile.TemporaryDirectory()
 
 # The output methods, each with the arguments of a call
-OUTPUTFILE = os.path.join(tmpdir.name, "policy.csv")
+OUTPUTFILE = os.path.join(tmpdir.name, "policy.npy")
 OUTPUTMETHODS = {
     "getRuntime": dict(),
     "getIterations": dict(),
@@ -254,11 +254,9 @@ for rejected in (False, True):
             or not np.allclose([float(line.split(": ")[1]) for line in lines], values, rtol=1e-5):
         sys.exit("Validation test failed at case 3: printValueVector() %s printed %r, where it should print the %d values of getValueVector()." % (after, printed["printValueVector"].strip(), NSTATES))
 
-    with open(OUTPUTFILE) as file:
-        rows = file.read().strip().splitlines()
-    expected = ["State_Index,Action_Index"] + ["%d,%d" % (s, a) for s, a in enumerate(policy)]
-    if rows != expected:
-        sys.exit("Validation test failed at case 3: saveToFile() %s wrote %r, where it should write %r." % (after, rows, expected))
+    saved = np.load(OUTPUTFILE, allow_pickle=False)
+    if list(saved) != policy:
+        sys.exit("Validation test failed at case 3: saveToFile() %s wrote %r, where it should write %r." % (after, list(saved), policy))
 
     iterations, runtime = results["getIterations"], results["getRuntime"]
     if not isinstance(iterations, int) or iterations < 1:
