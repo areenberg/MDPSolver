@@ -63,13 +63,16 @@ public:
 
     //methods
     void solve(ModelType * mdl, Policy * ply, ValueVector * vv);
-    
+    void evaluate(ModelType * mdl, Policy * ply, ValueVector * vv); //evaluates the policy without improving it (the algorithm is not used)
+
 private:
 
     //parameters
     double epsilon, diffMax, diffMin, diff, norm, tolerance, SORrelaxation, val, valBest, valSum, probSame, discount;
     int iterLim, parIter, parIterLim, PIparIterLim, sf, sidx, aidx, cidx, aBest, nJumps, nStates, nActions;
     bool useMPI, usePI, useVI, useStd, useGS, useSOR, useDis, useAvg, initPol, initVal, printStuff, postProcessing, makeFinalCheck, parallel;
+    bool evaluating; //true in evaluate(), false in solve()
+    int sweeps; //the number of sweeps of evaluate() (iter, the improvement steps, stays 0 there)
 
     //pointer to model, policy, and value vector
     ModelType * model;
@@ -84,9 +87,21 @@ private:
     vector<double> *vpTemp; //temporary pointer used when swapping vp and vpOld
 
     //methods
+    void prepare(ModelType * mdl, Policy * ply, ValueVector * vv); //the start of solve() and evaluate()
+    void finish(); //the end of solve() and evaluate(): the gain bounds, post-processing and final check
     void mainLoopModifiedPolicyIteration();
     void mainLoopValueIteration();
-    
+
+    //the evaluation of the policy: up to limit sweeps of v <- r_pi + discount P_pi v, stopped
+    //early once the norm of a sweep is below the tolerance; each returns the number of sweeps
+    //run. PI and MPI run them before every improvement step, and evaluate() until the tolerance.
+    int policyEvaluation(int limit); //picks the routine below for the model and the update
+    template <typename Prob> int evaluatePolicyCSR(const Prob* prob, int limit); //standard updates (serial computation)
+    template <typename Prob> int parEvaluatePolicyCSR(const Prob* prob, int limit); //standard updates (parallel computation)
+    template <typename Prob> int evaluatePolicySORCSR(const Prob* prob, int limit); //GS/SOR updates (serial computation)
+    int evaluatePolicy(int limit); //standard updates, for a model without tables (serial computation)
+    int evaluatePolicySOR(int limit); //GS/SOR updates, for a model without tables (serial computation)
+
     //models with CSR tables (e.g. the general MDP model): the loops read the tables directly
     //(templates on the type of the probabilities, double or float)
     template <typename Prob> void modifiedPolicyIterationCSR(const Prob* prob); //MPI/PI, standard updates (serial computation)

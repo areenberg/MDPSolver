@@ -263,8 +263,8 @@ void ModuleInterface::solve(string algorithm,
                             string criterion,
                             int parIterLim,
                             double SORrelaxation,
-                            py::list initPolicy,
-                            py::list initValueVector,
+                            py::object initPolicy,
+                            py::object initValueVector,
                             bool verbose,
                             bool postProcessing,
                             bool makeFinalCheck,
@@ -273,6 +273,11 @@ void ModuleInterface::solve(string algorithm,
     if (problem.problemType.empty()){
         throw runtime_error("No model has been defined. Call mdp() before solve().");
     }
+
+    //the initial policy and value vector, if given (model.py hands them to setInitialVectors()
+    //before it calls solve(), so that it prints the note of a warm start only for vectors that
+    //were accepted, and passes None here)
+    setInitialVectors(initPolicy, initValueVector, "initial policy", "initPolicy");
 
     //store solver settings
     settings.algorithm=algorithm;
@@ -285,8 +290,6 @@ void ModuleInterface::solve(string algorithm,
     settings.postProcessing=postProcessing;
     settings.makeFinalCheck=makeFinalCheck;
     settings.parallel=parallel;
-    setInitPolicy(initPolicy);
-    setInitValueVector(initValueVector);
 
     //From here on nothing touches a Python object, so Python's global interpreter lock is
     //released, and other Python threads run while the model is solved (models in several
@@ -300,10 +303,135 @@ void ModuleInterface::solve(string algorithm,
     settings.update, settings.criterion, settings.parIterLim, settings.SORrelaxation, settings.verbose,
     settings.postProcessing, settings.makeFinalCheck, settings.parallel);
 
-    //create model object
+    runSolver(solver, false);
+    storeResults(solver);
+}
+
+void ModuleInterface::evaluate(py::object policy,
+                               double tolerance,
+                               string update,
+                               string criterion,
+                               double SORrelaxation,
+                               py::object initValueVector,
+                               bool verbose,
+                               bool postProcessing,
+                               bool makeFinalCheck,
+                               bool parallel){
+    //evaluates the policy given, or else the policy of the last solve() or evaluate(), without
+    //improving it. The evaluation starts from initValueVector, or else from the values that a
+    //first solve() starts from, not from the values of an earlier run, so that its results
+    //depend only on the policy and the settings.
+
+    if (problem.problemType.empty()){
+        throw runtime_error("No model has been defined. Call mdp() before evaluate().");
+    }
+    if (isEmpty(policy) && !problem.policy.isSet){
+        throw runtime_error("No policy has been given, and solve() has not been run, so there is no policy to evaluate.");
+    }
+    if (!setInitialVectors(policy, initValueVector, "policy", "policy")){
+        problem.valueVector.isSet = false; //the solver initializes the values
+    }
+
+    //(as in solve(), nothing from here on touches a Python object)
+    py::gil_scoped_release releasedGIL;
+
+    //(the algorithm and the partial evaluation limit are not used)
+    ModifiedPolicyIteration solver(tolerance, "pi", update, criterion, 1, SORrelaxation, verbose,
+    postProcessing, makeFinalCheck, parallel);
+
+    runSolver(solver, true);
+    storeResults(solver);
+}
+
+namespace {
+
+//an int64 or float64 array that is C-contiguous is used as it is, without a copy; anything
+//else (another type, a view, a list) is converted
+typedef py::array_t<int64_t, py::array::c_style | py::array::forcecast> PolicyArray;
+typedef py::array_t<double, py::array::c_style | py::array::forcecast> ValueArray;
+
+}
+
+bool ModuleInterface::isEmpty(const py::object& vector){
+    //whether a policy or value vector is not given: None, or empty
+    return vector.is_none() || py::len(vector) == 0;
+}
+
+bool ModuleInterface::setInitialVectors(py::object policy, py::object values, string label, string name){
+    //Sets the policy and the value vector the solver starts from: the initial policy of solve()
+    //(label "initial policy", argument initPolicy) or the policy of evaluate() ("policy",
+    //policy), and the initial value vector (initValueVector). Each is a 1D NumPy array or None,
+    //and an empty one counts as not given; one not given is left as it is. Returns whether a
+    //value vector was given.
+    //
+    //Both are checked against the model before either is changed, in one pass over the states
+    //and with the error messages that model.py gave before 0.13 (ValueError in Python), so that
+    //a rejected call leaves the object as it was. Then they are copied straight into the
+    //solver's policy and value vector. model.py hands them over as C-contiguous int64 and
+    //float64 arrays, which are read in place; it has checked that their entries are numbers.
+
+    const bool policyGiven = !isEmpty(policy);
+    const bool valuesGiven = !isEmpty(values);
+    PolicyArray actions;
+    ValueArray initValues;
+    if (policyGiven){
+        actions = policy.cast<PolicyArray>();
+        if (actions.ndim() != 1){
+            throw invalid_argument("The " + label + " needs one action index per state, as a 1D array.");
+        }
+    }
+    if (valuesGiven){
+        initValues = values.cast<ValueArray>();
+        if (initValues.ndim() != 1){
+            throw invalid_argument("The initial value vector needs one value per state, as a 1D array.");
+        }
+    }
+
+    //the general MDP model: the lengths, then the actions (the number of states and actions
+    //of the built-in models is not known here)
+    if (problem.problemType.compare("mdp")==0){
+        const int64_t nStates = problem.tranMat.numberOfRows();
+        if (policyGiven && actions.size() != nStates){
+            throw invalid_argument("The " + label + " needs one action index per state (the model has " + to_string(nStates) + " states, " + name + " has " + to_string(actions.size()) + " elements).");
+        }
+        if (valuesGiven && initValues.size() != nStates){
+            throw invalid_argument("The initial value vector needs one value per state (the model has " + to_string(nStates) + " states, initValueVector has " + to_string(initValues.size()) + " elements).");
+        }
+        if (policyGiven){
+            const int64_t* a = actions.data();
+            for (int sidx = 0; sidx < (int)nStates; sidx++){
+                const int nActions = problem.tranMat.numberOfActions(sidx);
+                if (a[sidx] < 0 || a[sidx] >= nActions){
+                    throw invalid_argument("The " + label + " assigns action " + to_string(a[sidx]) + " to state " + to_string(sidx) + ", which has " + to_string(nActions) + " actions (indices 0 to " + to_string(nActions - 1) + ").");
+                }
+            }
+        }
+    }
+
+    //both are valid: copy them into the solver's policy and value vector
+    if (policyGiven){
+        const int64_t* a = actions.data();
+        problem.policy.setSize((int)actions.size());
+        int* out = problem.policy.policy.data();
+        for (py::ssize_t sidx = 0; sidx < actions.size(); sidx++){
+            out[sidx] = (int)a[sidx];
+        }
+        problem.policy.isSet = true;
+    }
+    if (valuesGiven){
+        problem.valueVector.setSize((int)initValues.size());
+        copy(initValues.data(), initValues.data() + initValues.size(), problem.valueVector.valueVector.begin());
+        problem.valueVector.isSet = true;
+    }
+    return valuesGiven;
+}
+
+void ModuleInterface::runSolver(ModifiedPolicyIteration& solver, bool evaluateOnly){
+    //creates the selected model, and solves it, or evaluates the policy on it
+
     if (problem.problemType.compare("mdp")==0){
         GeneralMDPmodel mdl(&problem.rewards,&problem.tranMat,problem.discount); //General MDP model
-        solver.solve(&mdl,&problem.policy,&problem.valueVector);
+        runSolverOn(solver, &mdl, evaluateOnly);
     }else if (problem.problemType.compare("tbm")==0){
         TBMmodel mdl(problem.discount, //Time-based maintenance model
         problem.components,
@@ -315,7 +443,7 @@ void ModuleInterface::solve(string algorithm,
         problem.failureProb,
         problem.failureProbMin,
         problem.failureProbHat);
-        solver.solve(&mdl,&problem.policy,&problem.valueVector);
+        runSolverOn(solver, &mdl, evaluateOnly);
     }else if(problem.problemType.compare("cbm")==0){
         CBMmodel mdl(problem.discount, //Condition-based maintenance model
         problem.components,
@@ -326,9 +454,19 @@ void ModuleInterface::solve(string algorithm,
         problem.setupCost,
         problem.failurePenalty,
         problem.kOfN);
-        solver.solve(&mdl,&problem.policy,&problem.valueVector);
+        runSolverOn(solver, &mdl, evaluateOnly);
     }
+}
 
+void ModuleInterface::runSolverOn(ModifiedPolicyIteration& solver, ModelType* mdl, bool evaluateOnly){
+    if (evaluateOnly){
+        solver.evaluate(mdl,&problem.policy,&problem.valueVector);
+    }else{
+        solver.solve(mdl,&problem.policy,&problem.valueVector);
+    }
+}
+
+void ModuleInterface::storeResults(ModifiedPolicyIteration& solver){
     //save duration (runtime) in milliseconds
     results.duration=solver.duration;
     //save the number of iterations (policy improvement steps)
@@ -348,31 +486,6 @@ void ModuleInterface::solve(string algorithm,
 
 }
 
-void ModuleInterface::setInitPolicy(py::list initPolicy){
-    if (initPolicy.size()>0){
-        //cout << "Initializing with policy:" << endl;
-        problem.policy.setSize(initPolicy.size());
-        for (int sidx=0; sidx<initPolicy.size(); sidx++){
-            int a = initPolicy[sidx].cast<int>();
-            //cout << a << endl;
-            problem.policy.assignPolicy(sidx,a);    
-        }
-        problem.policy.isSet=true;
-    }
-}
-
-void ModuleInterface::setInitValueVector(py::list initValueVector){
-    if (initValueVector.size()>0){
-        //cout << "Initializing with values:" << endl;
-        problem.valueVector.setSize(initValueVector.size());
-        for (int sidx=0; sidx<initValueVector.size(); sidx++){
-            double v = initValueVector[sidx].cast<double>();
-            //cout << v << endl;
-            problem.valueVector.assignValue(sidx,v);    
-        }
-        problem.valueVector.isSet=true;
-    }    
-}
 
 py::array_t<int64_t> ModuleInterface::getPolicy(){
     //a NumPy array of int64 (NumPy's default integer), copied from the policy
