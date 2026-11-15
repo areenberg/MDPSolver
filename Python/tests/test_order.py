@@ -6,7 +6,9 @@ it, and the output methods (getPolicy(), getValueVector(), getAction(),
 getValue(), getGain(), getBias(), getRuntime(), getIterations(),
 hasConverged(), printPolicy(), printValueVector() and saveToFile()) report
 the solution. checkModel() needs
-only mdp(). Before a solution exists, the solver
+only mdp(). evaluate(), which stands in for solve() when a policy is to be
+evaluated rather than optimized, is tested in test_evaluate.py, its order of
+calls included. Before a solution exists, the solver
 holds a placeholder policy and value vector, a single -1 each, which the output
 methods used to return as if it were a solution: getPolicy() gave [-1] and
 getValue(0) gave -1.0, also for a model of several states, and saveToFile()
@@ -102,7 +104,7 @@ OUTPUTMETHODS = {
 }
 
 # Every public method of the class other than these is an output method
-STEPMETHODS = {"initialize", "mdp", "solve", "checkModel"}
+STEPMETHODS = {"initialize", "mdp", "solve", "evaluate", "checkModel"}
 publicmethods = {name for name, _ in inspect.getmembers(mdpsolver.model, inspect.isfunction) if not name.startswith("_")}
 if publicmethods - STEPMETHODS != set(OUTPUTMETHODS):
     sys.exit("Validation test failed at initialization: the output methods of the model class are %s, but the test covers %s." % (sorted(publicmethods - STEPMETHODS), sorted(OUTPUTMETHODS)))

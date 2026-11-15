@@ -75,7 +75,9 @@ ModifiedPolicyIteration::ModifiedPolicyIteration(double epsilon, string algorith
 	outOfRangeValue(0.0),
 	gainLower(numeric_limits<double>::quiet_NaN()),
 	gainUpper(numeric_limits<double>::quiet_NaN()),
-	parIter(0)
+	parIter(0),
+	evaluating(false),
+	sweeps(0)
 {
 	//check valid string input
 	assert(update.compare("standard")==0 || update.compare("gs")==0 || update.compare("sor")==0);
@@ -92,7 +94,71 @@ ModifiedPolicyIteration::~ModifiedPolicyIteration() {
 
 void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector * vv){
 	//The MDP is solved using the selected optimality criterion.
-	
+
+	evaluating = false;
+	prepare(mdl, ply, vv);
+
+	//MAIN LOOP
+
+	auto t1 = chrono::high_resolution_clock::now(); //start timer
+
+	nStates = model->getNumberOfStates();
+	iter=0;
+
+	if (!useVI){
+		mainLoopModifiedPolicyIteration();
+	}else{
+		mainLoopValueIteration();
+	}
+
+	auto t2 = chrono::high_resolution_clock::now(); //stop time
+	duration = (double) chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count() / 1e6;
+
+	finish();
+}
+
+void ModifiedPolicyIteration::evaluate(ModelType * mdl, Policy * ply, ValueVector * vv){
+	//The policy is evaluated without being improved: the sweeps v <- r_pi + discount P_pi v of
+	//the evaluation step of policy iteration run until the norm of a sweep is below the
+	//tolerance, or the iteration limit. They are counted in sweeps; iter, the number of
+	//policy improvement steps, stays 0.
+	//
+	//Discounted, with standard updates: if v' is a sweep of v, the policy's values lie between
+	//v' + discount/(1-discount) min(v'-v) and v' + discount/(1-discount) max(v'-v) (Puterman,
+	//1994, Theorem 6.6.3, with the policy as the only one), so the correction of finish() makes
+	//them a lower bound less than epsilon below the values, once the span is below the tolerance.
+	//With GS/SOR updates the supremum norm stops the sweeps, as in solve().
+	//
+	//Average reward: the gain of the policy is an average of v'-v (weighted by a limiting
+	//distribution of the policy), so min(v'-v) and max(v'-v) bound it for any v, as in solve().
+
+	evaluating = true;
+	prepare(mdl, ply, vv);
+
+	auto t1 = chrono::high_resolution_clock::now(); //start timer
+
+	nStates = model->getNumberOfStates();
+	iter=0;
+	sweeps=0;
+
+	//in blocks of sweeps, so that verbose prints the progress between them; the blocks run
+	//the same sweeps as a single run to the limit would
+	const int block = 50;
+	while (norm >= tolerance && sweeps < iterLim){
+		sweeps += policyEvaluation(min(block, iterLim - sweeps));
+		print();
+	}
+
+	auto t2 = chrono::high_resolution_clock::now(); //stop time
+	duration = (double) chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count() / 1e6;
+
+	finish();
+}
+
+void ModifiedPolicyIteration::prepare(ModelType * mdl, Policy * ply, ValueVector * vv){
+	//The start of solve() and evaluate(): the policy and the value vector (unless they are
+	//set), the pointers to the value vectors, the tolerance, the discount and the relaxation.
+
     //initialize value vectors and their pointers
     model = mdl;
     tables = model->tables(); //nullptr for a model that computes its transitions on the fly
@@ -149,21 +215,22 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 	}
 
 	if (printStuff) {
-		cout << "Solving with ";
+		cout << (evaluating ? "Evaluating the policy with " : "Solving with ");
 		if (useAvg){
-			cout << "average";	
+			cout << "average";
 		}else if (useDis){
 			cout << "discounted";
 		}
 		cout << " reward optimality criterion, ";
-		if (useVI) {
-			cout << "VI";
+		if (evaluating) {
+			//(no algorithm)
+		} else if (useVI) {
+			cout << "VI algorithm, ";
 		} else if (usePI) {
-			cout << "PI";
+			cout << "PI algorithm, ";
 		} else {
-			cout << "MPI";
+			cout << "MPI algorithm, ";
 		}
-		cout << " algorithm, ";
 		if (useStd) {
 			cout << "Standard";
 		} else if (useGS) {
@@ -179,30 +246,20 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		}
 		cout << " norm stopping criterion." << endl;
 	}
+}
 
-	//MAIN LOOP
-	
-	auto t1 = chrono::high_resolution_clock::now(); //start timer
-
-	nStates = model->getNumberOfStates();
-	iter=0;
-
-	if (!useVI){
-		mainLoopModifiedPolicyIteration();
-	}else{
-		mainLoopValueIteration();
-	}	
-
-    auto t2 = chrono::high_resolution_clock::now(); //stop time
-	duration = (double) chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count() / 1e6;
+void ModifiedPolicyIteration::finish(){
+	//The end of solve() and evaluate(), after the main loop.
 
 	//BOUNDS ON THE GAIN
 
-	//every loop ends with an improvement step, v' = Lv, whose smallest and largest change
-	//(diffMin and diffMax) bound the gain under the average reward criterion. The policy
+	//every loop of solve() ends with an improvement step, v' = Lv, whose smallest and largest
+	//change (diffMin and diffMax) bound the gain under the average reward criterion. The policy
 	//found chose its actions in that step, so its gain is an average of v'-v, weighted by
 	//its limiting distribution, and lies between them; the optimal gain is at least the
 	//policy's, and at most the same average for an optimal policy, which is at most diffMax.
+	//evaluate() ends with a sweep v' = r_pi + P_pi v of the policy, whose gain lies between
+	//them for the same reason (but not the optimal gain).
 	//They hold for any v, so also when a limit stopped the loops.
 	if (useAvg) {
 		gainLower = diffMin;
@@ -213,7 +270,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 	//make sure v is the last updated vector if we use standard updates
 	if (postProcessing && useStd && vpOld != &valueVector->valueVector) { //vpOld points to last updated value vector at this point
-		valueVector->valueVector = v2; //copy content of v2 into v
+		valueVector->valueVector.swap(v2); //v takes over the contents of v2 (no copy; v2 is not used again)
 	}
 
 	//if using span stopping criterion alter final v using 6.6.12 in Puterman
@@ -236,7 +293,7 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		}			 
 	}
 
-	iterationLimitReached = (iter >= iterLim);
+	iterationLimitReached = evaluating ? (sweeps >= iterLim) : (iter >= iterLim);
 	//infinite or NaN values give a norm that is not finite, and NaN ends the loops
 	//as if the tolerance were reached (one scalar test, not a check of the model)
 	diverged = !isfinite(norm);
@@ -244,6 +301,8 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 		cout << "Algorithm terminated at iteration limit." << endl;
 	}else if (evaluationLimitReached && printStuff){
 		cout << "Policy evaluation terminated at its iteration limit." << endl;
+	}else if (printStuff && evaluating){
+		cout << "Policy evaluated in " << sweeps << " sweeps and " << duration << " milliseconds." << endl;
 	}else if (printStuff){
 		cout << "Solution found in " << iter << " iterations and " << duration << " milliseconds." << endl;
 	}
@@ -261,7 +320,9 @@ void ModifiedPolicyIteration::solve(ModelType * mdl, Policy * ply, ValueVector *
 
 void ModifiedPolicyIteration::print(){
 	if (printStuff) {
-			if (useMPI) {
+			if (evaluating) { //(called after every block of sweeps)
+				cout << sweeps << " sweeps, current v[0]: " << (*vpOld)[0] << ", norm: " << norm << endl;
+			} else if (useMPI) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", norm: " << norm << ", polChanges: " << polChanges << " parIter " << parIter << endl;
 			} else if (usePI) {
 				cout << iter << ", current v[0]: " << (*vpOld)[0] << ", polChanges: " << polChanges << " parIter " << parIter << endl;
@@ -312,6 +373,28 @@ void ModifiedPolicyIteration::mainLoopValueIteration(){
 			valueIterationSOR();
 		}else{ //standard updates, or Gauss-Seidel in place
 			valueIteration();
+		}
+	}
+}
+
+int ModifiedPolicyIteration::policyEvaluation(int limit){
+	//up to limit sweeps of the evaluation of the policy, with the routine that
+	//mainLoopModifiedPolicyIteration() would pick (Gauss-Seidel isolates the diagonal, as
+	//in PI and MPI); returns the number of sweeps run
+
+	if (tables != nullptr){
+		if (useStd && parallel){
+			if (tables->prob32 != nullptr){ return parEvaluatePolicyCSR(tables->prob32, limit); }else{ return parEvaluatePolicyCSR(tables->prob, limit); }
+		}else if (useStd){
+			if (tables->prob32 != nullptr){ return evaluatePolicyCSR(tables->prob32, limit); }else{ return evaluatePolicyCSR(tables->prob, limit); }
+		}else{ //Gauss-Seidel or SOR
+			if (tables->prob32 != nullptr){ return evaluatePolicySORCSR(tables->prob32, limit); }else{ return evaluatePolicySORCSR(tables->prob, limit); }
+		}
+	}else{
+		if (useStd){
+			return evaluatePolicy(limit);
+		}else{ //Gauss-Seidel or SOR
+			return evaluatePolicySOR(limit);
 		}
 	}
 }
@@ -452,33 +535,77 @@ void ModifiedPolicyIteration::valueIterationSOR(){
 }
 
 
+int ModifiedPolicyIteration::evaluatePolicy(int limit){
+	//up to limit sweeps of the evaluation of the policy on a built-in MDP model, with
+	//standard updates; returns the number of sweeps run
+	int sweeps;
+	for (sweeps=0; sweeps<limit; sweeps++){
+		if (norm>=tolerance){ //We allow early termination before limit iterations
+			norm = 0;
+			diffMax = -numeric_limits<double>::infinity();
+			diffMin = numeric_limits<double>::infinity();
+			for (sidx = 0; sidx < nStates; sidx++) {
+				valSum = 0;
+				sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
+				model->transProb(sidx, *policy->getPolicy(sidx), sf);
+				do {
+					valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
+					model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
+				} while (*model->getNextState() != sf);
+				val = model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum;
+				updateNorm(val);
+				(*vp)[sidx] = val;
+			}
+			swapPointers(); //for standard update
+		}else{
+			break; //stop the evaluation earlier
+		}
+	}
+	return sweeps;
+}
+
+int ModifiedPolicyIteration::evaluatePolicySOR(int limit){
+	//up to limit sweeps of the evaluation of the policy on a built-in MDP model, with
+	//GS or SOR updates; returns the number of sweeps run
+	int sweeps;
+	for (sweeps = 0; sweeps < limit; sweeps++) {
+		if (norm >= tolerance) { //we allow early termination before limit iterations
+			norm = 0;
+			diffMax = -numeric_limits<double>::infinity();
+			diffMin = numeric_limits<double>::infinity();
+
+			for (sidx = 0; sidx < nStates; sidx++) {
+				valSum = 0;
+				probSame = 0;
+				sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
+				model->transProb(sidx, *policy->getPolicy(sidx), sf);
+				do {
+					if (*model->getNextState() != sidx) { //skip diagonal element
+						valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
+					}else{
+						probSame = model->getPsj();
+					}
+					model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
+				} while (*model->getNextState() != sf);
+				val = (1 - SORrelaxation) * (*vpOld)[sidx] +
+					SORrelaxation / (1 - discount * probSame) *
+					(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR equation in paper
+				updateNorm(val);
+				(*vp)[sidx] = val;
+			}
+		} else {
+			break; //stop the evaluation earlier
+		}
+	}
+	return sweeps;
+}
+
 void ModifiedPolicyIteration::modifiedPolicyIteration(){
 	//employ modified or common policy iteration on
 	//a built-in MDP model
 
 	do{
-		for (parIter=0; parIter<parIterLim; parIter++){
-			if (norm>=tolerance){ //We allow early termination before parIterLim iterations
-				norm = 0;
-				diffMax = -numeric_limits<double>::infinity();
-				diffMin = numeric_limits<double>::infinity();
-				for (sidx = 0; sidx < nStates; sidx++) {
-					valSum = 0;
-					sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
-					model->transProb(sidx, *policy->getPolicy(sidx), sf);
-					do {
-						valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
-						model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
-					} while (*model->getNextState() != sf);
-					val = model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum;
-					updateNorm(val);
-					(*vp)[sidx] = val;
-				}
-				swapPointers(); //for standard update
-			}else{
-				break; //stop partial evaluation earlier
-			}
-		}
+		parIter = evaluatePolicy(parIterLim); //partial evaluation, stopped earlier once the norm is below the tolerance
 
 		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
@@ -525,35 +652,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSOR(){
 	//a built-in MDP model using GS or SOR updates
 
 	do{
-		for (parIter = 0; parIter < parIterLim; parIter++) {
-			if (norm >= tolerance) { //we allow early termination before parIterLim iterations
-				norm = 0;
-				diffMax = -numeric_limits<double>::infinity();
-				diffMin = numeric_limits<double>::infinity();
-
-				for (sidx = 0; sidx < nStates; sidx++) {
-					valSum = 0;
-					probSame = 0;
-					sf = model->postDecisionIdx(sidx, *policy->getPolicy(sidx));
-					model->transProb(sidx, *policy->getPolicy(sidx), sf);
-					do {
-						if (*model->getNextState() != sidx) { //skip diagonal element
-							valSum += model->getPsj() * (*vpOld)[*model->getNextState()];
-						}else{
-							probSame = model->getPsj();
-						}
-						model->updateNextState(sidx, *policy->getPolicy(sidx), *model->getNextState());
-					} while (*model->getNextState() != sf);
-					val = (1 - SORrelaxation) * (*vpOld)[sidx] +
-						SORrelaxation / (1 - discount * probSame) *
-						(model->reward(sidx, *policy->getPolicy(sidx)) + discount * valSum); //SOR equation in paper
-					updateNorm(val);
-					(*vp)[sidx] = val;
-				}
-			} else {
-				break; //stop partial evaluation earlier
-			}
-		}
+		parIter = evaluatePolicySOR(parIterLim); //partial evaluation, stopped earlier once the norm is below the tolerance
 
 		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
@@ -690,6 +789,94 @@ inline double actionValueSOR(const CSRTables& t, const Prob* prob, int s, int a,
 
 }
 
+//the evaluation of the policy, up to limit sweeps (see policyEvaluation()); PI and MPI run
+//it before every improvement step, and evaluate() until the tolerance
+
+template <typename Prob>
+int ModifiedPolicyIteration::evaluatePolicyCSR(const Prob* prob, int limit){
+	//standard updates (serial computation); returns the number of sweeps run
+	const CSRTables& t = *tables;
+	const int* pol = policy->policy.data();
+	int sweeps;
+	for (sweeps = 0; sweeps < limit; sweeps++){
+		if ( norm >= tolerance ) { //We allow early termination before limit iterations
+			norm = 0;
+			diffMax = -numeric_limits<double>::infinity();
+			diffMin = numeric_limits<double>::infinity();
+			const double* vOld = vpOld->data();
+			double* vNew = vp->data();
+			for (int s = 0; s < nStates; s++) {
+				double val = actionValue(t, prob, s, pol[s], vOld, discount);
+				updateNorm(val, vOld[s]);
+				vNew[s] = val;
+			}
+			swapPointers(); //for standard update
+		} else {
+			break; //stop the evaluation earlier
+		}
+	}
+	return sweeps;
+}
+
+template <typename Prob>
+int ModifiedPolicyIteration::parEvaluatePolicyCSR(const Prob* prob, int limit){
+	//standard updates, each sweep in parallel; returns the number of sweeps run
+	const CSRTables& t = *tables;
+	const int n = nStates;
+	const double disc = discount;
+	const int* pol = policy->policy.data();
+	int sweeps;
+	for (sweeps = 0; sweeps < limit; sweeps++){
+		if (norm >= tolerance) { //We allow early termination before limit iterations
+			const double* vOld = vpOld->data();
+			double* vNew = vp->data();
+			double dMax = -numeric_limits<double>::infinity();
+			double dMin = numeric_limits<double>::infinity();
+			#pragma omp parallel for reduction(max:dMax) reduction(min:dMin)
+			for (int s = 0; s < n; s++) {
+				double val = actionValue(t, prob, s, pol[s], vOld, disc);
+				double d = val - vOld[s];
+				if (d > dMax) {
+					dMax = d;
+				}
+				if (d < dMin) {
+					dMin = d;
+				}
+				vNew[s] = val;
+			}
+			setNorm(dMax, dMin);
+			swapPointers(); //for standard update
+		} else {
+			break; //stop the evaluation earlier
+		}
+	}
+	return sweeps;
+}
+
+template <typename Prob>
+int ModifiedPolicyIteration::evaluatePolicySORCSR(const Prob* prob, int limit){
+	//Gauss-Seidel or SOR updates, in place; returns the number of sweeps run
+	const CSRTables& t = *tables;
+	double* v = vp->data(); //vp and vpOld point to the same vector
+	const int* pol = policy->policy.data();
+	int sweeps;
+	for (sweeps = 0; sweeps < limit; sweeps++) {
+		if (norm >= tolerance) { //we allow early termination before limit iterations
+			norm = 0;
+			diffMax = -numeric_limits<double>::infinity();
+			diffMin = numeric_limits<double>::infinity();
+			for (int s = 0; s < nStates; s++) {
+				double val = actionValueSOR(t, prob, s, pol[s], v, discount, SORrelaxation);
+				updateNorm(val, v[s]);
+				v[s] = val;
+			}
+		}else{
+			break; //stop the evaluation earlier
+		}
+	}
+	return sweeps;
+}
+
 template <typename Prob>
 void ModifiedPolicyIteration::valueIterationCSR(const Prob* prob){
 	//value iteration with standard updates, or with Gauss-Seidel updates, which are the
@@ -816,23 +1003,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationCSR(const Prob* prob){
 	int* pol = policy->policy.data();
 
 	do{
-		for (parIter = 0; parIter < parIterLim; parIter++){
-			if ( norm >= tolerance ) { //We allow early termination before parIterLim iterations
-				norm = 0;
-				diffMax = -numeric_limits<double>::infinity();
-				diffMin = numeric_limits<double>::infinity();
-				const double* vOld = vpOld->data();
-				double* vNew = vp->data();
-				for (int s = 0; s < nStates; s++) {
-					double val = actionValue(t, prob, s, pol[s], vOld, discount);
-					updateNorm(val, vOld[s]);
-					vNew[s] = val;
-				}
-				swapPointers(); //for standard update
-			} else {
-				break; //stop partial evaluation earlier
-			}
-		}
+		parIter = evaluatePolicyCSR(prob, parIterLim); //partial evaluation, stopped earlier once the norm is below the tolerance
 
 		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;
@@ -875,30 +1046,7 @@ void ModifiedPolicyIteration::parModifiedPolicyIterationCSR(const Prob* prob){
 	int* pol = policy->policy.data();
 
 	do{
-		for (parIter = 0; parIter < parIterLim; parIter++){
-			if (norm >= tolerance) { //We allow early termination before parIterLim iterations
-				const double* vOld = vpOld->data();
-				double* vNew = vp->data();
-				double dMax = -numeric_limits<double>::infinity();
-				double dMin = numeric_limits<double>::infinity();
-				#pragma omp parallel for reduction(max:dMax) reduction(min:dMin)
-				for (int s = 0; s < n; s++) {
-					double val = actionValue(t, prob, s, pol[s], vOld, disc);
-					double d = val - vOld[s];
-					if (d > dMax) {
-						dMax = d;
-					}
-					if (d < dMin) {
-						dMin = d;
-					}
-					vNew[s] = val;
-				}
-				setNorm(dMax, dMin);
-				swapPointers(); //for standard update
-			} else {
-				break; //stop partial evaluation earlier
-			}
-		}
+		parIter = parEvaluatePolicyCSR(prob, parIterLim); //partial evaluation, stopped earlier once the norm is below the tolerance
 
 		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		int changes = 0;
@@ -995,20 +1143,7 @@ void ModifiedPolicyIteration::modifiedPolicyIterationSORCSR(const Prob* prob){
 	int* pol = policy->policy.data();
 
 	do{
-		for (parIter = 0; parIter < parIterLim; parIter++) {
-			if (norm >= tolerance) { //we allow early termination before parIterLim iterations
-				norm = 0;
-				diffMax = -numeric_limits<double>::infinity();
-				diffMin = numeric_limits<double>::infinity();
-				for (int s = 0; s < nStates; s++) {
-					double val = actionValueSOR(t, prob, s, pol[s], v, discount, SORrelaxation);
-					updateNorm(val, v[s]);
-					v[s] = val;
-				}
-			}else{
-				break; //stop partial evaluation earlier
-			}
-		}
+		parIter = evaluatePolicySORCSR(prob, parIterLim); //partial evaluation, stopped earlier once the norm is below the tolerance
 
 		if (usePI && parIter == parIterLim) { evaluationLimitReached = true; }
 		polChanges = 0;

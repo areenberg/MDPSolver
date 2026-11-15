@@ -18,7 +18,7 @@ from mdpsolver import solvermodule
 
 class ConvergenceWarning(UserWarning):
     """
-    Issued by solve() when a run has not converged.
+    Issued by solve() and evaluate() when a run has not converged.
     """
 
 def _openError(fileName, mode="r"):
@@ -78,13 +78,56 @@ def _asInput(name, value, integer=False, toArray=False, keepFloat32=False):
     return np.ascontiguousarray(array, dtype=np.int64)
 
 
-def _asList(value):
-    """An initial policy or value vector as a list (e.g. from a NumPy array or a tuple)."""
-    if isinstance(value, list):
-        return value
-    if hasattr(value, "tolist"):
-        value = value.tolist()
-    return list(value) if not isinstance(value, (str, bytes)) else value
+def _asVector(label, value, integer):
+    """
+    A policy (integer) or a value vector given to solve() or evaluate(), as a 1D, C-contiguous
+    NumPy array of int64 or float64, which the compiled module reads in place: an array that
+    already is one is passed on as it is, without a copy, and a list is converted once. None
+    when it is empty (not given). Raises TypeError for an entry that is not an integer (not a
+    number); the compiled module checks the length and the action indices against the model,
+    in one pass over the states (setInitialVectors()).
+    """
+    if value is None or isinstance(value, (str, bytes)):
+        raise TypeError("The %s needs a list or a NumPy array, not %r." % (label, value))
+    try:
+        array = np.asarray(value)
+    except (ValueError, TypeError):
+        array = None    # e.g. entries of different lengths, found below
+    if array is not None and array.ndim == 0:
+        raise TypeError("The %s needs a list or a NumPy array, not %r." % (label, value))
+    if array is not None and array.ndim == 1:
+        if array.size == 0:
+            return None
+        # (booleans are integers in Python, as before)
+        if array.dtype.kind in ("biu" if integer else "biuf"):
+            return np.ascontiguousarray(array, dtype=np.int64 if integer else np.float64)
+    # Otherwise, name the first entry that is not an integer (a number), as the checks
+    # of every entry did before; only this path looks at the entries one by one
+    entries = value.tolist() if hasattr(value, "tolist") else list(value)
+    kind = numbers.Integral if integer else numbers.Real
+    for state, entry in enumerate(entries):
+        if not isinstance(entry, kind):
+            raise TypeError("The %s needs %s for every state (state %d has %r)." % (label, "an integer action index" if integer else "a number", state, entry))
+    # (numbers that NumPy keeps as Python objects)
+    return np.array(entries, dtype=np.int64 if integer else np.float64)
+
+
+def _checkSettings(tolerance, update, criterion):
+    """Raise ValueError for a tolerance, update or criterion that solve() and evaluate() do not accept."""
+    if tolerance <= 0.0 or tolerance >= 1.0:
+        raise ValueError("The tolerance needs to be between 0.0 and 1.0 (i.e. 0 < tolerance < 1).")
+    if not (update == "standard" or update == "gs" or update == "sor"):
+        raise ValueError("Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
+    if not (criterion == "discounted" or criterion == "average"):
+        raise ValueError("Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
+    if criterion == "average" and (update == "gs" or update == "sor"):
+        raise ValueError("Gauss-Seidel and SOR updates are not available with the average reward criterion. Select update='standard'.")
+
+
+def _checkRelaxation(update, SORrelaxation):
+    """Raise ValueError for a relaxation parameter outside (0, 2) with SOR updates."""
+    if (SORrelaxation <= 0.0 or SORrelaxation >= 2.0) and update == "sor":
+        raise ValueError("The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
 
 
 def _oneAtATime(method):
@@ -120,18 +163,20 @@ class model:
         self.mdl = solvermodule.Model()
         # A model object contains only one model
         self._modelDefined = False
+        # Whether solve() or evaluate() has run, so that the object holds results
         self._solved = False
-        # The optimality criterion of the last run of solve()
+        # The optimality criterion of the last run of solve() or evaluate(), and which of them ran
         self._criterion = None
+        self._lastRun = None
 
     def _requireSolution(self, method):
         """
-        Raise RuntimeError unless solve() has run on this model object.
+        Raise RuntimeError unless solve() or evaluate() has run on this model object.
         """
         if not self._modelDefined:
-            raise RuntimeError("No model has been defined and solved for this model object, so %s() has no solution to use. Call mdp() and then solve() first." % method)
+            raise RuntimeError("No model has been defined and solved for this model object, so %s() has no solution to use. Call mdp() and then solve() (or evaluate()) first." % method)
         if not self._solved:
-            raise RuntimeError("The model has not been solved yet, so %s() has no solution to use. Call solve() first." % method)
+            raise RuntimeError("The model has not been solved yet, so %s() has no solution to use. Call solve() (or evaluate()) first." % method)
 
     @_oneAtATime
     def solve(
@@ -177,48 +222,31 @@ class model:
         
         if not self._modelDefined:
             raise RuntimeError("No model has been defined for this model object. Call mdp() before solve().")
-        initPolicy = _asList(initPolicy)
-        initValueVector = _asList(initValueVector)
         if not (algorithm == "mpi" or algorithm == "pi" or algorithm == "vi"):
             raise ValueError("Algorithm type not recognized. Select either: 'mpi', 'pi', or 'vi'.")
-        if tolerance <= 0.0 or tolerance >= 1.0:
-            raise ValueError("The tolerance needs to be between 0.0 and 1.0 (i.e. 0 < tolerance < 1).")
-        if not (update == "standard" or update == "gs" or update == "sor"):
-            raise ValueError("Update method not recognized. Select either: 'standard', 'gs', or 'sor'.")
-        if not (criterion == "discounted" or criterion == "average"):
-            raise ValueError("Optimality criterion not recognized. Select either: 'discounted' or 'average'.")
-        if criterion == "average" and (update == "gs" or update == "sor"):
-            raise ValueError("Gauss-Seidel and SOR updates are not available with the average reward criterion. Select update='standard'.")
+        _checkSettings(tolerance, update, criterion)
         if parIterLim <= 0 and algorithm == "mpi":
             raise ValueError("The partial evaluation limit needs to be a positive number.")
-        if (SORrelaxation <= 0.0 or SORrelaxation >= 2.0) and update == "sor":
-            raise ValueError("The relaxation parameter needs to be between 0.0 and 2.0 (i.e. 0 < SORrelaxation < 2).")
-        if len(initPolicy) > 0 or len(initValueVector) > 0:
-            numberOfStates = self.mdl.getNumberOfStates()
-            if numberOfStates >= 0 and len(initPolicy) > 0 and len(initPolicy) != numberOfStates:
-                raise ValueError("The initial policy needs one action index per state (the model has %d states, initPolicy has %d elements)." % (numberOfStates, len(initPolicy)))
-            if numberOfStates >= 0 and len(initValueVector) > 0 and len(initValueVector) != numberOfStates:
-                raise ValueError("The initial value vector needs one value per state (the model has %d states, initValueVector has %d elements)." % (numberOfStates, len(initValueVector)))
-            for stateIndex, value in enumerate(initValueVector):
-                if not isinstance(value, numbers.Real):
-                    raise TypeError("The initial value vector needs a number for every state (state %d has %r)." % (stateIndex, value))
-            if numberOfStates >= 0 and len(initPolicy) > 0:
-                for stateIndex, action in enumerate(initPolicy):
-                    if not isinstance(action, numbers.Integral):
-                        raise TypeError("The initial policy needs an integer action index for every state (state %d has %r)." % (stateIndex, action))
-                    numberOfActions = self.mdl.getNumberOfActions(stateIndex=stateIndex)
-                    if not 0 <= action < numberOfActions:
-                        raise ValueError("The initial policy assigns action %s to state %d, which has %d actions (indices 0 to %d)." % (action, stateIndex, numberOfActions, numberOfActions - 1))
+        _checkRelaxation(update, SORrelaxation)
+        # NumPy arrays, read in place by the compiled module (None if not given)
+        initValueVector = _asVector("initial value vector", initValueVector, integer=False)
+        initPolicy = _asVector("initial policy", initPolicy, integer=True)
+
+        # The compiled module checks the lengths and the actions against the model
+        # (ValueError) before it changes anything, and sets the vectors
+        if initPolicy is not None or initValueVector is not None:
+            self.mdl.setInitialVectors(policy=initPolicy, initValueVector=initValueVector, label="initial policy", name="initPolicy")
 
         # The solver keeps the policy and the value vector of the previous run,
         # unless initPolicy or initValueVector replace them.
 
         if self._solved:
             # Value iteration never uses the policy it starts from
-            reusesPolicy = len(initPolicy) == 0 and algorithm != "vi"
-            reusesValueVector = len(initValueVector) == 0
+            reusesPolicy = initPolicy is None and algorithm != "vi"
+            reusesValueVector = initValueVector is None
             if reusesPolicy or reusesValueVector:
-                print("Note: This model has been solved before. Create a new model object to run solver with initial values.", flush=True)
+                before = "This model has been solved before." if self._lastRun == "solve" else "A policy has been evaluated on this model before."
+                print("Note: %s Create a new model object to run solver with initial values." % before, flush=True)
 
         self.mdl.solve(
             algorithm=algorithm,
@@ -227,8 +255,6 @@ class model:
             criterion=criterion,
             parIterLim=parIterLim,
             SORrelaxation=SORrelaxation,
-            initPolicy=initPolicy,
-            initValueVector=initValueVector,
             verbose=verbose,
             postProcessing=postProcessing,
             makeFinalCheck=makeFinalCheck,
@@ -238,26 +264,112 @@ class model:
         # object without a solution
         self._solved = True
         self._criterion = criterion
+        self._lastRun = "solve"
+        self._warnConvergence("solve()", criterion, update, postProcessing)
 
+    def _warnConvergence(self, method, criterion, update, postProcessing):
+        """
+        Issue a ConvergenceWarning if the run of solve() or evaluate() (the
+        method) that just finished has not converged.
+        """
+        # (stacklevel 4 names the line that called solve() or evaluate(): this
+        # method, the method, and the lock of _oneAtATime come first)
         convergence = self.mdl.getConvergence()
-        hint = " Under the average reward criterion, this happens with periodic models." if criterion == "average" else ""
-        if convergence["iterationLimitReached"]:
-            warnings.warn("solve() stopped at the iteration limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=2)
+        hint = ""
+        if criterion == "average" and method == "solve()":
+            hint = " Under the average reward criterion, this happens with periodic models."
+        elif criterion == "average":
+            hint = " Under the average reward criterion, this happens with periodic policies, and with policies whose gain differs between states."
+        if convergence["iterationLimitReached"] and method == "evaluate()":
+            warnings.warn("evaluate() stopped at its limit of %d value updates before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=4)
+        elif convergence["iterationLimitReached"]:
+            warnings.warn("%s stopped at the iteration limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (method, convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=4)
         elif convergence["evaluationLimitReached"]:
-            warnings.warn("A policy evaluation of policy iteration stopped at its limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=2)
+            warnings.warn("A policy evaluation of policy iteration stopped at its limit of %d iterations before reaching the tolerance, so the results have not converged.%s" % (convergence["iterationLimit"], hint), ConvergenceWarning, stacklevel=4)
         if convergence["valuesOutOfRange"] and not postProcessing and update == "standard":
             # The values are left uncorrected, and may lie outside the range
             # even when the policy is right
-            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow. With postProcessing=False, the values are not corrected and may lie outside it; use postProcessing=True for correct values, or makeFinalCheck=False to skip the check." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=2)
+            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow. With postProcessing=False, the values are not corrected and may lie outside it; use postProcessing=True for correct values, or makeFinalCheck=False to skip the check." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=4)
         elif convergence["valuesOutOfRange"]:
-            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow, so the results are wrong. checkModel() can look for errors in the model." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=2)
+            warnings.warn("The final check found the value %r in state %d, outside the range that the rewards and the discount allow, so the results are wrong. checkModel() can look for errors in the model." % (convergence["outOfRangeValue"], convergence["outOfRangeState"]), ConvergenceWarning, stacklevel=4)
         elif convergence["diverged"]:
-            warnings.warn("solve() stopped because the values became infinite or NaN, so the results are wrong. checkModel() can look for errors in the model.", ConvergenceWarning, stacklevel=2)
+            warnings.warn("%s stopped because the values became infinite or NaN, so the results are wrong. checkModel() can look for errors in the model." % method, ConvergenceWarning, stacklevel=4)
+
+    @_oneAtATime
+    def evaluate(
+        self,
+        policy: "list | numpy.ndarray" = list(),
+        tolerance: float = 1e-3,
+        update: str = "standard",
+        criterion: str = "discounted",
+        SORrelaxation: float = 1.0,
+        initValueVector: "list | numpy.ndarray" = list(),
+        verbose: bool = False,
+        postProcessing: bool = True,
+        makeFinalCheck: bool = True,
+        parallel: bool = True,
+    ) -> None:
+        """
+        Evaluate a policy without improving it: compute its value vector,
+        and under the average reward criterion its gain and bias.
+
+        Args:
+            policy (list or NumPy array): The policy to evaluate, one valid action index per state. By default the policy of the last run of solve() or evaluate().
+            tolerance (float): Convergence threshold for the evaluation (0 < tolerance < 1).
+            update (str): The value-update method ('standard', 'gs' or 'sor'; only 'standard' with the average reward criterion).
+            criterion (str): The optimality criterion the policy is evaluated under: 'discounted' (with the discount given to mdp()) or 'average'.
+            SORrelaxation (float): Relaxation parameter for the Successive Over-Relaxation method.
+            initValueVector (list or NumPy array): The initial value vector, one value per state. By default the evaluation starts from the values a first run of solve() starts from.
+            verbose (bool): If True, prints the progress of the evaluation to console.
+            postProcessing (bool): If True, performs post-processing after evaluating.
+            makeFinalCheck (bool): If True, makes a final check of the value vector. This process checks if the resulting values are reasonable.
+            parallel (bool): If True, enables parallel computation for faster evaluation. This option is only available for the custom MDP model with standard updates.
+
+        The values are updated with the actions of the policy, as in the
+        evaluation step of policy iteration, until an update changes them by
+        less than the tolerance. The output methods then report the
+        evaluation: getPolicy() returns the policy evaluated,
+        getValueVector() its values, and getGain() and getBias() its gain and
+        bias. No policy improvement step is made, so getIterations() returns
+        0. A later run of solve() starts from this policy and value vector.
+
+        Returns:
+            None
+        """
+
+        if not self._modelDefined:
+            raise RuntimeError("No model has been defined for this model object. Call mdp() before evaluate().")
+        # NumPy arrays, read in place by the compiled module (None if not given)
+        _checkSettings(tolerance, update, criterion)
+        _checkRelaxation(update, SORrelaxation)
+        initValueVector = _asVector("initial value vector", initValueVector, integer=False)
+        policy = _asVector("policy", policy, integer=True)
+        if policy is None and not self._solved:
+            raise RuntimeError("No policy has been given, and solve() has not been run on this model object, so there is no policy to evaluate. Give the policy with evaluate(policy=...), or call solve() first.")
+
+        # The compiled module checks the length of the vectors and the actions
+        # of the policy against the model (ValueError), before it changes anything
+        self.mdl.evaluate(
+            policy=policy,
+            tolerance=tolerance,
+            update=update,
+            criterion=criterion,
+            SORrelaxation=SORrelaxation,
+            initValueVector=initValueVector,
+            verbose=verbose,
+            postProcessing=postProcessing,
+            makeFinalCheck=makeFinalCheck,
+            parallel=parallel,
+        )
+        self._solved = True
+        self._criterion = criterion
+        self._lastRun = "evaluate"
+        self._warnConvergence("evaluate()", criterion, update, postProcessing)
 
     @_oneAtATime
     def hasConverged(self) -> bool:
         """
-        Whether the last run of solve() converged.
+        Whether the last run of solve() or evaluate() converged.
 
         Returns:
             bool: True if the last run converged.
@@ -301,7 +413,8 @@ class model:
         """
         Get the number of iterations of the last solver execution.
         An iteration is one policy improvement step, i.e. one update that
-        chooses the best action in every state.
+        chooses the best action in every state. evaluate() makes none, so
+        after evaluate() it is 0.
 
         Returns:
             int: Number of iterations.
@@ -324,7 +437,7 @@ class model:
     @_oneAtATime
     def getAction(self, stateIndex: int = 0) -> int:
         """
-        Get the action from the optimized policy for a specific state.
+        Get the action from the optimized (or evaluated) policy for a specific state.
 
         Args:
             stateIndex (int): Index of the state.
@@ -340,7 +453,7 @@ class model:
     @_oneAtATime
     def getValue(self, stateIndex: int = 0) -> float:
         """
-        Get the value from the optimized value vector for a specific state.
+        Get the value from the optimized (or evaluated) value vector for a specific state.
 
         Args:
             stateIndex (int): Index of the state.
@@ -356,10 +469,10 @@ class model:
     @_oneAtATime
     def getPolicy(self) -> np.ndarray:
         """
-        Get the entire optimized policy.
+        Get the entire optimized (or evaluated) policy.
 
         Returns:
-            numpy.ndarray: The optimized policy, the action index (int64) of each state.
+            numpy.ndarray: The policy, the action index (int64) of each state.
         """
         self._requireSolution("getPolicy")
         return self.mdl.getPolicy()
@@ -367,10 +480,10 @@ class model:
     @_oneAtATime
     def getValueVector(self) -> np.ndarray:
         """
-        Get the entire optimized value vector.
+        Get the entire optimized (or evaluated) value vector.
 
         Returns:
-            numpy.ndarray: The optimized value vector, the value (float64) of each state.
+            numpy.ndarray: The value vector, the value (float64) of each state.
         """
         self._requireSolution("getValueVector")
         return self.mdl.getValueVector()
@@ -379,13 +492,14 @@ class model:
     def getGain(self, bound: str | None = None) -> float:
         """
         Get the gain, the long-run average reward per period, from the last
-        run of solve() under the average reward criterion.
+        run of solve() or evaluate() under the average reward criterion.
 
         The smallest and largest change of the values in the last iteration
         of solve() are a lower and an upper bound on the gain: the gain of the
-        optimized policy and the optimal gain both lie between them. When
-        solve() has converged, the bounds are less than the tolerance apart,
-        so their midpoint is within half the tolerance of the gain.
+        optimized policy and the optimal gain both lie between them. After
+        evaluate(), they bound the gain of the evaluated policy. When the run
+        has converged, the bounds are less than the tolerance apart, so their
+        midpoint is within half the tolerance of the gain.
 
         Args:
             bound (str): None for the midpoint of the bounds, 'lower' for the lower bound, or 'upper' for the upper bound (in any case).
@@ -393,8 +507,8 @@ class model:
         Returns:
             float: The gain, or the bound selected.
 
-        Raises RuntimeError if the last run of solve() used the discounted
-        reward criterion.
+        Raises RuntimeError if the last run of solve() or evaluate() used the
+        discounted reward criterion.
         """
         self._requireAverage("getGain", "gain")
         if not (bound is None or (isinstance(bound, str) and bound.lower() in ("lower", "upper"))):
@@ -408,9 +522,9 @@ class model:
     def getBias(self, stateIndex: int, referenceIndex: int = 0) -> float:
         """
         Get the bias (the relative value) of a state from the last run of
-        solve() under the average reward criterion, with the bias of a
-        reference state set to 0. Thus, the bias of a state is its value
-        minus the value of the reference state.
+        solve() or evaluate() under the average reward criterion, with the
+        bias of a reference state set to 0. Thus, the bias of a state is its
+        value minus the value of the reference state.
 
         Args:
             stateIndex (int): Index of the state.
@@ -419,8 +533,9 @@ class model:
         Returns:
             float: Bias of the given state.
 
-        Raises RuntimeError if the last run of solve() used the discounted
-        reward criterion, and IndexError for a state outside the model.
+        Raises RuntimeError if the last run of solve() or evaluate() used the
+        discounted reward criterion, and IndexError for a state outside the
+        model.
         """
         self._requireAverage("getBias", "bias")
         numberOfStates = self.mdl.getNumberOfStates()
@@ -433,17 +548,17 @@ class model:
 
     def _requireAverage(self, method, quantity):
         """
-        Raise RuntimeError unless the last run of solve() used the average
-        reward criterion.
+        Raise RuntimeError unless the last run of solve() or evaluate() used
+        the average reward criterion.
         """
         self._requireSolution(method)
         if self._criterion != "average":
-            raise RuntimeError("The %s is defined under the average reward criterion, but the last run of solve() used criterion='%s'. Call solve(criterion='average') first." % (quantity, self._criterion))
+            raise RuntimeError("The %s is defined under the average reward criterion, but the last run of %s() used criterion='%s'. Call %s(criterion='average') first." % (quantity, self._lastRun, self._criterion, self._lastRun))
 
     @_oneAtATime
     def saveToFile(self, fileName: str | None = None, type: str = "policy", filetype: str = "npy") -> None:
         """
-        Save the optimized policy or value vector to a file.
+        Save the optimized (or evaluated) policy or value vector to a file.
 
         Args:
             fileName (str): Name of the output file. By default result.npy, or result.csv when filetype is 'csv'.

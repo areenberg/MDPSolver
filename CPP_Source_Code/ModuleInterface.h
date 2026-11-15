@@ -175,13 +175,29 @@ public:
      string criterion="discounted",
      int parIterLim=100,
      double SORrelaxation=1.0,
-     py::list initPolicy=py::list(),
-     py::list initValueVector=py::list(),
+     py::object initPolicy=py::none(), //a NumPy array of int64, or None (model.py sets them with setInitialVectors() first)
+     py::object initValueVector=py::none(), //a NumPy array of float64, or None
      bool verbose=false,
      bool postProcessing=true,
      bool makeFinalCheck=true,
-     bool parallel=true); 
-    
+     bool parallel=true);
+
+    //checks the initial policy (or the policy of evaluate()) and the initial value vector
+    //against the model, and sets them (each a NumPy array or None); returns whether a value
+    //vector was given
+    bool setInitialVectors(py::object policy, py::object values, string label="initial policy", string name="initPolicy");
+
+    void evaluate(py::object policy=py::none(), //evaluates the policy (by default that of the last run) without improving it; a NumPy array of int64 or None
+     double tolerance=1e-3,
+     string update="standard",
+     string criterion="discounted",
+     double SORrelaxation=1.0,
+     py::object initValueVector=py::none(), //a NumPy array of float64 or None
+     bool verbose=false,
+     bool postProcessing=true,
+     bool makeFinalCheck=true,
+     bool parallel=true);
+
     //-------------------------------
 
     //------ output methods ------
@@ -209,8 +225,10 @@ public:
 private:
 
     //METHODS
-    void setInitPolicy(py::list initPolicy);
-    void setInitValueVector(py::list initValueVector);
+    void runSolver(ModifiedPolicyIteration& solver, bool evaluateOnly); //solves the selected model, or evaluates the policy on it
+    void runSolverOn(ModifiedPolicyIteration& solver, ModelType* mdl, bool evaluateOnly);
+    void storeResults(ModifiedPolicyIteration& solver); //copies the solver's results into results
+    bool isEmpty(const py::object& vector); //whether a policy or value vector is None or empty
     void loadRewardsFromList(py::list rewards);
     void loadTranMatFromLists(py::list tranMatProbs, py::list tranMatColumns);
     void loadTranMatWithZeros(py::list tranMatWithZeros);
